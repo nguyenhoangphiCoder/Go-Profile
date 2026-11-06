@@ -10,7 +10,12 @@ export async function fetchPublicPage(slug: string): Promise<PublicPageDTO> {
   });
 
   if (error || !data) {
-    console.error(`Lỗi khi tải trang công khai slug="${slug}":`, error);
+    if (error) {
+      console.error(
+        `Lỗi khi tải trang công khai slug="${slug}":`,
+        error.message || error.code || JSON.stringify(error)
+      );
+    }
     return { found: false, reason: "SLUG_NOT_FOUND" };
   }
 
@@ -72,3 +77,4 @@ export async function resolveAndRecordClick(
     kind: resolve.kind,
   };
 }
+
