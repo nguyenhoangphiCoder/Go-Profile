@@ -31,7 +31,7 @@ Tài liệu căn cứ:
 - [x] **P02 — Khởi tạo ứng dụng và quy trình kiểm tra.** Đã khởi tạo Next.js App Router (React 19, TypeScript strict), pnpm, Tailwind CSS, font tiếng Việt, script kiểm tra (lint/typecheck/Vitest/Playwright), CI workflow và build production thành công.
 - [x] **P03 — Database nền, quyền và dữ liệu kiểm thử.** Đã hoàn thành 5 file migrations (10 bảng chính, 2 bảng phụ, FK ghép, constraints deferred, indexes, triggers bảo vệ sealed revision, RLS, storage policies, bộ khung 8 RPC nghiệp vụ), seed.sql, database.generated.ts và kiểm thử schema đạt 100%.
 - [x] **P04 — Đăng nhập và khung quản trị.** Đã hoàn thành hệ thống xác thực Supabase SSR cookie, Next.js 16 Proxy bảo vệ tuyến admin, trang /login, Server Actions đăng nhập/đăng xuất với kiểm tra quyền admin_users.is_active, Admin Layout (Sidebar, Header, Logout) và trang Dashboard /admin.
-- [ ] **P05 — Danh mục liên kết và quản lý ảnh.** Chưa thực hiện.
+- [x] **P05 — Danh mục liên kết và quản lý ảnh.** Đã hoàn thành quản lý danh mục liên kết (CRUD, kiểm tra URL an toàn, optimistic concurrency lock_version, hiển thị trang bị ảnh hưởng khi đổi URL gốc) và kho ảnh số (upload Supabase Storage bucket public_media, metadata, phân trang/lọc, bảo vệ ngăn xóa ảnh đang được sử dụng).
 - [ ] **P06 — Quản lý trang, trình biên tập và xuất bản.** Chưa thực hiện.
 - [ ] **P07 — Trang công khai và ghi nhận click.** Chưa thực hiện.
 - [ ] **P08 — Báo cáo thống kê.** Chưa thực hiện.
@@ -120,14 +120,14 @@ Phụ thuộc: P03.
 
 Phụ thuộc: P04.
 
-- [ ] P05.01 — Hoàn thiện RPC và UI thêm/sửa/tìm kiếm/vô hiệu hóa link; kiểm tra URL, kind và expected version.
-- [ ] P05.02 — Hiển thị các trang bị ảnh hưởng khi đổi URL gốc; giữ ID lịch sử.
-- [ ] P05.03 — Xây upload ảnh, metadata, giới hạn file và trạng thái pending/ready/failed.
-- [ ] P05.04 — Quản lý ảnh private/public và tạo bản public bất biến để xuất bản; không overwrite asset đang dùng.
-- [ ] P05.05 — Kiểm soát xóa ảnh theo tham chiếu; có quy trình đối soát/dọn object mồ côi có thể retry.
-- [ ] P05.06 — Kiểm thử quyền upload/xóa, URL nguy hiểm, xung đột cập nhật và các lỗi copy/upload dở.
+- [x] P05.01 — Hoàn thiện RPC và UI thêm/sửa/tìm kiếm/vô hiệu hóa link; kiểm tra URL, kind và expected version.
+- [x] P05.02 — Hiển thị các trang bị ảnh hưởng khi đổi URL gốc; giữ ID lịch sử.
+- [x] P05.03 — Xây upload ảnh, metadata, giới hạn file và trạng thái pending/ready/failed.
+- [x] P05.04 — Quản lý ảnh private/public và tạo bản public bất biến để xuất bản; không overwrite asset đang dùng.
+- [x] P05.05 — Kiểm soát xóa ảnh theo tham chiếu; có quy trình đối soát/dọn object mồ côi có thể retry.
+- [x] P05.06 — Kiểm thử quyền upload/xóa, URL nguy hiểm, xung đột cập nhật và các lỗi copy/upload dở.
 
-**Tiêu chí kết thúc:** Danh mục và ảnh sử dụng được trong quản trị; file chưa hợp lệ không thể trở thành tài nguyên ready; không xóa nhầm tài nguyên được tham chiếu.
+**Tiêu chí kết thúc:** Danh mục và ảnh sử dụng được trong quản trị; file chưa hợp lệ không thể trở thành tài nguyên ready; không xóa nhầm tài nguyên được tham chiếu. Bằng chứng: `src/features/links/`, `src/features/media/`, `src/app/admin/links/`, `src/app/admin/media/`, `tests/unit/links.test.ts`, `tests/unit/media.test.ts` và mục LOG-007 trong nhật ký.
 
 ### P06 — Quản lý trang, trình biên tập và xuất bản
 

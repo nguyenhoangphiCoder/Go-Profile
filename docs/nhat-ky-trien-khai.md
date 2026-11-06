@@ -233,7 +233,7 @@ Trạng thái đợt công việc có thể là: `hoàn thành`, `đang thực h
   - `schemas.ts`: Zod schema `loginSchema` kiểm tra tính hợp lệ của email và mật khẩu (tối thiểu 6 ký tự).
   - `queries.ts`: `getCurrentAdmin()`, `requireActiveAdmin()` kiểm tra phiên người dùng và bắt buộc có cờ `is_active = true` trong bảng `admin_users`.
   - `actions.ts`: Server Actions `loginAction` (xác thực qua Supabase Auth, kiểm tra phân quyền quản trị, tự động hủy phiên nếu không có quyền admin) và `logoutAction` (đăng xuất và điều hướng về `/login`).
-- Xây dựng giao diện đăng nhập [`src/app/(auth)/login/page.tsx`](file:///d:/PROJECT/gocafe.profile/src/app/(auth)/login/page.tsx) với phong cách thương hiệu Gờ Cafe, hỗ trợ tham số `redirectTo`, thông báo lỗi tiếng Việt trực quan, trạng thái loading và ẩn/hiện mật khẩu, bọc trong `<Suspense>`.
+- Xây dựng giao diện đăng nhập [`src/app/(auth)/login/page.tsx`](<file:///d:/PROJECT/gocafe.profile/src/app/(auth)/login/page.tsx>) với phong cách thương hiệu Gờ Cafe, hỗ trợ tham số `redirectTo`, thông báo lỗi tiếng Việt trực quan, trạng thái loading và ẩn/hiện mật khẩu, bọc trong `<Suspense>`.
 - Xây dựng route handler [`src/app/auth/callback/route.ts`](file:///d:/PROJECT/gocafe.profile/src/app/auth/callback/route.ts) trao đổi code xác thực cho session.
 - Xây dựng khung giao diện quản trị CMS:
   - [`src/components/admin/admin-nav.tsx`](file:///d:/PROJECT/gocafe.profile/src/components/admin/admin-nav.tsx): Sidebar điều hướng với hiệu ứng active link rõ ràng.
@@ -273,7 +273,70 @@ Trạng thái đợt công việc có thể là: `hoàn thành`, `đang thực h
 
 **Bước tiếp theo:**
 
-- Bắt đầu Phase 05 (P05): Danh mục liên kết và quản lý ảnh (CRUD link, RPC, upload ảnh Supabase Storage, metadata, giới hạn file và trạng thái pending/ready/failed).
+- Hoàn thành Phase 05 (P05): Danh mục liên kết và quản lý ảnh.
+
+### LOG-007 — Danh mục liên kết và quản lý ảnh (P05)
+
+- **Ngày:** 2026-11-06 10:24.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P05.01, P05.02, P05.03, P05.04, P05.05, P05.06; hoàn tất P05.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Xây dựng mô-đun quản lý liên kết (`src/features/links/`):
+  - `types.ts`, `schemas.ts`: Zod validation schema chặt chẽ cho URL (chỉ cho phép giao thức `http:`, `https:`, `tel:`, `mailto:`, chặn tuyệt đối `javascript:`, `data:`, `vbscript:`, và khoảng trắng nguy hiểm).
+  - `queries.ts`: Truy vấn danh sách links kèm số lượng placement đang sử dụng, truy vấn chi tiết link kèm danh sách các trang đang bị ảnh hưởng bởi link đó.
+  - `actions.ts`: Server Actions cho tạo mới (`createLinkAction`), cập nhật link (`updateLinkAction`) với cơ chế kiểm soát đồng thời lạc quan (optimistic concurrency qua `expected_version` / `lock_version`) và chuyển đổi trạng thái kích hoạt (`toggleLinkStatusAction`).
+  - Giao diện người dùng:
+    - `src/features/links/components/link-form-modal.tsx`: Modal thêm/sửa link, tự động hiển thị danh sách các trang bị ảnh hưởng khi chỉnh sửa URL gốc để admin nắm bắt rủi ro.
+    - `src/features/links/components/links-table.tsx`: Bảng dữ liệu tìm kiếm, lọc theo loại (standard, social, contact), gắn cờ kích hoạt/vô hiệu hóa tức thì, nút sửa và xem chi tiết.
+    - `src/app/admin/links/page.tsx`: Tuyến trang quản lý danh mục liên kết trong CMS.
+- Xây dựng mô-đun quản lý tài nguyên ảnh (`src/features/media/`):
+  - `types.ts`, `schemas.ts`: Xác thực file upload (kích thước tối đa 5MB, định dạng cho phép: image/jpeg, image/png, image/webp, image/gif, image/svg+xml).
+  - `queries.ts`: Truy vấn danh sách tài nguyên ảnh trong kho lưu trữ kèm trạng thái tham chiếu (`isReferenced`), kiểm tra xem ảnh có đang được gắn vào `links`, `pages`, `page_blocks`, hay `page_revisions` không.
+  - `actions.ts`: Server Actions xử lý upload ảnh lên Supabase Storage bucket `public_media` (sử dụng privileged/admin client với xử lý transaction metadata, trạng thái `pending` -> `ready` / `failed`), và xóa ảnh an toàn (`deleteMediaAction`) có chặn xóa nếu ảnh đang được bất kỳ revision hoặc link nào tham chiếu.
+  - Giao diện người dùng:
+    - `src/features/media/components/media-upload-modal.tsx`: Modal upload ảnh hỗ trợ kéo thả/chọn file, xem trước ảnh tức thì (instant image preview), hiển thị tiến trình tải.
+    - `src/features/media/components/media-grid.tsx`: Lưới hiển thị ảnh trực quan kèm thumbnail, nút sao chép nhanh URL CDN, huy hiệu khoá cho ảnh đang được tham chiếu, nút xóa có xác nhận và bảo vệ an toàn.
+    - `src/app/admin/media/page.tsx`: Tuyến trang quản lý kho ảnh trong CMS.
+- Viết bộ kiểm thử đơn vị:
+  - `tests/unit/links.test.ts`: Kiểm tra toàn diện Zod link schema (chặn XSS/URL độc hại, chấp nhận `tel:` và `mailto:`, kiểm tra `expected_version`).
+  - `tests/unit/media.test.ts`: Kiểm tra validation file type, file size limit (5MB), và metadata upload.
+- Chạy kiểm tra thực tế: format (`prettier`), lint (`eslint`), typecheck (`tsc`), test (`vitest`), build production (`next build`).
+
+**File/bằng chứng:**
+
+- `src/features/links/types.ts`, `src/features/links/schemas.ts`, `src/features/links/queries.ts`, `src/features/links/actions.ts`
+- `src/features/links/components/link-form-modal.tsx`, `src/features/links/components/links-table.tsx`
+- `src/app/admin/links/page.tsx`
+- `src/features/media/types.ts`, `src/features/media/schemas.ts`, `src/features/media/queries.ts`, `src/features/media/actions.ts`
+- `src/features/media/components/media-upload-modal.tsx`, `src/features/media/components/media-grid.tsx`
+- `src/app/admin/media/page.tsx`
+- `tests/unit/links.test.ts`, `tests/unit/media.test.ts`
+- `docs/ke-hoach-trien-khai.md`, `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- `pnpm run format:check`: Đạt 100%.
+- `pnpm run lint`: Đạt, 0 error, 0 warning.
+- `pnpm run typecheck`: Đạt, 0 error.
+- `pnpm run test`: 5 file test, 21/21 test cases pass.
+- `pnpm run build`: Thành công trong 3.9s, các tuyến `/admin/links` và `/admin/media` được build tối ưu dạng dynamic server-rendered.
+- Đạt 100% tiêu chí kết thúc của Phase 05.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P05.01 đến P05.06.
+- Đánh dấu hoàn thành Phase P05 trên checklist tổng và checklist chi tiết.
+
+**Còn mở và tác động:**
+
+- Cần bucket `public_media` trên Supabase Storage đã được cấu hình public read để URL ảnh hiển thị trực tiếp trên trình duyệt.
+
+**Bước tiếp theo:**
+
+- Bắt đầu Phase 06 (P06): Quản lý trang, trình biên tập block editor và xuất bản revision (CRUD trang, alias slug, theme customizer, block ordering/drag-drop, atomic publish RPC, revision immutability).
 
 ## 3. Mẫu cho lần cập nhật tiếp theo
 
