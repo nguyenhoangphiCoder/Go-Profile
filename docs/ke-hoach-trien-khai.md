@@ -32,7 +32,7 @@ Tài liệu căn cứ:
 - [x] **P03 — Database nền, quyền và dữ liệu kiểm thử.** Đã hoàn thành 5 file migrations (10 bảng chính, 2 bảng phụ, FK ghép, constraints deferred, indexes, triggers bảo vệ sealed revision, RLS, storage policies, bộ khung 8 RPC nghiệp vụ), seed.sql, database.generated.ts và kiểm thử schema đạt 100%.
 - [x] **P04 — Đăng nhập và khung quản trị.** Đã hoàn thành hệ thống xác thực Supabase SSR cookie, Next.js 16 Proxy bảo vệ tuyến admin, trang /login, Server Actions đăng nhập/đăng xuất với kiểm tra quyền admin_users.is_active, Admin Layout (Sidebar, Header, Logout) và trang Dashboard /admin.
 - [x] **P05 — Danh mục liên kết và quản lý ảnh.** Đã hoàn thành quản lý danh mục liên kết (CRUD, kiểm tra URL an toàn, optimistic concurrency lock_version, hiển thị trang bị ảnh hưởng khi đổi URL gốc) và kho ảnh số (upload Supabase Storage bucket public_media, metadata, phân trang/lọc, bảo vệ ngăn xóa ảnh đang được sử dụng).
-- [ ] **P06 — Quản lý trang, trình biên tập và xuất bản.** Chưa thực hiện.
+- [x] **P06 — Quản lý trang, trình biên tập và xuất bản.** Đã hoàn thành quản lý trang profile (tạo, liệt kê, nhân bản, lưu trữ, đổi slug chính kèm alias redirect), trình biên tập block editor (header, heading, text, link list, image, social icons, spacer, divider), bộ chọn giao diện theme preset, live preview điện thoại/máy tính, lưu nháp với optimistic locking và xuất bản nguyên tử (atomic publish RPC) niêm phong revision.
 - [ ] **P07 — Trang công khai và ghi nhận click.** Chưa thực hiện.
 - [ ] **P08 — Báo cáo thống kê.** Chưa thực hiện.
 - [ ] **P09 — Kiểm thử tích hợp và nghiệm thu trên staging.** Chưa thực hiện.
@@ -133,16 +133,16 @@ Phụ thuộc: P04.
 
 Phụ thuộc: P05.
 
-- [ ] P06.01 — Hoàn thiện RPC/UI tạo, liệt kê, nhân bản, archive trang và đổi slug/alias.
-- [ ] P06.02 — Xây trình biên tập các khối đã chốt; cấu hình theme riêng từng trang, không nhận HTML/CSS/JS tùy ý.
-- [ ] P06.03 — Chọn link chung, ghi đè nhãn/ảnh, sắp xếp khối/link bằng kéo thả và bàn phím.
-- [ ] P06.04 — Lưu draft theo expected version; đồng bộ block/placement/media trong transaction, báo conflict khi cần.
-- [ ] P06.05 — Preview riêng tư trên điện thoại/máy tính, không ghi thống kê công khai.
-- [ ] P06.06 — Hoàn thiện publish/unpublish: khóa đúng thứ tự, resolve nhãn/ảnh, seal revision và đổi con trỏ nguyên tử.
-- [ ] P06.07 — Bảo đảm gỡ link trong draft không archive vị trí vẫn có trong bản công khai.
-- [ ] P06.08 — Kiểm thử rollback publish, sửa đồng thời, trùng slug/alias, clone ID mới và bất biến revision sealed.
+- [x] P06.01 — Hoàn thiện RPC/UI tạo, liệt kê, nhân bản, archive trang và đổi slug/alias.
+- [x] P06.02 — Xây trình biên tập các khối đã chốt; cấu hình theme riêng từng trang, không nhận HTML/CSS/JS tùy ý.
+- [x] P06.03 — Chọn link chung, ghi đè nhãn/ảnh, sắp xếp khối/link bằng kéo thả và bàn phím.
+- [x] P06.04 — Lưu draft theo expected version; đồng bộ block/placement/media trong transaction, báo conflict khi cần.
+- [x] P06.05 — Preview riêng tư trên điện thoại/máy tính, không ghi thống kê công khai.
+- [x] P06.06 — Hoàn thiện publish/unpublish: khóa đúng thứ tự, resolve nhãn/ảnh, seal revision và đổi con trỏ nguyên tử.
+- [x] P06.07 — Bảo đảm gỡ link trong draft không archive vị trí vẫn có trong bản công khai.
+- [x] P06.08 — Kiểm thử rollback publish, sửa đồng thời, trùng slug/alias, clone ID mới và bất biến revision sealed.
 
-**Tiêu chí kết thúc:** Người quản trị tạo và biên tập trang được; draft không ảnh hưởng bản công khai; publish áp dụng đồng thời nội dung/theme/thứ tự link, lỗi không gây dữ liệu dở dang.
+**Tiêu chí kết thúc:** Người quản trị tạo và biên tập trang được; draft không ảnh hưởng bản công khai; publish áp dụng đồng thời nội dung/theme/thứ tự link, lỗi không gây dữ liệu dở dang. Bằng chứng: `src/features/pages/`, `src/app/admin/pages/`, `tests/unit/pages.test.ts` và mục LOG-008 trong nhật ký.
 
 ### P07 — Trang công khai và ghi nhận click
 

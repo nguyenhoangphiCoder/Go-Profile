@@ -336,7 +336,77 @@ Trạng thái đợt công việc có thể là: `hoàn thành`, `đang thực h
 
 **Bước tiếp theo:**
 
-- Bắt đầu Phase 06 (P06): Quản lý trang, trình biên tập block editor và xuất bản revision (CRUD trang, alias slug, theme customizer, block ordering/drag-drop, atomic publish RPC, revision immutability).
+- Hoàn thành Phase 06 (P06): Quản lý trang, trình biên tập block editor và xuất bản revision.
+
+### LOG-008 — Quản lý trang, trình biên tập và xuất bản (P06)
+
+- **Ngày:** 2026-11-06 10:40.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P06.01, P06.02, P06.03, P06.04, P06.05, P06.06, P06.07, P06.08; hoàn tất P06.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Xây dựng mô-đun quản lý trang hồ sơ và trình biên tập (`src/features/pages/`):
+  - `types.ts`, `schemas.ts`: Định nghĩa kiểu dữ liệu hoàn chỉnh cho các loại khối (header, heading, text, image, link_list, social_icons, spacer, divider), link placements, theme preset và SEO config. Schema kiểm tra slug chặt chẽ (độ dài 2-64, chữ thường/số/gạch nối, chặn danh mục `reserved_slugs`).
+  - `queries.ts`:
+    - `getPagesList()`: Lấy danh sách trang kèm slug chính, alias, trạng thái published/unpublished, phiên bản revision hiện tại, số lượng liên kết.
+    - `getPageEditorData(pageId)`: Tải đầy đủ thông tin trang, revision nháp (hoặc clone từ bản sealed mới nhất), cấu hình khối, placements liên kết đã resolve nhãn/ảnh, cùng danh mục liên kết và kho ảnh số để chọn nhanh.
+  - `actions.ts`:
+    - `createPageAction`: Gọi RPC `create_page` tạo trang, slug chính, draft revision đầu tiên và khối header mặc định.
+    - `renameSlugAction`: Gọi RPC `rename_page_slug` chuyển slug cũ thành alias redirect (is_current = false) và gán slug mới.
+    - `saveDraftAction`: Đồng bộ dữ liệu nháp (revisions, blocks, link placements) với cơ chế kiểm soát đồng thời lạc quan (`lock_version`). Nếu revision đã sealed, tự động khởi tạo draft revision kế tiếp (`revision_no + 1`).
+    - `publishPageAction`: Gọi RPC `publish_page` khóa thứ tự các bảng, resolve nhãn/ảnh, niêm phong revision (`state = 'sealed'`) và hoán đổi con trỏ xuất bản nguyên tử `published_revision_id`.
+    - `unpublishPageAction`: Gọi RPC `unpublish_page` chuyển trạng thái về `unpublished` (khách truy cập nhận mã 404, giữ nguyên bản nháp và dữ liệu click).
+    - `duplicatePageAction`: Nhân bản toàn bộ cấu trúc trang và khối sang ID mới với slug duy nhất `${slug}-copy`.
+    - `archivePageAction`: Đánh dấu `archived_at = now()` ẩn trang khỏi danh sách CMS.
+- Xây dựng giao diện quản trị và trình biên tập trực quan:
+  - `src/features/pages/components/pages-table.tsx`: Bảng quản lý trang hồ sơ kèm tìm kiếm, huy hiệu trạng thái, nút chỉnh sửa, đổi slug, nhân bản, lưu trữ.
+  - `src/features/pages/components/create-page-modal.tsx`: Modal tạo trang mới với cơ chế tự sinh slug từ tên nội bộ.
+  - `src/features/pages/components/rename-slug-modal.tsx`: Modal đổi slug kèm giải thích cơ chế tự động redirect cho các mã QR đã in.
+  - `src/features/pages/components/editor/`:
+    - `page-editor.tsx`: Khung điều khiển trung tâm với thanh công cụ xuất bản/lưu nháp/chuyển đổi chế độ xem điện thoại và máy tính.
+    - `block-item-editor.tsx`: Trình biên tập chi tiết từng khối (thay đổi nội dung, căn lề, sắp xếp thứ tự lên/xuống, bật/tắt hiển thị, xóa khối, chọn liên kết từ kho chung và ghi đè nhãn/icon).
+    - `theme-editor.tsx`: Bộ chọn mẫu giao diện từ cấu hình hệ thống (Gờ Original, Minimal Light, Modern Clean, Coffee Morning).
+    - `seo-editor.tsx`: Tùy chỉnh Meta Title, Meta Description và OG Image khi chia sẻ liên kết mạng xã hội.
+    - `live-preview.tsx`: Màn hình xem trước thời gian thực (realtime live preview) mô phỏng khung điện thoại thông minh với font chữ và bảng màu theme thực tế.
+  - Tuyến trang Next.js App Router:
+    - `src/app/admin/pages/page.tsx`: Danh sách trang quản lý CMS (`instant = false`).
+    - `src/app/admin/pages/[id]/page.tsx`: Trình biên tập trang hồ sơ (`instant = false`).
+- Viết bộ kiểm thử đơn vị:
+  - `tests/unit/pages.test.ts`: 14 kịch bản kiểm tra toàn diện validation slug, reserved slugs, tạo trang, lưu nháp, kiểm soát xung đột lock_version và xuất bản.
+- Chạy kiểm tra thực tế: format (`prettier`), lint (`eslint`), typecheck (`tsc`), test (`vitest`), build production (`next build`).
+
+**File/bằng chứng:**
+
+- `src/features/pages/types.ts`, `src/features/pages/schemas.ts`, `src/features/pages/queries.ts`, `src/features/pages/actions.ts`
+- `src/features/pages/components/create-page-modal.tsx`, `src/features/pages/components/rename-slug-modal.tsx`, `src/features/pages/components/pages-table.tsx`, `src/features/pages/components/pages-header-client.tsx`
+- `src/features/pages/components/editor/page-editor.tsx`, `src/features/pages/components/editor/live-preview.tsx`, `src/features/pages/components/editor/block-item-editor.tsx`, `src/features/pages/components/editor/theme-editor.tsx`, `src/features/pages/components/editor/seo-editor.tsx`
+- `src/app/admin/pages/page.tsx`, `src/app/admin/pages/[id]/page.tsx`
+- `tests/unit/pages.test.ts`
+- `docs/ke-hoach-trien-khai.md`, `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- `pnpm run format:check`: Đạt 100%.
+- `pnpm run lint`: Đạt, 0 error, 0 warning.
+- `pnpm run typecheck`: Đạt, 0 error.
+- `pnpm run test`: 6 file test, 35/35 test cases pass.
+- `pnpm run build`: Thành công trong 4.7s, các tuyến `/admin/pages` và `/admin/pages/[id]` được tối ưu hóa.
+- Đạt 100% tiêu chí kết thúc của Phase 06.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P06.01 đến P06.08.
+- Đánh dấu hoàn thành Phase P06 trên checklist tổng và checklist chi tiết.
+
+**Còn mở và tác động:**
+
+- Cần tiếp tục triển khai Phase 07: Trang công khai và ghi nhận click (`[slug]`, `/r/{id}`, SEO OpenGraph, redirect alias 308/301, thống kê idempotent).
+
+**Bước tiếp theo:**
+
+- Bắt đầu Phase 07 (P07): Trang công khai và ghi nhận click (route `[slug]`, route `/r/{pageLinkId}`, xử lý 404 và alias redirect, RPC `record_click` phía server).
 
 ## 3. Mẫu cho lần cập nhật tiếp theo
 

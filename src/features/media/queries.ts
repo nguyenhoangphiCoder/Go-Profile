@@ -4,6 +4,11 @@ import { requireActiveAdmin } from "@/features/auth/queries";
 import { clientEnv } from "@/lib/env.client";
 import type { MediaAssetItem } from "./types";
 
+export function getPublicMediaUrl(objectPath: string): string {
+  if (!objectPath) return "";
+  return `${clientEnv.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/public_media/${objectPath}`;
+}
+
 export async function getMediaAssets(): Promise<MediaAssetItem[]> {
   await requireActiveAdmin();
   const supabase = await createSupabaseServerClient();
