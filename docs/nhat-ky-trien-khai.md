@@ -406,7 +406,72 @@ Trạng thái đợt công việc có thể là: `hoàn thành`, `đang thực h
 
 **Bước tiếp theo:**
 
-- Bắt đầu Phase 07 (P07): Trang công khai và ghi nhận click (route `[slug]`, route `/r/{pageLinkId}`, xử lý 404 và alias redirect, RPC `record_click` phía server).
+- Hoàn thành Phase 07 (P07): Trang công khai và ghi nhận click.
+
+### LOG-009 — Trang công khai và ghi nhận click (P07)
+
+- **Ngày:** 2026-11-06 10:54.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P07.01, P07.02, P07.03, P07.04, P07.05, P07.06, P07.07, P07.08; hoàn tất P07.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Xây dựng mô-đun hiển thị công khai và đo lường click (`src/features/public/`):
+  - `types.ts`: Định nghĩa kiểu dữ liệu cho DTO trang công khai (`PublicPageDTO`, `PublicBlockItem`, `PublicLinkItem`, `ResolveLinkResult`, `RecordClickResult`).
+  - `bot-detector.ts`: Bộ lọc thông minh nhận diện hơn 20 loại bot/crawler phổ biến (Googlebot, Bingbot, Facebook, Twitter, WhatsApp, Telegram, Discord, LinkedIn, Ahrefs, Semrush, v.v.), nhận diện các header prefetch/preview (`Purpose`, `Sec-Purpose`, `X-Moz`, `X-Purpose`) và phương thức HEAD để loại trừ khỏi báo cáo click (P07.05, P07.07).
+  - `queries.ts`:
+    - `fetchPublicPage(slug)`: Gọi RPC `get_public_page` với quyền truy cập công khai an toàn, chỉ trả về dữ liệu của revision đã niêm phong (`state = 'sealed'`) trên trang đang xuất bản, không làm lộ bất kỳ dữ liệu nháp nào.
+    - `resolveAndRecordClick(pageLinkId, skipTracking)`: Sử dụng privileged/admin client gọi RPC `resolve_public_link` và `record_click` với UUID idempotent (`crypto.randomUUID()`). Thiết kế khả năng phục hồi lỗi cao: nếu bước ghi thống kê click gặp sự cố hoặc timeout, hệ thống vẫn trả về `target_url` cho người dùng mà không chặn điều hướng (P07.06).
+- Triển khai các tuyến trang công khai:
+  - `src/app/[slug]/page.tsx`:
+    - Chặn các slug hệ thống (`reserved_slugs`) trả về 404.
+    - Xử lý chuyển hướng vĩnh viễn (HTTP 308) khi người dùng truy cập alias cũ sang slug chính (`canonical_slug`) giúp bảo vệ toàn bộ mã QR đã in (P07.03).
+    - Tạo metadata SEO tự động (`generateMetadata`): OpenGraph, Twitter card (`summary_large_image`), tiêu đề, mô tả và ảnh đại diện.
+    - Cấu hình `export const instant = false` chuẩn Next.js 16 Partial Prerendering.
+  - `src/features/public/components/public-page-view.tsx`:
+    - Component hiển thị hồ sơ thương hiệu đáp ứng (responsive), tối ưu hiển thị trên thiết bị di động.
+    - Áp dụng chuẩn theme (màu nền, màu chữ, card style, bo góc, font chữ Be Vietnam Pro / Inter).
+    - Render đầy đủ 8 loại khối nội dung; các liên kết đều trỏ qua endpoint đo lường `/r/{page_link_id}` với nhãn và hình ảnh đã niêm phong.
+  - `src/app/page.tsx`: Tự động chuyển hướng về trang thương hiệu chính (`/gocafe`) nếu đã xuất bản, hoặc hiển thị trang chào đón ấm áp của Gờ Cafe.
+  - `src/app/r/[id]/route.ts`:
+    - Endpoint chuyển hướng phía máy chủ hỗ trợ cả `GET` và `HEAD`.
+    - Kiểm tra định dạng UUID hợp lệ.
+    - Áp dụng bộ lọc bot/crawler và header `Cache-Control: no-store, no-cache, must-revalidate` chống lưu cache trung gian.
+    - Chuyển hướng tạm thời HTTP 307 đến địa chỉ đích quản lý (hỗ trợ `https:`, `http:`, `tel:`, `mailto:`).
+- Viết bộ kiểm thử đơn vị:
+  - `tests/unit/public.test.ts`: 10 kịch bản kiểm tra toàn diện bot detection, prefetch detection, logic bỏ qua tracking cho HEAD/crawler, và kiểm tra cơ chế phục hồi lỗi P07.06 (mock RPC `record_click` ném lỗi vẫn trả về `target_url`).
+- Chạy kiểm tra thực tế: format (`prettier`), lint (`eslint`), typecheck (`tsc`), test (`vitest`), build production (`next build`).
+
+**File/bằng chứng:**
+
+- `src/features/public/types.ts`, `src/features/public/bot-detector.ts`, `src/features/public/queries.ts`
+- `src/features/public/components/public-page-view.tsx`
+- `src/app/[slug]/page.tsx`, `src/app/r/[id]/route.ts`, `src/app/page.tsx`
+- `tests/unit/public.test.ts`
+- `docs/ke-hoach-trien-khai.md`, `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- `pnpm run format:check`: Đạt 100%.
+- `pnpm exec eslint src tests`: Đạt, 0 error, 0 warning.
+- `pnpm run typecheck`: Đạt, 0 error.
+- `pnpm run test`: 7 file test, 45/45 test cases pass.
+- `pnpm run build`: Thành công trong 1.3s, các tuyến `/[slug]` và `/r/[id]` được tối ưu hóa chuẩn Next.js 16.
+- Đạt 100% tiêu chí kết thúc của Phase 07.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P07.01 đến P07.08.
+- Đánh dấu hoàn thành Phase P07 trên checklist tổng và checklist chi tiết.
+
+**Còn mở và tác động:**
+
+- Sẵn sàng bước sang Phase 08: Báo cáo thống kê (RPC `get_click_report`, bộ lọc theo trang/link/khoảng thời gian múi giờ Việt Nam, biểu đồ trực quan trong CMS).
+
+**Bước tiếp theo:**
+
+- Bắt đầu Phase 08 (P08): Báo cáo thống kê (UI `/admin/reports`, RPC `get_click_report`, tổng lượt click, biểu đồ thời gian, thống kê theo thiết bị/nguồn, xuất file CSV/JSON).
 
 ## 3. Mẫu cho lần cập nhật tiếp theo
 

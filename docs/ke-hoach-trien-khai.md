@@ -33,7 +33,7 @@ Tài liệu căn cứ:
 - [x] **P04 — Đăng nhập và khung quản trị.** Đã hoàn thành hệ thống xác thực Supabase SSR cookie, Next.js 16 Proxy bảo vệ tuyến admin, trang /login, Server Actions đăng nhập/đăng xuất với kiểm tra quyền admin_users.is_active, Admin Layout (Sidebar, Header, Logout) và trang Dashboard /admin.
 - [x] **P05 — Danh mục liên kết và quản lý ảnh.** Đã hoàn thành quản lý danh mục liên kết (CRUD, kiểm tra URL an toàn, optimistic concurrency lock_version, hiển thị trang bị ảnh hưởng khi đổi URL gốc) và kho ảnh số (upload Supabase Storage bucket public_media, metadata, phân trang/lọc, bảo vệ ngăn xóa ảnh đang được sử dụng).
 - [x] **P06 — Quản lý trang, trình biên tập và xuất bản.** Đã hoàn thành quản lý trang profile (tạo, liệt kê, nhân bản, lưu trữ, đổi slug chính kèm alias redirect), trình biên tập block editor (header, heading, text, link list, image, social icons, spacer, divider), bộ chọn giao diện theme preset, live preview điện thoại/máy tính, lưu nháp với optimistic locking và xuất bản nguyên tử (atomic publish RPC) niêm phong revision.
-- [ ] **P07 — Trang công khai và ghi nhận click.** Chưa thực hiện.
+- [x] **P07 — Trang công khai và ghi nhận click.** Đã hoàn thành route công khai `/[slug]` render trang xuất bản theo theme và SEO OpenGraph/Twitter, redirect 308 cho alias cũ, endpoint chuyển hướng `/r/{pageLinkId}` đo lường click phía server bằng RPC `record_click` với tính chất idempotent, nhận diện và loại trừ bot/crawler/prefetch/HEAD, bảo đảm người dùng mở link mượt mà ngay cả khi ghi nhận thống kê gặp lỗi.
 - [ ] **P08 — Báo cáo thống kê.** Chưa thực hiện.
 - [ ] **P09 — Kiểm thử tích hợp và nghiệm thu trên staging.** Chưa thực hiện.
 - [ ] **P10 — Triển khai production và xác minh vận hành.** Chưa thực hiện.
@@ -148,16 +148,16 @@ Phụ thuộc: P05.
 
 Phụ thuộc: P06.
 
-- [ ] P07.01 — Hoàn thiện RPC DTO công khai và route `[slug]`, chỉ trả revision công khai và dữ liệu được phép.
-- [ ] P07.02 — Render các khối/theme responsive, metadata SEO/chia sẻ và trang chủ theo quyết định P01.
-- [ ] P07.03 — Xử lý 404, alias đến slug hiện tại, trang ngừng xuất bản và link inactive.
-- [ ] P07.04 — Hoàn thiện resolve/record click phía server; xác minh nguồn, event ID idempotent, không cho browser ghi trực tiếp.
-- [ ] P07.05 — Xây `/r/{pageLinkId}`, redirect tạm thời, no-store và không prefetch; chỉ dùng URL đã quản lý.
-- [ ] P07.06 — Khi resolve đã thành công nhưng ghi click lỗi, vẫn mở đích và log lỗi; xử lý race theo hợp đồng database.
-- [ ] P07.07 — Loại preview, HEAD và bot nhận biết được; triển khai luồng tel/mailto nếu đã nằm trong phạm vi.
-- [ ] P07.08 — Kiểm thử không lộ draft qua slug/alias/RPC, retry event, URL không hợp lệ và hành vi lỗi thống kê.
+- [x] P07.01 — Hoàn thiện RPC DTO công khai và route `[slug]`, chỉ trả revision công khai và dữ liệu được phép.
+- [x] P07.02 — Render các khối/theme responsive, metadata SEO/chia sẻ và trang chủ theo quyết định P01.
+- [x] P07.03 — Xử lý 404, alias đến slug hiện tại, trang ngừng xuất bản và link inactive.
+- [x] P07.04 — Hoàn thiện resolve/record click phía server; xác minh nguồn, event ID idempotent, không cho browser ghi trực tiếp.
+- [x] P07.05 — Xây `/r/{pageLinkId}`, redirect tạm thời, no-store và không prefetch; chỉ dùng URL đã quản lý.
+- [x] P07.06 — Khi resolve đã thành công nhưng ghi click lỗi, vẫn mở đích và log lỗi; xử lý race theo hợp đồng database.
+- [x] P07.07 — Loại preview, HEAD và bot nhận biết được; triển khai luồng tel/mailto nếu đã nằm trong phạm vi.
+- [x] P07.08 — Kiểm thử không lộ draft qua slug/alias/RPC, retry event, URL không hợp lệ và hành vi lỗi thống kê.
 
-**Tiêu chí kết thúc:** Trang đã xuất bản hiển thị đúng; click được gán đúng nguồn và giữ trải nghiệm mở link khi riêng bước ghi thống kê lỗi. Các giới hạn đo lường được mô tả rõ.
+**Tiêu chí kết thúc:** Trang đã xuất bản hiển thị đúng; click được gán đúng nguồn và giữ trải nghiệm mở link khi riêng bước ghi thống kê lỗi. Các giới hạn đo lường được mô tả rõ. Bằng chứng: `src/features/public/`, `src/app/[slug]/`, `src/app/r/[id]/`, `src/app/page.tsx`, `tests/unit/public.test.ts` và mục LOG-009 trong nhật ký.
 
 ### P08 — Báo cáo thống kê
 
