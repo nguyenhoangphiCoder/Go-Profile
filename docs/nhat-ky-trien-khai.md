@@ -218,6 +218,63 @@ Trạng thái đợt công việc có thể là: `hoàn thành`, `đang thực h
 
 - Bắt đầu Phase 04 (P04): Đăng nhập và khung quản trị (Tạo Supabase browser/server client SSR cookie, giao diện đăng nhập/đăng xuất, middleware kiểm tra quyền quản trị `admin_users.is_active` và layout quản trị CMS).
 
+### LOG-006 — Đăng nhập và khung quản trị (P04)
+
+- **Ngày:** 2026-11-06 10:14.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P04.01, P04.02, P04.03, P04.04, P04.05; hoàn tất P04.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Thiết lập `src/proxy.ts` (Next.js 16 file convention thay cho middleware) và `src/lib/supabase/session.ts` để quản lý session cookie an toàn, tự động refresh phiên và bảo vệ các tuyến `/admin/*`.
+- Xây dựng module xác thực nghiệp vụ `src/features/auth/`:
+  - `types.ts`: Định nghĩa kiểu dữ liệu `AdminUser` và `AuthState`.
+  - `schemas.ts`: Zod schema `loginSchema` kiểm tra tính hợp lệ của email và mật khẩu (tối thiểu 6 ký tự).
+  - `queries.ts`: `getCurrentAdmin()`, `requireActiveAdmin()` kiểm tra phiên người dùng và bắt buộc có cờ `is_active = true` trong bảng `admin_users`.
+  - `actions.ts`: Server Actions `loginAction` (xác thực qua Supabase Auth, kiểm tra phân quyền quản trị, tự động hủy phiên nếu không có quyền admin) và `logoutAction` (đăng xuất và điều hướng về `/login`).
+- Xây dựng giao diện đăng nhập [`src/app/(auth)/login/page.tsx`](file:///d:/PROJECT/gocafe.profile/src/app/(auth)/login/page.tsx) với phong cách thương hiệu Gờ Cafe, hỗ trợ tham số `redirectTo`, thông báo lỗi tiếng Việt trực quan, trạng thái loading và ẩn/hiện mật khẩu, bọc trong `<Suspense>`.
+- Xây dựng route handler [`src/app/auth/callback/route.ts`](file:///d:/PROJECT/gocafe.profile/src/app/auth/callback/route.ts) trao đổi code xác thực cho session.
+- Xây dựng khung giao diện quản trị CMS:
+  - [`src/components/admin/admin-nav.tsx`](file:///d:/PROJECT/gocafe.profile/src/components/admin/admin-nav.tsx): Sidebar điều hướng với hiệu ứng active link rõ ràng.
+  - [`src/components/admin/logout-button.tsx`](file:///d:/PROJECT/gocafe.profile/src/components/admin/logout-button.tsx): Nút đăng xuất tích hợp Server Action với `useTransition`.
+  - [`src/app/admin/layout.tsx`](file:///d:/PROJECT/gocafe.profile/src/app/admin/layout.tsx): Layout responsive với Desktop Sidebar, Mobile Header, Topbar, User badge và lớp bảo vệ máy chủ `requireActiveAdmin()`.
+  - [`src/app/admin/page.tsx`](file:///d:/PROJECT/gocafe.profile/src/app/admin/page.tsx): Trang tổng quan Dashboard với thẻ chào mừng admin, 3 thẻ số liệu tóm tắt (trang xuất bản, kho liên kết, lượt click) và trạng thái bảo mật hệ thống. Cấu hình `export const instant = false` chuẩn Next.js 16.
+- Viết bộ kiểm thử đơn vị [`tests/unit/auth.test.ts`](file:///d:/PROJECT/gocafe.profile/tests/unit/auth.test.ts) kiểm tra tính hợp lệ và thông báo lỗi của `loginSchema`.
+- Chạy kiểm tra thực tế: format (`prettier`), lint (`eslint`), typecheck (`tsc`), test (`vitest`), build production (`next build`).
+
+**File/bằng chứng:**
+
+- `src/proxy.ts`, `src/lib/supabase/session.ts`
+- `src/features/auth/types.ts`, `src/features/auth/schemas.ts`, `src/features/auth/queries.ts`, `src/features/auth/actions.ts`
+- `src/app/(auth)/login/page.tsx`, `src/app/auth/callback/route.ts`
+- `src/components/admin/admin-nav.tsx`, `src/components/admin/logout-button.tsx`
+- `src/app/admin/layout.tsx`, `src/app/admin/page.tsx`
+- `tests/unit/auth.test.ts`
+- `docs/ke-hoach-trien-khai.md`, `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- `pnpm run format:check`: Đạt 100%.
+- `pnpm run lint`: Đạt, 0 error, 0 warning.
+- `pnpm run typecheck`: Đạt, 0 error.
+- `pnpm run test`: 3 file test, 11/11 test cases pass.
+- `pnpm run build`: Thành công trong 2.6s, các tuyến `/admin` và `/login` được build tối ưu.
+- Đạt 100% tiêu chí kết thúc của Phase 04.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P04.01 đến P04.05.
+- Đánh dấu hoàn thành Phase P04 trên checklist tổng và checklist chi tiết.
+
+**Còn mở và tác động:**
+
+- Người dùng đăng nhập cần được gán bản ghi `admin_users` với `is_active = true` trong database để có thể vào được CMS.
+
+**Bước tiếp theo:**
+
+- Bắt đầu Phase 05 (P05): Danh mục liên kết và quản lý ảnh (CRUD link, RPC, upload ảnh Supabase Storage, metadata, giới hạn file và trạng thái pending/ready/failed).
+
 ## 3. Mẫu cho lần cập nhật tiếp theo
 
 Sao chép mẫu này vào cuối mục 2, trước mục mẫu, và thay bằng dữ liệu thực tế. Đây là mẫu hướng dẫn, không phải công việc đã thực hiện.

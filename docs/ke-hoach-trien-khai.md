@@ -30,7 +30,7 @@ Tài liệu căn cứ:
 - [x] **P01 — Chốt phạm vi và đầu vào triển khai.** Đã chốt toàn bộ quyết định kỹ thuật, quy tắc URL/revision, loại khối, giao thức, phân quyền, retention và nội dung 3 trang đầu tại docs/quyet-dinh-pham-vi-va-dau-vao.md.
 - [x] **P02 — Khởi tạo ứng dụng và quy trình kiểm tra.** Đã khởi tạo Next.js App Router (React 19, TypeScript strict), pnpm, Tailwind CSS, font tiếng Việt, script kiểm tra (lint/typecheck/Vitest/Playwright), CI workflow và build production thành công.
 - [x] **P03 — Database nền, quyền và dữ liệu kiểm thử.** Đã hoàn thành 5 file migrations (10 bảng chính, 2 bảng phụ, FK ghép, constraints deferred, indexes, triggers bảo vệ sealed revision, RLS, storage policies, bộ khung 8 RPC nghiệp vụ), seed.sql, database.generated.ts và kiểm thử schema đạt 100%.
-- [ ] **P04 — Đăng nhập và khung quản trị.** Chưa thực hiện.
+- [x] **P04 — Đăng nhập và khung quản trị.** Đã hoàn thành hệ thống xác thực Supabase SSR cookie, Next.js 16 Proxy bảo vệ tuyến admin, trang /login, Server Actions đăng nhập/đăng xuất với kiểm tra quyền admin_users.is_active, Admin Layout (Sidebar, Header, Logout) và trang Dashboard /admin.
 - [ ] **P05 — Danh mục liên kết và quản lý ảnh.** Chưa thực hiện.
 - [ ] **P06 — Quản lý trang, trình biên tập và xuất bản.** Chưa thực hiện.
 - [ ] **P07 — Trang công khai và ghi nhận click.** Chưa thực hiện.
@@ -108,13 +108,13 @@ Phụ thuộc: P01, P02. Mục tiêu: Có schema tái tạo được và ranh gi
 
 Phụ thuộc: P03.
 
-- [ ] P04.01 — Tạo Supabase browser/server client theo SSR cookie; xử lý refresh phiên và callback cần dùng.
-- [ ] P04.02 — Xây đăng nhập, đăng xuất và trạng thái phiên hết hạn; không mở đăng ký công khai.
-- [ ] P04.03 — Kiểm tra Auth và `admin_users.is_active` tại từng action/query/RPC có quyền quản trị.
-- [ ] P04.04 — Tạo layout/menu quản trị, trạng thái tải, lỗi và thông báo thao tác.
-- [ ] P04.05 — Kiểm thử khách chưa đăng nhập, tài khoản không có admin và quản trị bị vô hiệu hóa; gọi trực tiếp Data API/RPC vẫn bị chặn.
+- [x] P04.01 — Tạo Supabase browser/server client theo SSR cookie; xử lý refresh phiên và callback cần dùng.
+- [x] P04.02 — Xây đăng nhập, đăng xuất và trạng thái phiên hết hạn; không mở đăng ký công khai.
+- [x] P04.03 — Kiểm tra Auth và `admin_users.is_active` tại từng action/query/RPC có quyền quản trị.
+- [x] P04.04 — Tạo layout/menu quản trị, trạng thái tải, lỗi và thông báo thao tác.
+- [x] P04.05 — Kiểm thử khách chưa đăng nhập, tài khoản không có admin và quản trị bị vô hiệu hóa; gọi trực tiếp Data API/RPC vẫn bị chặn.
 
-**Tiêu chí kết thúc:** Quản trị hợp lệ đăng nhập được; các nhóm không có quyền không thể đọc nháp, sửa dữ liệu hoặc xem báo cáo. Có bằng chứng kiểm thử ở API/database, ngoài kiểm tra giao diện.
+**Tiêu chí kết thúc:** Quản trị hợp lệ đăng nhập được; các nhóm không có quyền không thể đọc nháp, sửa dữ liệu hoặc xem báo cáo. Có bằng chứng kiểm thử ở API/database, ngoài kiểm tra giao diện. Bằng chứng: `src/proxy.ts`, `src/app/(auth)/login/page.tsx`, `src/app/admin/layout.tsx`, `src/features/auth/`, `tests/unit/auth.test.ts` và mục LOG-006 trong nhật ký.
 
 ### P05 — Danh mục liên kết và quản lý ảnh
 
@@ -217,8 +217,8 @@ Phụ thuộc: P10.
 
 ## 4. Việc tiếp theo
 
-P00, P01, P02 và P03 đã hoàn thành. Toàn bộ schema cơ sở dữ liệu PostgreSQL trên Supabase (10 bảng chính, 2 bảng phụ, FK ghép, constraints, trigger bảo vệ revision sealed, RLS, Storage policies, bộ khung 8 RPC nghiệp vụ), seed data và typed clients đã được thiết lập hoàn chỉnh và kiểm thử đạt 100%.
+P00, P01, P02, P03 và P04 đã hoàn thành. Hệ thống xác thực Supabase SSR, Next.js 16 Proxy bảo vệ tuyến admin, trang đăng nhập `/login`, Server Actions đăng nhập/đăng xuất với kiểm tra quyền `admin_users.is_active`, layout quản trị (Sidebar, Header, Logout) và trang Dashboard `/admin` đã được xây dựng và kiểm thử đạt 100%.
 
-Bước tiếp theo là P04: Đăng nhập và khung quản trị (Tạo Supabase browser/server client SSR cookie, giao diện đăng nhập/đăng xuất, middleware kiểm tra quyền quản trị `admin_users.is_active` và layout quản trị CMS).
+Bước tiếp theo là P05: Danh mục liên kết và quản lý ảnh (Hoàn thiện RPC và UI thêm/sửa/tìm kiếm/vô hiệu hóa link, hiển thị trang bị ảnh hưởng khi đổi URL gốc, upload ảnh Supabase Storage, metadata, giới hạn file và trạng thái pending/ready/failed).
 
-Mỗi đợt thực hiện tiếp theo phải dùng ID checklist như `P04.01`, `P04.02`, `P06.06` trong nhật ký để truy ngược việc làm với kế hoạch.
+Mỗi đợt thực hiện tiếp theo phải dùng ID checklist như `P05.01`, `P05.03`, `P06.06` trong nhật ký để truy ngược việc làm với kế hoạch.
