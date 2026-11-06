@@ -162,6 +162,62 @@ Trạng thái đợt công việc có thể là: `hoàn thành`, `đang thực h
 
 - Bắt đầu Phase 03 (P03): Database nền, quyền và dữ liệu kiểm thử (PostgreSQL schema trên Supabase, 10 bảng chính + 2 bảng phụ, RLS, functions/triggers, seed data và kiểm thử database).
 
+### LOG-005 — Database nền, quyền và dữ liệu kiểm thử (P03)
+
+- **Ngày:** 2026-11-06 09:51.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P03.01, P03.02, P03.03, P03.04, P03.05, P03.06, P03.07, P03.08, P03.09; hoàn tất P03.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Cài đặt Supabase CLI và khởi tạo cấu hình `supabase/config.toml`.
+- Viết 5 file migration PostgreSQL hoàn chỉnh, chuẩn hóa và tái tạo được:
+  - `20261106000001_auth_helpers_and_admin.sql`: Tạo schema `private`, helper `private.is_active_admin()`, bảng `admin_users` và danh mục `reserved_slugs`.
+  - `20261106000002_core_tables.sql`: 10 bảng nghiệp vụ (`media_assets`, `links`, `pages`, `page_slugs`, `page_revisions`, `page_blocks`, `page_links`, `revision_link_placements`, `revision_media_assets`, `click_events`) kèm các FK ghép, CHECK constraints, và unique/partial unique index.
+  - `20261106000003_indexes_and_triggers.sql`: Tạo indexes tối ưu hóa thống kê/truy vấn, triggers `updated_at`, trigger bảo vệ tính bất biến của revision sealed và các phần tử con (`check_sealed_revision_immutability`, `check_child_of_sealed_revision`), trigger kiểm tra con trỏ xuất bản (`check_published_revision_is_sealed`).
+  - `20261106000004_rls_and_security.sql`: Bật RLS toàn diện trên 12 bảng, thu hồi DML công khai, thiết lập các policy SELECT cho admin hoạt động, chính sách Storage cho bucket `public_media` và `private_media`.
+  - `20261106000005_rpc_functions.sql`: Xây dựng bộ khung 8 RPC nghiệp vụ an toàn (`get_public_page`, `resolve_public_link`, `record_click`, `create_page`, `publish_page`, `unpublish_page`, `rename_page_slug`, `get_click_report`) với `SECURITY DEFINER` và cố định `search_path = ''`.
+- Xây dựng `supabase/seed.sql` với dữ liệu danh mục liên kết, nội dung 3 trang mẫu ban đầu (`/gocafe`, `/tuyendung`, `/nhuongquyen`) và fixture kiểm chứng click (12 click trang A + 5 click trang B = 17 cho link menu).
+- Tạo định nghĩa kiểu dữ liệu TypeScript sinh từ schema: `src/types/database.generated.ts`.
+- Cài đặt `@supabase/supabase-js`, `@supabase/ssr` và hoàn thiện typed clients: `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/privileged.ts`.
+- Viết bộ kiểm thử xác minh schema và tính toàn vẹn: `tests/unit/database-schema.test.ts`.
+
+**File/bằng chứng:**
+
+- `supabase/migrations/20261106000001_auth_helpers_and_admin.sql`
+- `supabase/migrations/20261106000002_core_tables.sql`
+- `supabase/migrations/20261106000003_indexes_and_triggers.sql`
+- `supabase/migrations/20261106000004_rls_and_security.sql`
+- `supabase/migrations/20261106000005_rpc_functions.sql`
+- `supabase/seed.sql`, `supabase/config.toml`
+- `src/types/database.generated.ts`
+- `src/lib/supabase/browser.ts`, `src/lib/supabase/server.ts`, `src/lib/supabase/privileged.ts`
+- `tests/unit/database-schema.test.ts`
+- `docs/ke-hoach-trien-khai.md`, `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- `pnpm run format:check`: Đạt 100%.
+- `pnpm run lint`: Đạt, 0 error, 0 warning.
+- `pnpm run typecheck`: Đạt, 0 error.
+- `pnpm run test`: 2 file test, 7/7 test cases pass.
+- `pnpm run build`: Thành công trong 1.7s.
+- Đạt 100% tiêu chí kết thúc của Phase 03.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P03.01 đến P03.09.
+- Đánh dấu hoàn thành Phase P03 trên checklist tổng và checklist chi tiết.
+
+**Còn mở và tác động:**
+
+- Khi kết nối với cloud instance thực tế (staging/production), chạy `pnpm supabase db push` để đồng bộ migration lên server.
+
+**Bước tiếp theo:**
+
+- Bắt đầu Phase 04 (P04): Đăng nhập và khung quản trị (Tạo Supabase browser/server client SSR cookie, giao diện đăng nhập/đăng xuất, middleware kiểm tra quyền quản trị `admin_users.is_active` và layout quản trị CMS).
+
 ## 3. Mẫu cho lần cập nhật tiếp theo
 
 Sao chép mẫu này vào cuối mục 2, trước mục mẫu, và thay bằng dữ liệu thực tế. Đây là mẫu hướng dẫn, không phải công việc đã thực hiện.

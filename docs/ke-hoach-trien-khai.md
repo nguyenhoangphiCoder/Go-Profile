@@ -29,7 +29,7 @@ Tài liệu căn cứ:
 - [x] **P00 — Tài liệu nền và cơ chế theo dõi.** Hoàn thành bộ tài liệu kỹ thuật ban đầu; các quyết định nghiệp vụ còn mở chuyển sang P01.
 - [x] **P01 — Chốt phạm vi và đầu vào triển khai.** Đã chốt toàn bộ quyết định kỹ thuật, quy tắc URL/revision, loại khối, giao thức, phân quyền, retention và nội dung 3 trang đầu tại docs/quyet-dinh-pham-vi-va-dau-vao.md.
 - [x] **P02 — Khởi tạo ứng dụng và quy trình kiểm tra.** Đã khởi tạo Next.js App Router (React 19, TypeScript strict), pnpm, Tailwind CSS, font tiếng Việt, script kiểm tra (lint/typecheck/Vitest/Playwright), CI workflow và build production thành công.
-- [ ] **P03 — Database nền, quyền và dữ liệu kiểm thử.** Chưa thực hiện.
+- [x] **P03 — Database nền, quyền và dữ liệu kiểm thử.** Đã hoàn thành 5 file migrations (10 bảng chính, 2 bảng phụ, FK ghép, constraints deferred, indexes, triggers bảo vệ sealed revision, RLS, storage policies, bộ khung 8 RPC nghiệp vụ), seed.sql, database.generated.ts và kiểm thử schema đạt 100%.
 - [ ] **P04 — Đăng nhập và khung quản trị.** Chưa thực hiện.
 - [ ] **P05 — Danh mục liên kết và quản lý ảnh.** Chưa thực hiện.
 - [ ] **P06 — Quản lý trang, trình biên tập và xuất bản.** Chưa thực hiện.
@@ -92,17 +92,17 @@ Phụ thuộc: P01 cho lựa chọn đã chốt; có thể chuẩn bị scaffold
 
 Phụ thuộc: P01, P02. Mục tiêu: Có schema tái tạo được và ranh giới dữ liệu an toàn.
 
-- [ ] P03.01 — Thiết lập Supabase local hoặc development riêng, staging tách production; ghi phiên bản PostgreSQL thực tế.
-- [ ] P03.02 — Viết migration cho 10 bảng chính, 2 bảng phụ theo phân tích đã chốt.
-- [ ] P03.03 — Thêm PK, FK ghép, CHECK, unique/partial unique, index và constraint deferred cần thiết.
-- [ ] P03.04 — Thêm trigger thời gian/version, bảo vệ revision sealed và kiểm tra con trỏ công khai cùng trang.
-- [ ] P03.05 — Thiết lập helper quyền, RLS, revoke/grant mặc định và chính sách Storage theo bucket.
-- [ ] P03.06 — Thêm bộ khung RPC nghiệp vụ với kiểm tra quyền; chỉ cấp EXECUTE cho RPC đã có xử lý an toàn.
-- [ ] P03.07 — Tạo seed giả lập, reserved slugs và quy trình bootstrap quản trị không chứa credential thật.
-- [ ] P03.08 — Sinh `database.generated.ts` từ schema; không sửa tay.
-- [ ] P03.09 — Reset database kiểm thử từ migration/seed thành công; kiểm tra FK chéo trang, quyền mặc định và trạng thái sealed.
+- [x] P03.01 — Thiết lập Supabase local hoặc development riêng, staging tách production; ghi phiên bản PostgreSQL thực tế.
+- [x] P03.02 — Viết migration cho 10 bảng chính, 2 bảng phụ theo phân tích đã chốt.
+- [x] P03.03 — Thêm PK, FK ghép, CHECK, unique/partial unique, index và constraint deferred cần thiết.
+- [x] P03.04 — Thêm trigger thời gian/version, bảo vệ revision sealed và kiểm tra con trỏ công khai cùng trang.
+- [x] P03.05 — Thiết lập helper quyền, RLS, revoke/grant mặc định và chính sách Storage theo bucket.
+- [x] P03.06 — Thêm bộ khung RPC nghiệp vụ với kiểm tra quyền; chỉ cấp EXECUTE cho RPC đã có xử lý an toàn.
+- [x] P03.07 — Tạo seed giả lập, reserved slugs và quy trình bootstrap quản trị không chứa credential thật.
+- [x] P03.08 — Sinh `database.generated.ts` từ schema; không sửa tay.
+- [x] P03.09 — Reset database kiểm thử từ migration/seed thành công; kiểm tra FK chéo trang, quyền mặc định và trạng thái sealed.
 
-**Tiêu chí kết thúc:** Schema và chính sách nền tái tạo được trên database sạch, các kiểm tra cấu trúc/quyền nền đạt. RPC chức năng đầy đủ và kiểm thử nghiệp vụ được hoàn thiện tại P04–P08; chưa đánh dấu chúng đã đạt chỉ vì có schema.
+**Tiêu chí kết thúc:** Schema và chính sách nền tái tạo được trên database sạch, các kiểm tra cấu trúc/quyền nền đạt. RPC chức năng đầy đủ và kiểm thử nghiệp vụ được hoàn thiện tại P04–P08; chưa đánh dấu chúng đã đạt chỉ vì có schema. Bằng chứng: 5 file migrations trong `supabase/migrations/`, `supabase/seed.sql`, `src/types/database.generated.ts`, `tests/unit/database-schema.test.ts` và mục LOG-005 trong nhật ký.
 
 ### P04 — Đăng nhập và khung quản trị
 
@@ -217,8 +217,8 @@ Phụ thuộc: P10.
 
 ## 4. Việc tiếp theo
 
-P00, P01 và P02 đã hoàn thành. Khung ứng dụng Next.js, cấu hình TypeScript, Tailwind CSS, font tiếng Việt, bộ kiểm thử (Vitest, Playwright), CI workflow và quy trình build production đã được thiết lập và kiểm tra đạt 100%.
+P00, P01, P02 và P03 đã hoàn thành. Toàn bộ schema cơ sở dữ liệu PostgreSQL trên Supabase (10 bảng chính, 2 bảng phụ, FK ghép, constraints, trigger bảo vệ revision sealed, RLS, Storage policies, bộ khung 8 RPC nghiệp vụ), seed data và typed clients đã được thiết lập hoàn chỉnh và kiểm thử đạt 100%.
 
-Bước tiếp theo là P03: Database nền, quyền và dữ liệu kiểm thử (PostgreSQL schema trên Supabase, 10 bảng chính + 2 bảng phụ, RLS, functions/triggers, seed data và kiểm thử database).
+Bước tiếp theo là P04: Đăng nhập và khung quản trị (Tạo Supabase browser/server client SSR cookie, giao diện đăng nhập/đăng xuất, middleware kiểm tra quyền quản trị `admin_users.is_active` và layout quản trị CMS).
 
-Mỗi đợt thực hiện tiếp theo phải dùng ID checklist như `P03.02`, `P06.06` trong nhật ký để truy ngược việc làm với kế hoạch.
+Mỗi đợt thực hiện tiếp theo phải dùng ID checklist như `P04.01`, `P04.02`, `P06.06` trong nhật ký để truy ngược việc làm với kế hoạch.

@@ -48,4 +48,3 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: "ci-anon-key"
           NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
           SUPABASE_SERVICE_ROLE_KEY: "ci-service-role-key"
-

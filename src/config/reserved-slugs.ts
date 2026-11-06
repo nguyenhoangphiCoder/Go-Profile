@@ -19,4 +19,3 @@ export function isReservedSlug(slug: string): boolean {
   const normalized = slug.trim().toLowerCase();
   return (RESERVED_SLUGS as readonly string[]).includes(normalized);
 }
-

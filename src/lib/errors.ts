@@ -33,4 +33,3 @@ export class ValidationError extends AppError {
     super(message, "VALIDATION_ERROR", 422, details);
   }
 }
-
