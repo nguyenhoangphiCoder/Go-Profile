@@ -122,7 +122,7 @@ export async function getPagesList(): Promise<PageListItem[]> {
         slug,
         is_current
       ),
-      page_revisions (
+      page_revisions!page_revisions_page_id_fkey (
         id,
         revision_no,
         state
@@ -137,7 +137,7 @@ export async function getPagesList(): Promise<PageListItem[]> {
     .order("updated_at", { ascending: false });
 
   if (error) {
-    console.error("Lỗi khi tải danh sách trang:", error);
+    console.error("Lỗi khi tải danh sách trang:", error.message || error);
     return [];
   }
 
@@ -246,7 +246,7 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
           )
         )
       ),
-      media_assets (
+      media_assets!revision_link_placements_media_override_id_fkey (
         object_path
       )
     `

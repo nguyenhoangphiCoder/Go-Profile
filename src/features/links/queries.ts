@@ -18,7 +18,6 @@ export async function getLinks(
       default_label,
       target_url,
       kind,
-      description,
       default_media_id,
       is_active,
       lock_version,
@@ -53,7 +52,7 @@ export async function getLinks(
   const { data, error } = await query;
 
   if (error || !data) {
-    console.error("Error fetching links:", error);
+    console.error("Error fetching links:", error?.message || error);
     return [];
   }
 
@@ -76,7 +75,7 @@ export async function getLinks(
       defaultLabel: row.default_label,
       targetUrl: row.target_url,
       kind: row.kind as LinkKind,
-      description: row.description,
+      description: null,
       defaultMediaId: row.default_media_id,
       isActive: row.is_active,
       lockVersion: Number(row.lock_version),
@@ -101,7 +100,6 @@ export async function getLinkById(id: string): Promise<LinkItem | null> {
       default_label,
       target_url,
       kind,
-      description,
       default_media_id,
       is_active,
       lock_version,
@@ -147,7 +145,7 @@ export async function getLinkById(id: string): Promise<LinkItem | null> {
     defaultLabel: row.default_label,
     targetUrl: row.target_url,
     kind: row.kind as LinkKind,
-    description: row.description,
+    description: null,
     defaultMediaId: row.default_media_id,
     isActive: row.is_active,
     lockVersion: Number(row.lock_version),

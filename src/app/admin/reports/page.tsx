@@ -1,4 +1,5 @@
 import { BarChart3 } from "lucide-react";
+import { requireActiveAdmin } from "@/features/auth/queries";
 import { getClickReport, getReportFilterOptions } from "@/features/reports/queries";
 import { getPresetDateStrings, vietnamDateRangeToUtc } from "@/features/reports/timezone";
 import { ReportFilters } from "@/features/reports/components/report-filters";
@@ -16,6 +17,7 @@ interface AdminReportsPageProps {
 }
 
 export default async function AdminReportsPage({ searchParams }: AdminReportsPageProps) {
+  await requireActiveAdmin();
   const resolvedParams = await searchParams;
 
   const rawPreset = typeof resolvedParams.preset === "string" ? resolvedParams.preset : "last7days";

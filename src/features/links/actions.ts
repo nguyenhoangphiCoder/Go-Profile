@@ -30,8 +30,7 @@ export async function upsertLinkAction(
     };
   }
 
-  const { id, defaultLabel, targetUrl, kind, description, defaultMediaId, lockVersion } =
-    parsed.data;
+  const { id, defaultLabel, targetUrl, kind, defaultMediaId, lockVersion } = parsed.data;
   const supabase = await createSupabaseServerClient();
 
   if (id) {
@@ -62,7 +61,6 @@ export async function upsertLinkAction(
         default_label: defaultLabel,
         target_url: targetUrl,
         kind,
-        description,
         default_media_id: defaultMediaId,
         lock_version: lockVersion + 1,
         updated_at: new Date().toISOString(),
@@ -82,7 +80,6 @@ export async function upsertLinkAction(
       default_label: defaultLabel,
       target_url: targetUrl,
       kind,
-      description,
       default_media_id: defaultMediaId,
       created_by: admin.userId,
       lock_version: 1,

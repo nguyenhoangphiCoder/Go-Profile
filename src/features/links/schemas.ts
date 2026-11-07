@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+const PG_UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 export const linkSchema = z
   .object({
-    id: z.string().uuid().optional(),
+    id: z.string().regex(PG_UUID_REGEX, "ID liên kết không hợp lệ").optional(),
     defaultLabel: z
       .string()
       .trim()
@@ -13,7 +15,7 @@ export const linkSchema = z
     }),
     targetUrl: z.string().trim().min(1, "Địa chỉ liên kết đích không được để trống"),
     description: z.string().trim().max(255, "Mô tả tối đa 255 ký tự").optional().nullable(),
-    defaultMediaId: z.string().uuid().optional().nullable(),
+    defaultMediaId: z.string().regex(PG_UUID_REGEX, "ID media không hợp lệ").optional().nullable(),
     lockVersion: z.coerce.number().optional().default(1),
   })
   .superRefine((data, ctx) => {

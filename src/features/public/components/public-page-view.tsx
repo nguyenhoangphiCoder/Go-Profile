@@ -1,41 +1,45 @@
 import Image from "next/image";
-import { THEME_PRESETS } from "@/config/themes";
+import { resolveTheme } from "@/config/themes";
 import { getPublicMediaUrl } from "@/features/media/queries";
+import { renderLnkBioFormattedText } from "./lnkbio-format";
 import type { PublicPageDTO } from "../types";
-import { ExternalLink, Phone, Mail, Share2 } from "lucide-react";
+import { Link2, Phone, Mail, Share2 } from "lucide-react";
 
 interface PublicPageViewProps {
   page: PublicPageDTO;
 }
 
 export function PublicPageView({ page }: PublicPageViewProps) {
-  const themePresetKey = page.theme?.preset || "go-original";
-  const theme = THEME_PRESETS[themePresetKey] || THEME_PRESETS["go-original"];
+  const theme = resolveTheme(page.theme);
+  const accentColor = theme.accentColor || "#2563eb";
 
-  const radiusClass =
-    theme.borderRadius === "full"
-      ? "rounded-2xl"
-      : theme.borderRadius === "sm"
-        ? "rounded-md"
+  const pillRadiusClass =
+    theme.borderRadius === "sm"
+      ? "rounded-xl"
+      : theme.borderRadius === "md"
+        ? "rounded-2xl"
         : theme.borderRadius === "none"
           ? "rounded-none"
-          : "rounded-xl";
+          : "rounded-[31px]";
 
   const blocks = page.blocks || [];
 
   return (
     <div
-      className="min-h-screen w-full flex flex-col items-center justify-between px-4 py-8 sm:py-12 transition-colors duration-200"
+      className="min-h-screen w-full flex flex-col items-center justify-between pt-10 pb-6 px-4 sm:px-6 relative overflow-x-hidden select-none transition-colors duration-200"
       style={{
         backgroundColor: theme.backgroundColor,
+        backgroundImage: `radial-gradient(circle at 50% 0%, ${accentColor}14 0%, transparent 65%)`,
         color: theme.textColor,
         fontFamily:
           theme.fontFamily === "be-vietnam-pro"
             ? "var(--font-be-vietnam-pro), sans-serif"
             : "var(--font-inter), sans-serif",
+        letterSpacing: "0.6px",
       }}
     >
-      <main className="w-full max-w-md mx-auto space-y-5">
+      {/* Main Lnk.Bio Centered Container (col-12 col-lg-8 equivalent) */}
+      <main className="w-full max-w-[680px] mx-auto space-y-5 z-10">
         {blocks.map((block) => {
           switch (block.type) {
             case "header": {
@@ -47,12 +51,18 @@ export function PublicPageView({ page }: PublicPageViewProps) {
               };
 
               return (
-                <div key={block.block_id} className="text-center space-y-3 pb-2">
+                <div key={block.block_id} className="text-center">
+                  {/* Profile Picture (.pb-profilepic.profilepic_large.profilepic-shadow) */}
                   {p.avatarUrl && (
-                    <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden ring-4 ring-blue-500/20 shadow-md">
+                    <div
+                      className="relative w-[110px] h-[110px] mx-auto rounded-full overflow-hidden block"
+                      style={{
+                        boxShadow: `0 1px 2px ${accentColor}20, 0 2px 4px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.08), 0 8px 16px rgba(15, 23, 42, 0.08), 0 16px 32px ${accentColor}1a`,
+                      }}
+                    >
                       <Image
                         src={p.avatarUrl}
-                        alt={p.title || page.title || "Gờ Cafe"}
+                        alt={p.title || page.title || "HỒ PHƯỢNG ÁNH"}
                         fill
                         className="object-cover"
                         priority
@@ -60,36 +70,38 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                       />
                     </div>
                   )}
-                  <div>
-                    <h1 className="text-xl sm:text-2xl font-black tracking-tight">
-                      {p.title || page.title || "Gờ Cafe"}
-                    </h1>
-                    {p.bio && (
-                      <p className="text-xs sm:text-sm opacity-85 mt-1.5 whitespace-pre-wrap leading-relaxed max-w-sm mx-auto">
-                        {p.bio}
-                      </p>
-                    )}
-                  </div>
+
+                  {/* Display Name (.pb-name) */}
+                  <h1 className="mt-2.5 text-[16px] sm:text-[17px] font-bold uppercase tracking-[1px] text-center">
+                    {p.title || page.title || "HỒ PHƯỢNG ÁNH"}
+                  </h1>
+
+                  {/* Bio (.pb-bio) */}
+                  {p.bio && (
+                    <div className="mt-5 space-y-2.5 text-center mx-auto">
+                      {renderLnkBioFormattedText(p.bio, "center", accentColor)}
+                    </div>
+                  )}
                 </div>
               );
             }
 
             case "heading": {
               const p = block.payload as { text?: string; level?: number };
-              const level = p.level || 2;
+              const level = p.level || 1;
 
               return (
-                <div key={block.block_id} className="pt-2">
+                <div key={block.block_id} className="pt-2 text-center">
                   {level === 1 ? (
-                    <h2 className="text-base sm:text-lg font-black tracking-tight text-center">
+                    <h2 className="text-[18px] sm:text-[19px] font-medium uppercase tracking-[1px] text-center">
                       {p.text}
                     </h2>
                   ) : level === 2 ? (
-                    <h3 className="text-sm sm:text-base font-bold tracking-tight text-center">
+                    <h3 className="text-[15px] sm:text-[16px] font-bold uppercase tracking-[1px] text-center">
                       {p.text}
                     </h3>
                   ) : (
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-center opacity-75">
+                    <h4 className="text-xs font-semibold uppercase tracking-[1px] text-center opacity-80">
                       {p.text}
                     </h4>
                   )}
@@ -102,11 +114,8 @@ export function PublicPageView({ page }: PublicPageViewProps) {
               const align = p.align || "center";
 
               return (
-                <div
-                  key={block.block_id}
-                  className={`text-xs sm:text-sm opacity-85 leading-relaxed whitespace-pre-wrap text-${align}`}
-                >
-                  {p.content}
+                <div key={block.block_id} className="pt-1 space-y-1.5">
+                  {p.content ? renderLnkBioFormattedText(p.content, align, accentColor) : null}
                 </div>
               );
             }
@@ -121,7 +130,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
               return (
                 <div key={block.block_id} className="space-y-1.5 overflow-hidden">
                   {p.imageUrl && (
-                    <div className={`relative w-full aspect-16/9 overflow-hidden ${radiusClass}`}>
+                    <div className="relative w-full aspect-16/9 overflow-hidden rounded-2xl border border-blue-100 shadow-xs">
                       <Image
                         src={p.imageUrl}
                         alt={p.alt || "Hình ảnh"}
@@ -131,7 +140,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                       />
                     </div>
                   )}
-                  {p.caption && <p className="text-[11px] opacity-65 text-center">{p.caption}</p>}
+                  {p.caption && <p className="text-xs opacity-75 text-center">{p.caption}</p>}
                 </div>
               );
             }
@@ -143,11 +152,12 @@ export function PublicPageView({ page }: PublicPageViewProps) {
               return (
                 <div
                   key={block.block_id}
-                  className={isGrid ? "grid grid-cols-2 gap-3" : "space-y-3"}
+                  className={isGrid ? "grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1" : "space-y-2.5 pt-1"}
                 >
                   {block.links.map((link) => {
                     const iconUrl = link.media_url ? getPublicMediaUrl(link.media_url) : null;
                     const isContact = link.kind === "contact";
+                    const hasLeftIcon = Boolean(iconUrl) || isContact;
 
                     return (
                       <a
@@ -155,32 +165,41 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                         href={`/r/${link.page_link_id}`}
                         target={isContact ? "_self" : "_blank"}
                         rel="noopener noreferrer"
-                        className={`flex items-center gap-3.5 p-3.5 sm:p-4 transition-all duration-200 hover:scale-[1.015] active:scale-[0.985] shadow-xs border ${radiusClass}`}
+                        title={link.label}
+                        className={`group relative min-h-[64px] w-full flex items-center justify-center p-2 border-2 transition-all duration-200 hover:scale-[1.01] hover:shadow-md hover:shadow-blue-500/15 active:scale-[0.99] ${pillRadiusClass}`}
                         style={{
                           backgroundColor: theme.cardBackground,
                           color: theme.cardTextColor,
-                          borderColor: theme.cardBorderColor || "transparent",
+                          borderColor: theme.cardBorderColor || theme.cardBackground,
                         }}
                       >
+                        {/* Left 50x50 Circular Thumbnail (.pb-linkimage) */}
                         {iconUrl ? (
-                          <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0">
+                          <div className="w-[50px] h-[50px] rounded-full overflow-hidden absolute left-[7px] top-1/2 -translate-y-1/2 bg-white shrink-0 shadow-xs">
                             <Image
                               src={iconUrl}
                               alt={link.label}
                               fill
-                              className="object-cover"
+                              className="object-cover rounded-full"
                               unoptimized
                             />
                           </div>
-                        ) : link.target_url.startsWith("tel:") ? (
-                          <Phone className="w-5 h-5 shrink-0 opacity-80" />
-                        ) : link.target_url.startsWith("mailto:") ? (
-                          <Mail className="w-5 h-5 shrink-0 opacity-80" />
-                        ) : (
-                          <ExternalLink className="w-5 h-5 shrink-0 opacity-80" />
-                        )}
+                        ) : isContact ? (
+                          <div className="w-[50px] h-[50px] rounded-full absolute left-[7px] top-1/2 -translate-y-1/2 bg-white/15 flex items-center justify-center shrink-0">
+                            {link.target_url.startsWith("tel:") ? (
+                              <Phone className="w-5 h-5" />
+                            ) : (
+                              <Mail className="w-5 h-5" />
+                            )}
+                          </div>
+                        ) : null}
 
-                        <span className="text-xs sm:text-sm font-semibold truncate flex-1 text-center">
+                        {/* Centered Bold Uppercase Title (.pb-linktitle) */}
+                        <span
+                          className={`block w-full text-center font-bold uppercase text-[13px] sm:text-[14px] tracking-[1px] leading-snug wrap-break-word ${
+                            hasLeftIcon ? "px-16" : "px-6"
+                          }`}
+                        >
                           {link.label}
                         </span>
                       </a>
@@ -205,7 +224,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                         href={`/r/${link.page_link_id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-11 h-11 rounded-full flex items-center justify-center border transition-all duration-200 hover:scale-110 active:scale-95 shadow-xs"
+                        className="w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all duration-200 hover:scale-110 active:scale-95 shadow-xs"
                         style={{
                           backgroundColor: theme.cardBackground,
                           color: theme.cardTextColor,
@@ -224,7 +243,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                             />
                           </div>
                         ) : (
-                          <Share2 className="w-4 h-4 opacity-80" />
+                          <Share2 className="w-4 h-4 opacity-90" />
                         )}
                       </a>
                     );
@@ -265,9 +284,19 @@ export function PublicPageView({ page }: PublicPageViewProps) {
         })}
       </main>
 
-      {/* Branded Footer */}
-      <footer className="pt-12 pb-4 text-center opacity-50 text-xs">
-        <p className="font-semibold tracking-wide">Gờ Cafe</p>
+      {/* Lnk.Bio-style Footer (.pb-footer) */}
+      <footer className="pt-14 pb-4 w-full text-center z-10">
+        <div className="inline-flex items-center justify-center gap-2 opacity-85 hover:opacity-100 transition-opacity">
+          <span
+            className="inline-flex items-center justify-center w-7 h-7 rounded-md text-white shadow-xs"
+            style={{ backgroundColor: accentColor }}
+          >
+            <Link2 className="w-4 h-4" />
+          </span>
+          <span className="font-bold text-sm tracking-[1px]" style={{ color: theme.textColor }}>
+            Gờ Cafe
+          </span>
+        </div>
       </footer>
     </div>
   );

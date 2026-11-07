@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { THEME_PRESETS } from "@/config/themes";
+import { resolveTheme } from "@/config/themes";
+import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import type {
   EditorBlockItem,
   PageThemeConfig,
@@ -13,7 +14,7 @@ import type {
   SpacerBlockPayload,
   DividerBlockPayload,
 } from "../../types";
-import { ExternalLink, Phone, Share2 } from "lucide-react";
+import { Link2, Phone, Share2 } from "lucide-react";
 
 interface LivePreviewProps {
   themeConfig: PageThemeConfig;
@@ -23,16 +24,17 @@ interface LivePreviewProps {
 }
 
 export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePreviewProps) {
-  const currentTheme = THEME_PRESETS[themeConfig.preset] || THEME_PRESETS["go-original"];
+  const currentTheme = resolveTheme(themeConfig);
+  const accentColor = currentTheme.accentColor || "#2563eb";
 
-  const radiusClass =
-    currentTheme.borderRadius === "full"
-      ? "rounded-3xl"
-      : currentTheme.borderRadius === "sm"
-        ? "rounded-md"
+  const pillRadiusClass =
+    currentTheme.borderRadius === "sm"
+      ? "rounded-xl"
+      : currentTheme.borderRadius === "md"
+        ? "rounded-2xl"
         : currentTheme.borderRadius === "none"
           ? "rounded-none"
-          : "rounded-xl";
+          : "rounded-[31px]";
 
   const visibleBlocks = blocks.filter((b) => b.isVisible).sort((a, b) => a.position - b.position);
 
@@ -48,14 +50,16 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
       >
         {/* Device screen */}
         <div
-          className="w-full h-full overflow-y-auto rounded-[36px] sm:rounded-[36px] p-6 relative flex flex-col transition-colors duration-200 border border-slate-200/60"
+          className="w-full h-full overflow-y-auto rounded-[36px] p-6 relative flex flex-col transition-colors duration-200 border border-slate-200/60"
           style={{
             backgroundColor: currentTheme.backgroundColor,
+            backgroundImage: `radial-gradient(circle at 50% 0%, ${accentColor}14 0%, transparent 65%)`,
             color: currentTheme.textColor,
             fontFamily:
               currentTheme.fontFamily === "be-vietnam-pro"
                 ? "var(--font-be-vietnam-pro), sans-serif"
                 : "var(--font-inter), sans-serif",
+            letterSpacing: "0.5px",
           }}
         >
           {/* Status bar notch simulation in mobile mode */}
@@ -75,9 +79,14 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                   case "header": {
                     const p = block.payload as HeaderBlockPayload;
                     return (
-                      <div key={block.id} className="text-center space-y-3 pb-2">
+                      <div key={block.id} className="text-center">
                         {p.avatarUrl && (
-                          <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden ring-4 ring-blue-500/20 shadow-md">
+                          <div
+                            className="relative w-24 h-24 mx-auto rounded-full overflow-hidden block"
+                            style={{
+                              boxShadow: `0 1px 2px ${accentColor}20, 0 2px 4px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.08), 0 8px 16px rgba(15, 23, 42, 0.08)`,
+                            }}
+                          >
                             <Image
                               src={p.avatarUrl}
                               alt={p.title || title}
@@ -87,35 +96,33 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                             />
                           </div>
                         )}
-                        <div>
-                          <h1 className="text-lg font-black tracking-tight">
-                            {p.title || title || "Tên hồ sơ"}
-                          </h1>
-                          {p.bio && (
-                            <p className="text-xs opacity-80 mt-1 whitespace-pre-wrap max-w-xs mx-auto">
-                              {p.bio}
-                            </p>
-                          )}
-                        </div>
+                        <h1 className="mt-2.5 text-sm sm:text-base font-bold uppercase tracking-[1px]">
+                          {p.title || title || "Tên hồ sơ"}
+                        </h1>
+                        {p.bio && (
+                          <div className="mt-3 space-y-2 text-center mx-auto">
+                            {renderLnkBioFormattedText(p.bio, "center", accentColor)}
+                          </div>
+                        )}
                       </div>
                     );
                   }
 
                   case "heading": {
                     const p = block.payload as HeadingBlockPayload;
-                    const level = p.level || 2;
+                    const level = p.level || 1;
                     return (
-                      <div key={block.id} className="pt-2">
+                      <div key={block.id} className="pt-2 text-center">
                         {level === 1 ? (
-                          <h2 className="text-base font-black tracking-tight text-center">
+                          <h2 className="text-base font-medium uppercase tracking-[1px] text-center">
                             {p.text || "Tiêu đề mục"}
                           </h2>
                         ) : level === 2 ? (
-                          <h3 className="text-sm font-bold tracking-tight text-center">
+                          <h3 className="text-sm font-bold uppercase tracking-[1px] text-center">
                             {p.text || "Tiêu đề mục"}
                           </h3>
                         ) : (
-                          <h4 className="text-xs font-semibold uppercase tracking-wider text-center opacity-70">
+                          <h4 className="text-xs font-semibold uppercase tracking-[1px] text-center opacity-75">
                             {p.text || "Tiêu đề mục"}
                           </h4>
                         )}
@@ -127,11 +134,10 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                     const p = block.payload as TextBlockPayload;
                     const align = p.align || "center";
                     return (
-                      <div
-                        key={block.id}
-                        className={`text-xs opacity-80 leading-relaxed whitespace-pre-wrap text-${align}`}
-                      >
-                        {p.content || "Nội dung văn bản giới thiệu..."}
+                      <div key={block.id} className="pt-1 space-y-1.5">
+                        {p.content
+                          ? renderLnkBioFormattedText(p.content, align, accentColor)
+                          : "Nội dung văn bản giới thiệu..."}
                       </div>
                     );
                   }
@@ -141,9 +147,7 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                     return (
                       <div key={block.id} className="space-y-1.5 overflow-hidden">
                         {p.imageUrl ? (
-                          <div
-                            className={`relative w-full aspect-16/9 overflow-hidden ${radiusClass}`}
-                          >
+                          <div className="relative w-full aspect-16/9 overflow-hidden rounded-2xl border border-blue-100">
                             <Image
                               src={p.imageUrl}
                               alt={p.alt || "Banner ảnh"}
@@ -153,9 +157,7 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                             />
                           </div>
                         ) : (
-                          <div
-                            className={`w-full aspect-16/9 bg-blue-500/5 border border-blue-500/20 flex items-center justify-center text-xs opacity-60 ${radiusClass}`}
-                          >
+                          <div className="w-full aspect-16/9 bg-blue-500/5 border border-blue-500/20 rounded-2xl flex items-center justify-center text-xs opacity-60">
                             Chưa chọn ảnh
                           </div>
                         )}
@@ -174,38 +176,45 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                     return (
                       <div
                         key={block.id}
-                        className={isGrid ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}
+                        className={isGrid ? "grid grid-cols-2 gap-2.5 pt-1" : "space-y-2.5 pt-1"}
                       >
                         {placements.map((pl) => {
                           const iconUrl = pl.mediaOverrideUrl || pl.defaultMediaUrl;
                           const label = pl.labelOverride || pl.defaultLabel;
+                          const isContact = pl.defaultKind === "contact";
+                          const hasLeftIcon = Boolean(iconUrl) || isContact;
 
                           return (
                             <div
                               key={pl.id}
-                              className={`flex items-center gap-3 p-3.5 transition-transform hover:scale-[1.01] active:scale-[0.99] border ${radiusClass}`}
+                              className={`relative min-h-[58px] w-full flex items-center justify-center p-2 border-2 transition-transform hover:scale-[1.01] ${pillRadiusClass}`}
                               style={{
                                 backgroundColor: currentTheme.cardBackground,
                                 color: currentTheme.cardTextColor,
-                                borderColor: currentTheme.cardBorderColor || "transparent",
+                                borderColor:
+                                  currentTheme.cardBorderColor || currentTheme.cardBackground,
                               }}
                             >
                               {iconUrl ? (
-                                <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0">
+                                <div className="w-[44px] h-[44px] rounded-full overflow-hidden absolute left-[7px] top-1/2 -translate-y-1/2 bg-white shrink-0 shadow-xs">
                                   <Image
                                     src={iconUrl}
                                     alt={label}
                                     fill
-                                    className="object-cover"
+                                    className="object-cover rounded-full"
                                     unoptimized
                                   />
                                 </div>
-                              ) : pl.defaultKind === "contact" ? (
-                                <Phone className="w-5 h-5 shrink-0 opacity-80" />
-                              ) : (
-                                <ExternalLink className="w-5 h-5 shrink-0 opacity-80" />
-                              )}
-                              <span className="text-xs sm:text-sm font-semibold truncate flex-1 text-center">
+                              ) : isContact ? (
+                                <div className="w-[44px] h-[44px] rounded-full absolute left-[7px] top-1/2 -translate-y-1/2 bg-white/15 flex items-center justify-center shrink-0">
+                                  <Phone className="w-4 h-4" />
+                                </div>
+                              ) : null}
+                              <span
+                                className={`block w-full text-center font-bold uppercase text-xs tracking-[1px] leading-snug wrap-break-word ${
+                                  hasLeftIcon ? "px-14" : "px-4"
+                                }`}
+                              >
                                 {label}
                               </span>
                             </div>
@@ -229,7 +238,7 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                           return (
                             <div
                               key={pl.id}
-                              className="w-10 h-10 rounded-full flex items-center justify-center border transition-transform hover:scale-110"
+                              className="w-10 h-10 rounded-full flex items-center justify-center border-2 transition-transform hover:scale-110"
                               style={{
                                 backgroundColor: currentTheme.cardBackground,
                                 color: currentTheme.cardTextColor,
@@ -291,8 +300,21 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
           </div>
 
           {/* Footer branding */}
-          <div className="pt-8 pb-2 text-center opacity-40 text-[10px]">
-            <span>Gờ Cafe Profile</span>
+          <div className="pt-8 pb-2 text-center">
+            <div className="inline-flex items-center justify-center gap-1.5 opacity-80">
+              <span
+                className="inline-flex items-center justify-center w-5 h-5 rounded-md text-white"
+                style={{ backgroundColor: accentColor }}
+              >
+                <Link2 className="w-3 h-3" />
+              </span>
+              <span
+                className="font-bold text-[11px] tracking-[1px]"
+                style={{ color: currentTheme.textColor }}
+              >
+                Gờ Cafe
+              </span>
+            </div>
           </div>
         </div>
       </div>

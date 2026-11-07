@@ -16,11 +16,14 @@ export interface HealthCheckResponse {
 }
 
 export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
-  const startTime = Date.now();
   let envCheck: "ok" | "error" = "ok";
   let dbCheck: "ok" | "error" = "ok";
+  let startTime = 0;
 
   try {
+    const supabase = await createSupabaseServerClient();
+    startTime = Date.now();
+
     // 1. Verify environment configuration is loaded
     if (
       !serverEnv.NEXT_PUBLIC_SUPABASE_URL ||
@@ -31,7 +34,6 @@ export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
     }
 
     // 2. Verify lightweight database connectivity via reserved_slugs lookup
-    const supabase = await createSupabaseServerClient();
     const { error } = await supabase.from("reserved_slugs").select("slug").limit(1);
 
     if (error) {
@@ -41,7 +43,7 @@ export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
     dbCheck = "error";
   }
 
-  const latencyMs = Date.now() - startTime;
+  const latencyMs = startTime > 0 ? Date.now() - startTime : 0;
   const overallStatus =
     envCheck === "ok" && dbCheck === "ok" ? (latencyMs < 1000 ? "ok" : "degraded") : "error";
 
