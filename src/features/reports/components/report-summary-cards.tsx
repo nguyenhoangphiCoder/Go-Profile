@@ -21,7 +21,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Tổng lượt click
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <MousePointerClick className="w-4 h-4" />
             </div>
           </div>
@@ -31,7 +31,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
             </span>
           </div>
           <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Info className="w-3 h-3 text-amber-500 shrink-0" />
+            <Info className="w-3 h-3 text-blue-500 shrink-0" />
             <span>Tổng lượt bấm (không định danh người duy nhất)</span>
           </div>
         </div>
@@ -42,7 +42,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Trang có click
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
               <FileText className="w-4 h-4" />
             </div>
           </div>
@@ -67,7 +67,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Link có click
             </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Link2 className="w-4 h-4" />
             </div>
           </div>
@@ -92,7 +92,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Khoảng thời gian
             </span>
-            <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Clock className="w-4 h-4" />
             </div>
           </div>

@@ -100,10 +100,10 @@ export function ReportFilters({
               key={item.key}
               type="button"
               onClick={() => handlePresetChange(item.key)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
                 preset === item.key
-                  ? "bg-foreground text-background font-semibold shadow-xs"
-                  : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+                  : "bg-muted/50 hover:bg-blue-50 text-muted-foreground hover:text-blue-700"
               }`}
             >
               {item.label}
@@ -133,7 +133,7 @@ export function ReportFilters({
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
                 max={toDate || undefined}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
             <div>
@@ -149,7 +149,7 @@ export function ReportFilters({
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
                 min={fromDate || undefined}
-                className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
           </>
@@ -167,7 +167,7 @@ export function ReportFilters({
             id="filter-page-select"
             value={pageId}
             onChange={(e) => setPageId(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-foreground"
+            className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-foreground"
           >
             <option value="">Tất cả các trang</option>
             {options.pages.map((p) => (
@@ -190,7 +190,7 @@ export function ReportFilters({
             id="filter-link-select"
             value={linkId}
             onChange={(e) => setLinkId(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-foreground"
+            className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-foreground"
           >
             <option value="">Tất cả các liên kết</option>
             {options.links.map((l) => (
@@ -206,7 +206,7 @@ export function ReportFilters({
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary hover:bg-blue-700 active:bg-blue-800 text-primary-foreground rounded-xl text-xs font-semibold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Filter className="w-3.5 h-3.5" />
             <span>{isPending ? "Đang tải..." : "Áp dụng"}</span>
@@ -217,7 +217,7 @@ export function ReportFilters({
               type="button"
               onClick={handleResetFilters}
               title="Đặt lại bộ lọc mặc định"
-              className="p-2 border border-border rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="p-2 border border-border rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>

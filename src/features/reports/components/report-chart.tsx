@@ -40,7 +40,7 @@ export function ReportChart({ data, totalClicks }: ReportChartProps) {
             Phân bố lượt bấm theo ngày (Múi giờ Asia/Ho_Chi_Minh)
           </p>
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300">
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
           Đỉnh: {maxClicks.toLocaleString("vi-VN")} click/ngày
         </span>
       </div>
@@ -59,13 +59,13 @@ export function ReportChart({ data, totalClicks }: ReportChartProps) {
               >
                 {/* Tooltip khi hover */}
                 <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-popover text-popover-foreground text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-md border border-border pointer-events-none whitespace-nowrap z-20">
-                  <span className="text-amber-500 font-bold">{item.clicks}</span> click (
+                  <span className="text-blue-600 font-bold">{item.clicks}</span> click (
                   {formatDisplayDate(item.date)})
                 </div>
 
                 {/* Số lượng phía trên cột */}
                 {!isZero && (
-                  <span className="text-[10px] font-semibold text-muted-foreground mb-1 group-hover:text-amber-600 transition-colors">
+                  <span className="text-[10px] font-semibold text-muted-foreground mb-1 group-hover:text-blue-600 transition-colors">
                     {item.clicks}
                   </span>
                 )}
@@ -73,7 +73,7 @@ export function ReportChart({ data, totalClicks }: ReportChartProps) {
                 {/* Cột dữ liệu */}
                 <div
                   className={`w-full max-w-[40px] rounded-t-md transition-all duration-300 ${
-                    isZero ? "h-1 bg-muted/40" : "bg-amber-500 group-hover:bg-amber-600 shadow-xs"
+                    isZero ? "h-1 bg-muted/40" : "bg-blue-500 group-hover:bg-blue-600 shadow-xs"
                   }`}
                   style={{ height: isZero ? "4px" : `${Math.max(heightPercent, 6)}%` }}
                 />

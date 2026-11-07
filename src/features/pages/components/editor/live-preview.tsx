@@ -40,15 +40,15 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
     <div className="flex flex-col items-center justify-center h-full p-2 sm:p-4">
       {/* Device frame container */}
       <div
-        className={`transition-all duration-300 overflow-hidden shadow-2xl border ${
+        className={`transition-all duration-300 overflow-hidden shadow-xl border ${
           previewMode === "mobile"
-            ? "w-[360px] sm:w-[380px] h-[720px] rounded-[48px] border-slate-700 bg-slate-900 p-3 ring-8 ring-slate-800"
-            : "w-full max-w-2xl h-[720px] rounded-3xl border-border bg-background"
+            ? "w-[360px] sm:w-[380px] h-[720px] rounded-[48px] border-blue-200 bg-white p-3 ring-8 ring-blue-100/70"
+            : "w-full max-w-2xl h-[720px] rounded-3xl border-border bg-white"
         }`}
       >
         {/* Device screen */}
         <div
-          className="w-full h-full overflow-y-auto rounded-[36px] sm:rounded-[36px] p-6 relative flex flex-col transition-colors duration-200"
+          className="w-full h-full overflow-y-auto rounded-[36px] sm:rounded-[36px] p-6 relative flex flex-col transition-colors duration-200 border border-slate-200/60"
           style={{
             backgroundColor: currentTheme.backgroundColor,
             color: currentTheme.textColor,
@@ -60,7 +60,7 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
         >
           {/* Status bar notch simulation in mobile mode */}
           {previewMode === "mobile" && (
-            <div className="w-28 h-4 bg-black/40 rounded-full mx-auto mb-4 shrink-0" />
+            <div className="w-28 h-4 bg-slate-200 rounded-full mx-auto mb-4 shrink-0" />
           )}
 
           {/* Page Content */}
@@ -77,7 +77,7 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                     return (
                       <div key={block.id} className="text-center space-y-3 pb-2">
                         {p.avatarUrl && (
-                          <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden ring-4 ring-white/10 shadow-lg">
+                          <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden ring-4 ring-blue-500/20 shadow-md">
                             <Image
                               src={p.avatarUrl}
                               alt={p.title || title}
@@ -154,7 +154,7 @@ export function LivePreview({ themeConfig, title, blocks, previewMode }: LivePre
                           </div>
                         ) : (
                           <div
-                            className={`w-full aspect-16/9 bg-white/5 border border-white/10 flex items-center justify-center text-xs opacity-40 ${radiusClass}`}
+                            className={`w-full aspect-16/9 bg-blue-500/5 border border-blue-500/20 flex items-center justify-center text-xs opacity-60 ${radiusClass}`}
                           >
                             Chưa chọn ảnh
                           </div>

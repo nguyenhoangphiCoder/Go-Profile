@@ -80,8 +80,8 @@ export function LinkFormModal({ isOpen, onClose, link }: LinkFormModalProps) {
                 onClick={() => setKind("http")}
                 className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-medium cursor-pointer transition-colors ${
                   kind === "http"
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                    ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                    : "border-border bg-background text-muted-foreground hover:bg-blue-50 hover:text-blue-700"
                 }`}
               >
                 <Globe className="w-3.5 h-3.5" />
@@ -92,8 +92,8 @@ export function LinkFormModal({ isOpen, onClose, link }: LinkFormModalProps) {
                 onClick={() => setKind("tel")}
                 className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-medium cursor-pointer transition-colors ${
                   kind === "tel"
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                    ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                    : "border-border bg-background text-muted-foreground hover:bg-blue-50 hover:text-blue-700"
                 }`}
               >
                 <Phone className="w-3.5 h-3.5" />
@@ -104,8 +104,8 @@ export function LinkFormModal({ isOpen, onClose, link }: LinkFormModalProps) {
                 onClick={() => setKind("mailto")}
                 className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl border text-xs font-medium cursor-pointer transition-colors ${
                   kind === "mailto"
-                    ? "border-foreground bg-foreground text-background"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                    ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                    : "border-border bg-background text-muted-foreground hover:bg-blue-50 hover:text-blue-700"
                 }`}
               >
                 <Mail className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ export function LinkFormModal({ isOpen, onClose, link }: LinkFormModalProps) {
             <button
               type="submit"
               disabled={isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer disabled:opacity-50"
             >
               {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>{link ? "Lưu thay đổi" : "Tạo liên kết"}</span>

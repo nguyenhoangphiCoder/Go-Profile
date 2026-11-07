@@ -45,7 +45,7 @@ export function ReportByPageTable({ data, totalClicks }: ReportByPageTableProps)
                     <Link
                       href={`/${item.slug}`}
                       target="_blank"
-                      className="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 hover:underline"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:underline"
                     >
                       <span>/{item.slug}</span>
                       <ExternalLink className="w-3 h-3" />
@@ -61,7 +61,7 @@ export function ReportByPageTable({ data, totalClicks }: ReportByPageTableProps)
                   <div className="flex items-center justify-end gap-2">
                     <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full bg-amber-500 rounded-full"
+                        className="h-full bg-blue-600 rounded-full"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>

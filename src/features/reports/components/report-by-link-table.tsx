@@ -69,7 +69,7 @@ export function ReportByLinkTable({ data, totalClicks }: ReportByLinkTableProps)
                   <div className="flex items-center justify-end gap-2">
                     <div className="w-16 h-1.5 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full bg-amber-500 rounded-full"
+                        className="h-full bg-blue-600 rounded-full"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>

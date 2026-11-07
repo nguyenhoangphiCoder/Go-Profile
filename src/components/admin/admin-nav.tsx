@@ -52,8 +52,8 @@ export function AdminNav() {
             className={cn(
               "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors",
               isActive
-                ? "bg-foreground text-background shadow-xs"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-xs shadow-blue-500/20"
+                : "text-muted-foreground hover:bg-blue-50 hover:text-blue-700"
             )}
           >
             <Icon className="w-4 h-4 shrink-0" />

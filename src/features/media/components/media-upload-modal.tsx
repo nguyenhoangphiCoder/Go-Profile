@@ -64,16 +64,16 @@ export function MediaUploadModal({ isOpen, onClose }: MediaUploadModalProps) {
         <form action={formAction} className="space-y-4">
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-border rounded-2xl p-6 text-center hover:border-foreground/40 hover:bg-muted/20 transition-colors cursor-pointer flex flex-col items-center justify-center gap-3"
+            className="border-2 border-dashed border-blue-200 rounded-2xl p-6 text-center hover:border-blue-400 hover:bg-blue-50/40 transition-colors cursor-pointer flex flex-col items-center justify-center gap-3"
           >
             {preview ? (
-              <div className="relative w-full h-40 rounded-xl overflow-hidden bg-muted/40 flex items-center justify-center">
+              <div className="relative w-full h-40 rounded-xl overflow-hidden bg-slate-50 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={preview} alt="Preview" className="max-h-full max-w-full object-contain" />
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
                   <UploadCloud className="w-6 h-6" />
                 </div>
                 <div>
@@ -117,7 +117,7 @@ export function MediaUploadModal({ isOpen, onClose }: MediaUploadModalProps) {
             <button
               type="submit"
               disabled={isPending || !preview}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer disabled:opacity-50"
             >
               {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>{isPending ? "Đang tải lên..." : "Tải lên"}</span>

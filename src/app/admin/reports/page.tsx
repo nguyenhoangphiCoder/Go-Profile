@@ -73,7 +73,7 @@ export default async function AdminReportsPage({ searchParams }: AdminReportsPag
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <BarChart3 className="w-4 h-4" />
             </div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">Báo cáo thống kê</h1>

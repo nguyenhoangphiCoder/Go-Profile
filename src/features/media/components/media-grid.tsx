@@ -74,7 +74,7 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
 
         <button
           onClick={() => setIsUploadOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Tải ảnh mới</span>
@@ -83,7 +83,7 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
 
       {/* Grid */}
       {filteredAssets.length === 0 ? (
-        <div className="p-12 text-center border border-border rounded-2xl bg-background space-y-3">
+        <div className="p-12 text-center border border-border rounded-2xl bg-white space-y-3">
           <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto" />
           <h3 className="text-sm font-semibold">Chưa có hình ảnh nào</h3>
           <p className="text-xs text-muted-foreground max-w-xs mx-auto">
@@ -97,10 +97,10 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
           {filteredAssets.map((asset) => (
             <div
               key={asset.id}
-              className="group rounded-2xl border border-border bg-background overflow-hidden flex flex-col hover:border-foreground/40 transition-colors"
+              className="group rounded-2xl border border-border bg-white overflow-hidden flex flex-col hover:border-blue-400 transition-colors shadow-xs"
             >
               {/* Thumbnail Container */}
-              <div className="relative aspect-square bg-muted/30 overflow-hidden flex items-center justify-center p-2">
+              <div className="relative aspect-square bg-slate-50 overflow-hidden flex items-center justify-center p-2">
                 {asset.publicUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -117,7 +117,7 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
                 <div className="absolute top-2 left-2 flex items-center gap-1">
                   {asset.isReferenced ? (
                     <span
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/90 text-white text-[10px] font-medium shadow-xs"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-600/90 text-white text-[10px] font-medium shadow-xs"
                       title="Đang được sử dụng trên trang hoặc liên kết"
                     >
                       <Lock className="w-2.5 h-2.5" />

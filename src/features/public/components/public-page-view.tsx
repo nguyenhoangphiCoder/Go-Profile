@@ -49,7 +49,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
               return (
                 <div key={block.block_id} className="text-center space-y-3 pb-2">
                   {p.avatarUrl && (
-                    <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden ring-4 ring-white/10 shadow-lg">
+                    <div className="relative w-24 h-24 mx-auto rounded-full overflow-hidden ring-4 ring-blue-500/20 shadow-md">
                       <Image
                         src={p.avatarUrl}
                         alt={p.title || page.title || "Gờ Cafe"}

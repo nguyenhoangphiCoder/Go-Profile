@@ -113,7 +113,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
         {/* Create Button */}
         <button
           onClick={handleCreate}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Thêm liên kết mới</span>
@@ -121,7 +121,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
       </div>
 
       {/* Links List */}
-      <div className="rounded-2xl border border-border bg-background overflow-hidden">
+      <div className="rounded-2xl border border-border bg-white shadow-xs overflow-hidden">
         {filteredLinks.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <Globe className="w-8 h-8 text-muted-foreground mx-auto" />
@@ -135,7 +135,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/40 border-b border-border/60 text-muted-foreground font-semibold">
+              <thead className="bg-blue-50/40 border-b border-border/60 text-muted-foreground font-semibold">
                 <tr>
                   <th className="py-3 px-4">Tên hiển thị & URL</th>
                   <th className="py-3 px-4">Loại</th>
@@ -146,7 +146,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
               </thead>
               <tbody className="divide-y divide-border/60">
                 {filteredLinks.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/20 transition-colors">
+                  <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
                     {/* Name & URL */}
                     <td className="py-3.5 px-4">
                       <div className="space-y-0.5">
@@ -157,7 +157,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                           href={item.targetUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 truncate max-w-sm"
+                          className="text-[11px] text-muted-foreground hover:text-blue-600 inline-flex items-center gap-1 truncate max-w-sm"
                         >
                           <span className="truncate">{item.targetUrl}</span>
                           <ExternalLink className="w-2.5 h-2.5 shrink-0" />
@@ -178,7 +178,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                           item.usageCount > 0
-                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            ? "bg-blue-50 text-blue-600 border border-blue-200"
                             : "bg-muted text-muted-foreground"
                         }`}
                         title={

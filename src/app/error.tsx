@@ -15,17 +15,17 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-      <div className="max-w-md w-full p-8 rounded-2xl border border-border bg-muted/40 shadow-sm space-y-4">
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-linear-to-b from-blue-50/50 to-white">
+      <div className="max-w-md w-full p-8 rounded-2xl border border-blue-100 bg-white shadow-sm space-y-4">
         <span className="text-4xl">⚠️</span>
-        <h1 className="text-2xl font-bold">Đã xảy ra sự cố</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Đã xảy ra sự cố</h1>
         <p className="text-muted-foreground text-sm">
           Hệ thống gặp sự cố trong quá trình xử lý yêu cầu. Vui lòng thử lại.
         </p>
         <div className="pt-2">
           <button
             onClick={() => reset()}
-            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-foreground text-background text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-blue-700 transition-colors cursor-pointer shadow-xs"
           >
             Thử lại
           </button>
