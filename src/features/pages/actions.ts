@@ -419,6 +419,7 @@ export async function publishPageAction(
 
   revalidatePath("/admin/pages");
   revalidatePath(`/admin/pages/${pageId}`);
+  revalidatePath("/", "layout");
 
   return {
     success: true,
@@ -456,6 +457,7 @@ export async function unpublishPageAction(pageId: string, expectedPageVersion: n
 
   revalidatePath("/admin/pages");
   revalidatePath(`/admin/pages/${pageId}`);
+  revalidatePath("/", "layout");
 
   return {
     success: true,
