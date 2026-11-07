@@ -77,4 +77,3 @@ export async function resolveAndRecordClick(
     kind: resolve.kind,
   };
 }
-

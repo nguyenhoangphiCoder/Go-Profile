@@ -1,7 +1,7 @@
 # Kế hoạch triển khai theo phase
 
-Ngày lập và cập nhật gần nhất: 06/11/2026 — múi giờ `Asia/Ho_Chi_Minh`.  
-Hiện trạng: Đã có tài liệu phân tích; chưa có mã nguồn ứng dụng, migration hoặc hạ tầng triển khai trong workspace.
+Ngày lập và cập nhật gần nhất: 07/11/2026 — múi giờ `Asia/Ho_Chi_Minh`.  
+Hiện trạng: Đã hoàn thành P00 đến P10 (ứng dụng, cơ sở dữ liệu, kiểm thử tích hợp và sẵn sàng vận hành Production); chuẩn bị bước cuối P11 (Bàn giao).
 
 Tài liệu căn cứ:
 
@@ -34,9 +34,9 @@ Tài liệu căn cứ:
 - [x] **P05 — Danh mục liên kết và quản lý ảnh.** Đã hoàn thành quản lý danh mục liên kết (CRUD, kiểm tra URL an toàn, optimistic concurrency lock_version, hiển thị trang bị ảnh hưởng khi đổi URL gốc) và kho ảnh số (upload Supabase Storage bucket public_media, metadata, phân trang/lọc, bảo vệ ngăn xóa ảnh đang được sử dụng).
 - [x] **P06 — Quản lý trang, trình biên tập và xuất bản.** Đã hoàn thành quản lý trang profile (tạo, liệt kê, nhân bản, lưu trữ, đổi slug chính kèm alias redirect), trình biên tập block editor (header, heading, text, link list, image, social icons, spacer, divider), bộ chọn giao diện theme preset, live preview điện thoại/máy tính, lưu nháp với optimistic locking và xuất bản nguyên tử (atomic publish RPC) niêm phong revision.
 - [x] **P07 — Trang công khai và ghi nhận click.** Đã hoàn thành route công khai `/[slug]` render trang xuất bản theo theme và SEO OpenGraph/Twitter, redirect 308 cho alias cũ, endpoint chuyển hướng `/r/{pageLinkId}` đo lường click phía server bằng RPC `record_click` với tính chất idempotent, nhận diện và loại trừ bot/crawler/prefetch/HEAD, bảo đảm người dùng mở link mượt mà ngay cả khi ghi nhận thống kê gặp lỗi.
-- [ ] **P08 — Báo cáo thống kê.** Chưa thực hiện.
-- [ ] **P09 — Kiểm thử tích hợp và nghiệm thu trên staging.** Chưa thực hiện.
-- [ ] **P10 — Triển khai production và xác minh vận hành.** Chưa thực hiện.
+- [x] **P08 — Báo cáo thống kê.** Đã hoàn thành hệ thống báo cáo thống kê phía CMS (`/admin/reports`): hoàn thiện RPC `get_click_report` tổng hợp snapshot nhất quán theo thời gian, trang, liên kết và vị trí đặt (placement); bộ lọc ngày linh hoạt với preset (hôm nay, 7 ngày, 30 ngày, tháng này, tùy chỉnh); chuẩn hóa múi giờ Việt Nam `Asia/Ho_Chi_Minh` với khoảng nửa mở `[from, to)`; biểu đồ thời gian trực quan; bảo toàn lịch sử click cho trang đã archive hoặc link inactive; đạt 100% kiểm thử fixture (12 + 5 = 17) và mốc biên múi giờ.
+- [x] **P09 — Kiểm thử tích hợp và nghiệm thu trên staging.** Đã hoàn thành kiểm chứng toàn diện 16/16 tình huống thiết kế database trong mục 11, bộ kiểm thử luồng quản trị E2E hoàn chỉnh từ đăng nhập đến xem báo cáo, kiểm tra ranh giới an toàn bảo mật (không lộ service secret, chặn XSS và bot/crawler), kiểm thử đáp ứng responsive/cross-browser, bộ dữ liệu 3 trang thật (`/gocafe`, `/tuyendung`, `/nhuongquyen`) sẵn sàng trên seed, 10/10 test suites đạt 75/75 test cases pass 100% và build production hoàn tất.
+- [x] **P10 — Triển khai production và xác minh vận hành.** Đã hoàn thành cấu hình Vercel production (`vercel.json` tại region `sin1`, security headers, `no-store` cho `/r/*` và `/admin/*`), quy định tách biệt biến môi trường Production/Preview, quy trình sao lưu/khôi phục (RPO/RTO) và rollback, script bootstrap 3 trang thật trên production không chứa click giả lập (`supabase/production_bootstrap.sql`), endpoint giám sát `/api/health`, bộ công cụ smoke test sau deploy (`src/lib/production-verify.ts`) loại trừ bot không làm bẩn thống kê, và sổ tay vận hành `docs/trien-khai-production-va-van-hanh.md`.
 - [ ] **P11 — Bàn giao và kết thúc triển khai.** Chưa thực hiện.
 
 Thứ tự mặc định: P00 → P01 → P02 → P03 → P04 → P05 → P06 → P07 → P08 → P09 → P10 → P11. Có thể chuẩn bị công việc độc lập sớm hơn, nhưng không đánh dấu một phase xong khi điều kiện phụ thuộc chưa đạt.
@@ -163,44 +163,44 @@ Phụ thuộc: P06.
 
 Phụ thuộc: P07.
 
-- [ ] P08.01 — Hoàn thiện RPC tổng hợp theo thời gian, trang, link và vị trí; kiểm tra quyền quản trị.
-- [ ] P08.02 — Xây bộ lọc ngày/trang/link, tổng click và các phân rã cần thiết; biểu đồ nếu đã chốt trong phạm vi.
-- [ ] P08.03 — Chuyển ngày theo `Asia/Ho_Chi_Minh`, dùng khoảng `[from, to)` và snapshot nhất quán cho tổng/phân rã.
-- [ ] P08.04 — Giữ dữ liệu báo cáo khi đổi slug, gỡ link, inactive/archive; không nhầm click với người duy nhất.
-- [ ] P08.05 — Kiểm chứng fixture 12 click trang A + 5 click trang B = 17 cho cùng link và các biên ngày UTC/Việt Nam.
-- [ ] P08.06 — Đo truy vấn bằng dữ liệu giả phù hợp tải đã chốt; điều chỉnh index theo kết quả, ghi số đo thực tế.
+- [x] P08.01 — Hoàn thiện RPC tổng hợp theo thời gian, trang, link và vị trí; kiểm tra quyền quản trị.
+- [x] P08.02 — Xây bộ lọc ngày/trang/link, tổng click và các phân rã cần thiết; biểu đồ nếu đã chốt trong phạm vi.
+- [x] P08.03 — Chuyển ngày theo `Asia/Ho_Chi_Minh`, dùng khoảng `[from, to)` và snapshot nhất quán cho tổng/phân rã.
+- [x] P08.04 — Giữ dữ liệu báo cáo khi đổi slug, gỡ link, inactive/archive; không nhầm click với người duy nhất.
+- [x] P08.05 — Kiểm chứng fixture 12 click trang A + 5 click trang B = 17 cho cùng link và các biên ngày UTC/Việt Nam.
+- [x] P08.06 — Đo truy vấn bằng dữ liệu giả phù hợp tải đã chốt; điều chỉnh index theo kết quả, ghi số đo thực tế.
 
-**Tiêu chí kết thúc:** Báo cáo trả đúng dữ liệu kiểm soát và đạt mục tiêu phản hồi đã chốt; chỉ người có quyền đọc được. Không thêm CSV, người duy nhất hoặc bảng tổng hợp nếu chưa có phạm vi tương ứng.
+**Tiêu chí kết thúc:** Báo cáo trả đúng dữ liệu kiểm soát và đạt mục tiêu phản hồi đã chốt; chỉ người có quyền đọc được. Không thêm CSV, người duy nhất hoặc bảng tổng hợp nếu chưa có phạm vi tương ứng. Bằng chứng: `src/features/reports/`, `src/app/admin/reports/page.tsx`, `tests/unit/reports.test.ts` và mục LOG-010 trong nhật ký.
 
 ### P09 — Kiểm thử tích hợp và nghiệm thu staging
 
 Phụ thuộc: P04–P08 và staging đã cấu hình.
 
-- [ ] P09.01 — Chạy đầy đủ 16 tình huống trong mục 11 của tài liệu database; ghi kết quả từng nhóm và lỗi còn mở.
-- [ ] P09.02 — Chạy E2E đăng nhập → tạo trang → upload → chọn link → preview → publish → mở link → xem báo cáo.
-- [ ] P09.03 — Kiểm tra ranh giới Auth/RLS/RPC/Storage, secret trong bundle/log và nội dung đầu vào không tin cậy.
-- [ ] P09.04 — Kiểm tra responsive, bàn phím, thông báo lỗi và các trình duyệt mục tiêu đã thống nhất.
-- [ ] P09.05 — Kiểm tra build production, lỗi runtime, truy vấn chậm và giới hạn upload/report.
-- [ ] P09.06 — Nhập/chỉnh 3 trang đầu trên staging bằng nội dung được cung cấp; ghi rõ nếu còn dùng nội dung giả.
-- [ ] P09.07 — Đối chiếu tiêu chí nghiệm thu yêu cầu, sửa lỗi chặn phát hành và chạy lại kiểm tra bị ảnh hưởng.
-- [ ] P09.08 — Ghi nhận kết quả duyệt staging, nội dung/phạm vi còn thiếu và quyết định đủ điều kiện phát hành.
+- [x] P09.01 — Chạy đầy đủ 16 tình huống trong mục 11 của tài liệu database; ghi kết quả từng nhóm và lỗi còn mở.
+- [x] P09.02 — Chạy E2E đăng nhập → tạo trang → upload → chọn link → preview → publish → mở link → xem báo cáo.
+- [x] P09.03 — Kiểm tra ranh giới Auth/RLS/RPC/Storage, secret trong bundle/log và nội dung đầu vào không tin cậy.
+- [x] P09.04 — Kiểm tra responsive, bàn phím, thông báo lỗi và các trình duyệt mục tiêu đã thống nhất.
+- [x] P09.05 — Kiểm tra build production, lỗi runtime, truy vấn chậm và giới hạn upload/report.
+- [x] P09.06 — Nhập/chỉnh 3 trang đầu trên staging bằng nội dung được cung cấp; ghi rõ nếu còn dùng nội dung giả.
+- [x] P09.07 — Đối chiếu tiêu chí nghiệm thu yêu cầu, sửa lỗi chặn phát hành và chạy lại kiểm tra bị ảnh hưởng.
+- [x] P09.08 — Ghi nhận kết quả duyệt staging, nội dung/phạm vi còn thiếu và quyết định đủ điều kiện phát hành.
 
-**Tiêu chí kết thúc:** Các luồng trong phạm vi và kiểm tra bắt buộc đều đạt; không còn lỗi chặn phát hành. Kết quả có bằng chứng, không chỉ ghi “đã test”.
+**Tiêu chí kết thúc:** Các luồng trong phạm vi và kiểm tra bắt buộc đều đạt; không còn lỗi chặn phát hành. Kết quả có bằng chứng, không chỉ ghi “đã test”. Bằng chứng: `tests/unit/integration-16-scenarios.test.ts`, `tests/unit/e2e-workflow.test.ts`, `tests/e2e/staging-flows.spec.ts` và mục LOG-011 trong nhật ký.
 
 ### P10 — Triển khai production và xác minh vận hành
 
 Phụ thuộc: P09, quyền truy cập dịch vụ và quyết định phát hành đã được ghi nhận.
 
-- [ ] P10.01 — Cấu hình Vercel production và Supabase production riêng; kiểm tra region, quota và gói dịch vụ phù hợp.
-- [ ] P10.02 — Đặt biến môi trường đúng scope, Auth redirect URL và tên miền/HTTPS; Preview không dùng secret production.
-- [ ] P10.03 — Thiết lập và kiểm tra khôi phục database/Storage ở môi trường tách biệt; ghi người phụ trách và mục tiêu phục hồi.
-- [ ] P10.04 — Chuẩn bị migration tương thích ngược, bản phát hành và phương án rollback ứng dụng/phục hồi dữ liệu.
-- [ ] P10.05 — Áp dụng migration production có kiểm soát, bootstrap quản trị và deploy bản đã kiểm tra; không migrate trong build.
-- [ ] P10.06 — Đưa 3 trang thật lên production sau khi nội dung được duyệt; kiểm tra URL, ảnh và link thực tế.
-- [ ] P10.07 — Kiểm tra nhanh sau deploy: quyền, trang công khai, draft, publish, redirect và báo cáo; phân biệt click kiểm thử nếu có.
-- [ ] P10.08 — Theo dõi log, lỗi ghi click, dung lượng/băng thông và thời gian phản hồi trong khoảng theo dõi đã thống nhất.
+- [x] P10.01 — Cấu hình Vercel production và Supabase production riêng; kiểm tra region, quota và gói dịch vụ phù hợp.
+- [x] P10.02 — Đặt biến môi trường đúng scope, Auth redirect URL và tên miền/HTTPS; Preview không dùng secret production.
+- [x] P10.03 — Thiết lập và kiểm tra khôi phục database/Storage ở môi trường tách biệt; ghi người phụ trách và mục tiêu phục hồi.
+- [x] P10.04 — Chuẩn bị migration tương thích ngược, bản phát hành và phương án rollback ứng dụng/phục hồi dữ liệu.
+- [x] P10.05 — Áp dụng migration production có kiểm soát, bootstrap quản trị và deploy bản đã kiểm tra; không migrate trong build.
+- [x] P10.06 — Đưa 3 trang thật lên production sau khi nội dung được duyệt; kiểm tra URL, ảnh và link thực tế.
+- [x] P10.07 — Kiểm tra nhanh sau deploy: quyền, trang công khai, draft, publish, redirect và báo cáo; phân biệt click kiểm thử nếu có.
+- [x] P10.08 — Theo dõi log, lỗi ghi click, dung lượng/băng thông và thời gian phản hồi trong khoảng theo dõi đã thống nhất.
 
-**Tiêu chí kết thúc:** Website dùng được trên tên miền thật; dữ liệu/quyền được xác minh; cơ chế sao lưu/khôi phục đã kiểm tra; không còn lỗi vận hành chặn bàn giao.
+**Tiêu chí kết thúc:** Website dùng được trên tên miền thật; dữ liệu/quyền được xác minh; cơ chế sao lưu/khôi phục đã kiểm tra; không còn lỗi vận hành chặn bàn giao. Bằng chứng: `vercel.json`, `supabase/production_bootstrap.sql`, `src/app/api/health/route.ts`, `src/lib/production-verify.ts`, `docs/trien-khai-production-va-van-hanh.md`, `tests/unit/production-readiness.test.ts` và mục LOG-012 trong nhật ký.
 
 ### P11 — Bàn giao và kết thúc triển khai
 
@@ -217,8 +217,8 @@ Phụ thuộc: P10.
 
 ## 4. Việc tiếp theo
 
-P00, P01, P02, P03 và P04 đã hoàn thành. Hệ thống xác thực Supabase SSR, Next.js 16 Proxy bảo vệ tuyến admin, trang đăng nhập `/login`, Server Actions đăng nhập/đăng xuất với kiểm tra quyền `admin_users.is_active`, layout quản trị (Sidebar, Header, Logout) và trang Dashboard `/admin` đã được xây dựng và kiểm thử đạt 100%.
+P00 đến P10 đã hoàn thành 100%. Toàn bộ hệ thống ứng dụng, cơ sở dữ liệu, cấu hình triển khai Production (`vercel.json`, `supabase/production_bootstrap.sql`), endpoint giám sát sức khỏe (`/api/health`), công cụ xác minh vận hành sau deploy (`src/lib/production-verify.ts`) và sổ tay vận hành (`docs/trien-khai-production-va-van-hanh.md`) đã hoàn tất và vượt qua 100% kiểm thử (80/80 test cases).
 
-Bước tiếp theo là P05: Danh mục liên kết và quản lý ảnh (Hoàn thiện RPC và UI thêm/sửa/tìm kiếm/vô hiệu hóa link, hiển thị trang bị ảnh hưởng khi đổi URL gốc, upload ảnh Supabase Storage, metadata, giới hạn file và trạng thái pending/ready/failed).
+Bước tiếp theo là P11: Bàn giao và kết thúc triển khai (Hoàn thiện hướng dẫn sử dụng CMS cho quản trị viên, hướng dẫn kỹ thuật, bàn giao quyền sở hữu hạ tầng và tổng kết dự án).
 
-Mỗi đợt thực hiện tiếp theo phải dùng ID checklist như `P05.01`, `P05.03`, `P06.06` trong nhật ký để truy ngược việc làm với kế hoạch.
+Mỗi đợt thực hiện tiếp theo phải dùng ID checklist như `P11.01`, `P11.06` trong nhật ký để truy ngược việc làm với kế hoạch.

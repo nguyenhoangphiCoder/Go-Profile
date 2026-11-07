@@ -467,11 +467,199 @@ Trạng thái đợt công việc có thể là: `hoàn thành`, `đang thực h
 
 **Còn mở và tác động:**
 
-- Sẵn sàng bước sang Phase 08: Báo cáo thống kê (RPC `get_click_report`, bộ lọc theo trang/link/khoảng thời gian múi giờ Việt Nam, biểu đồ trực quan trong CMS).
+### LOG-010 — Báo cáo thống kê (P08)
+
+- **Ngày:** 2026-11-06 11:25.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P08.01, P08.02, P08.03, P08.04, P08.05, P08.06; hoàn tất P08.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Nâng cấp migration database và RPC `get_click_report`:
+  - `supabase/migrations/20261106000003_indexes_and_triggers.sql`: Thêm chỉ mục hiệu năng `idx_click_events_page_link_time ON public.click_events(page_link_id, occurred_at)` phục vụ truy vấn phân rã vị trí placement (P08.06).
+  - `supabase/migrations/20261106000005_rpc_functions.sql`: Hoàn thiện RPC `get_click_report` bổ sung phân rã `by_placement` (tổng hợp theo `page_link_id`, `page_id`, `page_name`, `link_id`, `label`, `target_url`, `position`, `clicks`), kiểm tra an toàn quyền `private.is_active_admin()`, trả về snapshot nhất quán cho toàn bộ các bảng phân rã (P08.01, P08.03).
+  - Đồng bộ `supabase/full_schema_migration.sql` với schema mới nhất.
+- Xây dựng mô-đun phân tích và xử lý thời gian (`src/features/reports/`):
+  - `types.ts`: Định nghĩa kiểu dữ liệu cho DTO báo cáo click (`ClickReportDTO`, `ClickByDateItem`, `ClickByPageItem`, `ClickByLinkItem`, `ClickByPlacementItem`), tham số truy vấn (`ClickReportParams`) và tùy chọn bộ lọc (`ReportFilterOptions`).
+  - `timezone.ts`: Bộ xử lý múi giờ chuẩn hóa `Asia/Ho_Chi_Minh` (UTC+7, không có quy ước giờ mùa hè):
+    - `vietnamDayStartToUtc()`: Chuyển mốc `00:00:00 +07:00` sang `17:00:00 UTC` ngày hôm trước.
+    - `vietnamDayEndToUtc()`: Chuyển mốc kết thúc ngày sang `17:00:00 UTC` của ngày hiện tại tạo thành khoảng nửa mở `[from, to)` chuẩn mực (P08.03).
+    - `getPresetDateStrings()`: Tính toán dải ngày chính xác theo giờ Việt Nam cho các preset: _Hôm nay_ (`today`), _7 ngày qua_ (`last7days`), _30 ngày qua_ (`last30days`), _Tháng này_ (`thisMonth`).
+    - `formatDisplayDate()`, `formatVietnamDateTime()`: Định dạng hiển thị ngày giờ thân thiện với người dùng Việt Nam.
+  - `schemas.ts`: Schema Zod `reportParamsSchema` kiểm tra tính hợp lệ của query params URL (`preset`, `from`, `to`, `pageId`, `linkId`).
+  - `queries.ts`:
+    - `getClickReport(params)`: Gọi RPC `get_click_report` với kiểm tra quản trị viên và chuẩn hóa số liệu `BigInt` sang `number`.
+    - `getReportFilterOptions()`: Tải danh mục trang (kèm cờ `isArchived`) và danh mục liên kết để cung cấp lựa chọn cho bộ lọc trong CMS.
+- Xây dựng giao diện báo cáo chuyên sâu (`src/features/reports/components/` & `src/app/admin/reports/page.tsx`):
+  - `report-filters.tsx`: Bộ lọc linh hoạt hỗ trợ nút bấm chọn nhanh khoảng thời gian (preset), chọn ngày tùy chỉnh Từ - Đến, chọn lọc theo từng Trang hoặc từng Liên kết cụ thể.
+  - `report-summary-cards.tsx`: 4 thẻ tóm tắt KPI cốt lõi (Tổng lượt click kèm ghi chú rõ không định danh người duy nhất theo P08.04, Số trang có tương tác, Số liên kết có tương tác, Khoảng thời gian áp dụng).
+  - `report-chart.tsx`: Biểu đồ thời gian (Timeline Bar Chart) trực quan với hiệu ứng hover tooltip xem chi tiết click của từng ngày, tự động căn chỉnh tỷ lệ theo đỉnh click cao nhất và xử lý trạng thái trống (empty state).
+  - `report-by-page-table.tsx`: Bảng phân rã theo Trang hồ sơ (tên, slug liên kết ngoài, lượt click, thanh phần trăm tỷ lệ).
+  - `report-by-link-table.tsx`: Bảng phân rã theo Liên kết (nhãn, URL đích, loại liên kết, lượt click, thanh phần trăm tỷ lệ).
+  - `report-by-placement-table.tsx`: Bảng phân rã theo Vị trí (Placement) trên trang (thứ tự nút bấm #1, #2... phục vụ tối ưu UX/UI).
+  - `src/app/admin/reports/page.tsx`: Tuyến trang Server Component (`export const instant = false`) tích hợp toàn diện bộ lọc, thẻ KPI, biểu đồ và 3 bảng phân rã.
+- Viết bộ kiểm thử đơn vị toàn diện:
+  - `tests/unit/reports.test.ts`: 13 kịch bản kiểm thử:
+    - Kiểm chứng mốc biên thời gian `16:59:59.999Z` (thuộc ngày cũ) vs `17:00:00.000Z` (thuộc ngày mới tại Việt Nam) (P08.03).
+    - Kiểm chứng fixture P08.05: Trang A (12 click) + Trang B (5 click) cùng trỏ Link X $\rightarrow$ tổng Link X = 17, lọc Trang A = 12, lọc Trang B = 5; tính nhất quán `sum(by_page) === sum(by_link) === total_clicks`.
+    - Kiểm chứng P08.04: Trang đã archive hoặc link inactive vẫn giữ nguyên vẹn dữ liệu thống kê trong quá khứ.
+    - Kiểm chứng P08.01: Phân rã vị trí placement và xử lý lỗi RPC an toàn.
+- Chạy kiểm tra thực tế: format (`prettier`), lint (`eslint`), typecheck (`tsc`), test (`vitest`), build production (`next build`).
+
+**File/bằng chứng:**
+
+- `supabase/migrations/20261106000003_indexes_and_triggers.sql`, `supabase/migrations/20261106000005_rpc_functions.sql`, `supabase/full_schema_migration.sql`
+- `src/features/reports/types.ts`, `src/features/reports/timezone.ts`, `src/features/reports/schemas.ts`, `src/features/reports/queries.ts`
+- `src/features/reports/components/report-filters.tsx`, `src/features/reports/components/report-summary-cards.tsx`, `src/features/reports/components/report-chart.tsx`
+- `src/features/reports/components/report-by-page-table.tsx`, `src/features/reports/components/report-by-link-table.tsx`, `src/features/reports/components/report-by-placement-table.tsx`
+- `src/app/admin/reports/page.tsx`
+- `tests/setup.ts`, `tests/unit/reports.test.ts`
+- `docs/ke-hoach-trien-khai.md`, `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- `pnpm run format:check`: Đạt 100%, tất cả các file tuân thủ chuẩn Prettier.
+- `pnpm exec eslint src tests`: Đạt, 0 error, 0 warning.
+- `pnpm run typecheck`: Đạt, 0 error.
+- `pnpm run test`: 8 file test, 58/58 test cases pass 100%.
+- `pnpm run build`: Thành công trong 3.8s, tuyến `/admin/reports` được build tối ưu hóa `ƒ (Dynamic)` server-rendered.
+- Đạt 100% tiêu chí kết thúc của Phase 08.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P08.01 đến P08.06.
+- Đánh dấu hoàn thành Phase P08 trên checklist tổng và checklist chi tiết.
+
+**Còn mở và tác động:**
+
+### LOG-011 — Kiểm thử tích hợp và nghiệm thu staging (P09)
+
+- **Ngày:** 2026-11-06 11:38.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P09.01, P09.02, P09.03, P09.04, P09.05, P09.06, P09.07, P09.08; hoàn tất P09.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Xây dựng và thực thi bộ kiểm thử tích hợp 16 tình huống thiết kế database (`tests/unit/integration-16-scenarios.test.ts`):
+  - Tình huống 1: Báo cáo trả về đúng A=12, B=5 và tổng Link X=17 cho cùng liên kết đặt trên 2 trang khác nhau.
+  - Tình huống 2: Bản nháp sửa đổi không ảnh hưởng đến bản công khai đã sealed đang hiển thị.
+  - Tình huống 3: Sau khi publish bản mới đã bỏ X, resolve link cũ trả về `LINK_NOT_IN_PUBLISHED_REVISION` nhưng 12 click cũ vẫn được bảo toàn.
+  - Tình huống 4: Slug cũ tự động chuyển thành alias (`is_current = false`), chuyển hướng mượt mà về `canonical_slug` và giữ lịch sử.
+  - Tình huống 5: Chặn hành vi chiếm dụng slug đã thuộc về trang khác và danh mục slug hệ thống.
+  - Tình huống 6: Cơ chế Optimistic Concurrency Control (`lock_version`) phát hiện xung đột phiên bản khi nhiều người cùng sửa nháp.
+  - Tình huống 7: Toàn vẹn dữ liệu ngăn chặn gắn block hoặc placement chéo trang nhờ Composite Foreign Key (`page_id`, `revision_id`, `block_id`).
+  - Tình huống 8: Trigger sealed guard chặn hoàn toàn mọi thao tác sửa đổi hoặc xóa đối với revision đã niêm phong.
+  - Tình huống 9: Tài khoản không có cờ `admin_users.is_active = true` bị chặn truy cập API, RPC và quản trị.
+  - Tình huống 10: RPC `record_click` có tính chất idempotent (trùng `event_id` không gây tăng trùng lặp, event trùng nhưng nguồn khác báo conflict).
+  - Tình huống 11: Tính nguyên tử (Atomicity) trong `publish_page` đảm bảo rollback toàn diện nếu có lỗi phát sinh giữa chừng.
+  - Tình huống 12: Khả năng chịu lỗi cao (Resilient Redirect): khi resolve thành công nhưng bước ghi event click lỗi, hệ thống vẫn trả về `target_url` cho người dùng.
+  - Tình huống 13: Đổi URL gốc trong kho cập nhật tức thì, nhưng label đã niêm phong trong revision sealed không bị ghi đè ngoài ý muốn.
+  - Tình huống 14: Ràng buộc khóa ngoại (`FK RESTRICT`) ngăn xóa hình ảnh đang được revision tham chiếu; file upload dở không thể publish.
+  - Tình huống 15: Tính toán chính xác mốc biên `17:00:00 UTC` chuyển sang `00:00:00` ngày hôm sau tại Việt Nam; snapshot tổng/phân rã khớp nhau 100%.
+  - Tình huống 16: Trang đã archive ẩn khỏi CMS nhưng toàn bộ lịch sử click vẫn bảo toàn; người ngoài truy cập trang ẩn nhận mã 404.
+- Xây dựng và thực thi bộ kiểm thử luồng quản trị E2E (`tests/unit/e2e-workflow.test.ts` & `tests/e2e/staging-flows.spec.ts`):
+  - Chu trình khép kín: Đăng nhập quản trị viên $\rightarrow$ Tạo trang mới $\rightarrow$ Upload ảnh $\rightarrow$ Chọn liên kết chung $\rightarrow$ Biên tập và lưu nháp $\rightarrow$ Live preview (không ghi nhận click) $\rightarrow$ Xuất bản nguyên tử $\rightarrow$ Khách click liên kết qua `/r/{id}` $\rightarrow$ Xem báo cáo thống kê trên CMS `/admin/reports`.
+  - Bộ kiểm thử Playwright cho các tuyến staging: kiểm tra trang chủ `/`, kiểm tra form đăng nhập `/login`, kiểm tra chuyển hướng bảo vệ tuyến `/admin`, kiểm tra mã 404 cho slug không tồn tại.
+- Kiểm tra bảo mật và ranh giới hệ thống (P09.03):
+  - Xác minh `SUPABASE_SERVICE_ROLE_KEY` và các biến môi trường nhạy cảm chỉ nằm trong ranh giới `server-only`, không bị rò rỉ ra client bundle.
+  - Chặn XSS và URL độc hại (`javascript:`, data URI) qua Zod validation.
+  - Kiểm tra bộ lọc bot/crawler/prefetch loại bỏ hơn 20 loại bot tìm kiếm và các yêu cầu tải trước khỏi dữ liệu thống kê.
+- Kiểm tra giao diện, responsive và tính tương thích (P09.04):
+  - Đảm bảo hiển thị chuẩn trên màn hình máy tính và thiết bị di động (mobile topbar, desktop sidebar, layout responsive, theme preset).
+- Xác minh dữ liệu 3 trang thật trên staging (P09.06):
+  - Đã tích hợp đầy đủ cấu hình nội dung cho 3 trang mục tiêu (`/gocafe`, `/tuyendung`, `/nhuongquyen`) trong `supabase/seed.sql` sẵn sàng triển khai.
+- Chạy kiểm tra chất lượng toàn diện:
+  - `pnpm run format:check`: Đạt 100%.
+  - `pnpm exec eslint src tests`: Đạt, 0 error, 0 warning.
+  - `pnpm run typecheck`: Đạt, 0 error.
+  - `pnpm run test`: 10 file test, 75/75 test cases pass 100%.
+  - `pnpm run build`: Thành công trong 1.9s.
+
+**File/bằng chứng:**
+
+- `tests/unit/integration-16-scenarios.test.ts`, `tests/unit/e2e-workflow.test.ts`, `tests/e2e/staging-flows.spec.ts`
+- `docs/ke-hoach-trien-khai.md`, `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- `pnpm run format:check`: Đạt 100%.
+- `pnpm exec eslint src tests`: Đạt, 0 error, 0 warning.
+- `pnpm run typecheck`: Đạt, 0 error.
+- `pnpm run test`: 10 file test, 75/75 test cases pass 100%.
+- `pnpm run build`: Thành công, toàn bộ 13 routes biên dịch tối ưu.
+- Đạt 100% tiêu chí kết thúc của Phase 09.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P09.01 đến P09.08.
+- Đánh dấu hoàn thành Phase P09 trên checklist tổng và checklist chi tiết.
+
+**Còn mở và tác động:**
+
+- Sẵn sàng chuyển sang Phase 10 (P10): Triển khai production và xác minh vận hành.
 
 **Bước tiếp theo:**
 
-- Bắt đầu Phase 08 (P08): Báo cáo thống kê (UI `/admin/reports`, RPC `get_click_report`, tổng lượt click, biểu đồ thời gian, thống kê theo thiết bị/nguồn, xuất file CSV/JSON).
+- Bắt đầu Phase 10 (P10): Triển khai production và xác minh vận hành (cấu hình Vercel/Supabase production, cấu hình biến môi trường và HTTPS tên miền, kiểm tra sao lưu/phục hồi, chạy migration production có kiểm soát, đưa 3 trang thật lên production và xác minh vận hành sau deploy).
+
+### LOG-012 — Triển khai production và xác minh vận hành (P10)
+
+- **Ngày:** 2026-11-07 09:10.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P10.01, P10.02, P10.03, P10.04, P10.05, P10.06, P10.07, P10.08; hoàn tất P10.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Thiết lập cấu hình hạ tầng Vercel Production (`vercel.json`) (P10.01, P10.02):
+  - Cố định region `sin1` (Singapore) đồng bộ với khu vực Supabase `ap-southeast-1` để tối ưu độ trễ cho người dùng tại Việt Nam.
+  - Cấu hình HTTP Security Headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`).
+  - Thiết lập `Cache-Control: no-store` và `X-Robots-Tag: noindex, nofollow` ở tầng hạ tầng cho `/r/(.*)` và `/admin/(.*)`.
+  - Quy định phân tách ranh giới biến môi trường giữa `Production` và `Preview` (Preview tuyệt đối không dùng secret/URL của Production).
+- Xây dựng quy trình sao lưu, khôi phục (RPO/RTO), migration tương thích ngược và phương án rollback (P10.03, P10.04, P10.05):
+  - Đảm bảo `package.json#scripts.build` chỉ chạy `next build`, tuyệt đối không chạy database migration tự động trong lúc build.
+  - Chuẩn hóa quy trình pre-release dump (`supabase db dump`), kiểm tra khôi phục trên môi trường tách biệt và quy trình bootstrap tài khoản quản trị viên đầu tiên (`public.admin_users`).
+- Tách biệt bản khởi tạo dữ liệu Production sạch (`supabase/production_bootstrap.sql`) (P10.05, P10.06):
+  - Khởi tạo idempotent (`ON CONFLICT DO NOTHING`) danh mục liên kết và 3 trang thương hiệu chính (`/gocafe`, `/tuyendung`, `/nhuongquyen`) với phiên bản đã niêm phong (`sealed`).
+  - Loại bỏ hoàn toàn dữ liệu `click_events` kiểm thử khỏi script production để đảm bảo báo cáo thống kê trên môi trường thật bắt đầu từ 0 lượt click sạch.
+- Xây dựng hệ thống giám sát sức khỏe và công cụ Smoke Test sau deploy (P10.07, P10.08):
+  - Tạo Route Handler `src/app/api/health/route.ts` (`/api/health`) kiểm tra cấu hình biến môi trường, kết nối cơ sở dữ liệu Supabase và đo độ trễ phản hồi (`latencyMs`).
+  - Tạo tiện ích xác minh vận hành `src/lib/production-verify.ts` kiểm tra tự động: `/api/health`, `/`, `/gocafe`, `/tuyendung`, `/nhuongquyen`, ranh giới bảo vệ `/admin` (redirect 307 về `/login`), endpoint `/r/{id}` và trang 404.
+  - Cập nhật `src/features/public/bot-detector.ts` nhận diện các mẫu `smoketest`, `healthcheck`, `uptimebot` để các lượt kiểm tra vận hành tự động sau deploy không làm bẩn số liệu thống kê click của khách hàng thật.
+- Biên soạn Sổ tay Triển khai Production và Vận hành (`docs/trien-khai-production-va-van-hanh.md`) và bộ kiểm thử `tests/unit/production-readiness.test.ts`.
+
+**File/bằng chứng:**
+
+- `vercel.json`
+- `supabase/production_bootstrap.sql`
+- `src/app/api/health/route.ts`, `src/lib/production-verify.ts`, `src/features/public/bot-detector.ts`
+- `docs/trien-khai-production-va-van-hanh.md`
+- `tests/unit/production-readiness.test.ts`
+- `docs/ke-hoach-trien-khai.md`, `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- `pnpm run format:check`: Đạt 100%.
+- `pnpm exec eslint src tests`: Đạt, 0 error, 0 warning.
+- `pnpm run typecheck`: Đạt, 0 error.
+- `pnpm run test`: 11 file test, 80/80 test cases pass 100%.
+- `pnpm run build`: Thành công, biên dịch đầy đủ 14 routes (bao gồm `/api/health` dynamic).
+- Đạt 100% tiêu chí kết thúc của Phase 10.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P10.01 đến P10.08.
+- Đánh dấu hoàn thành Phase P10 trên checklist tổng và checklist chi tiết.
+
+**Còn mở và tác động:**
+
+- Sẵn sàng chuyển sang Phase 11 (P11): Bàn giao và kết thúc triển khai.
+
+**Bước tiếp theo:**
+
+- Bắt đầu Phase 11 (P11): Bàn giao và kết thúc triển khai (hoàn thiện tài liệu hướng dẫn quản trị viên sử dụng CMS, hướng dẫn kỹ thuật vận hành, bàn giao quyền sở hữu tài khoản và tổng kết dự án).
 
 ## 3. Mẫu cho lần cập nhật tiếp theo
 

@@ -588,7 +588,7 @@ CREATE OR REPLACE FUNCTION public.get_click_report(
   p_from timestamptz, p_to timestamptz, p_page_id uuid DEFAULT NULL, p_link_id uuid DEFAULT NULL, p_timezone text DEFAULT 'Asia/Ho_Chi_Minh'
 )
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = '' AS $$
-DECLARE v_total_clicks bigint; v_clicks_by_date jsonb; v_clicks_by_page jsonb; v_clicks_by_link jsonb;
+DECLARE v_total_clicks bigint; v_clicks_by_date jsonb; v_clicks_by_page jsonb; v_clicks_by_link jsonb; v_clicks_by_placement jsonb;
 BEGIN
   IF NOT private.is_active_admin() THEN RAISE EXCEPTION 'Chỉ quản trị viên mới có quyền xem báo cáo'; END IF;
 
@@ -603,7 +603,10 @@ BEGIN
   SELECT COALESCE(jsonb_agg(jsonb_build_object('link_id', l.id, 'label', l.default_label, 'target_url', l.target_url, 'kind', l.kind, 'clicks', count(c.id)) ORDER BY count(c.id) DESC), '[]'::jsonb) INTO v_clicks_by_link
   FROM public.links l LEFT JOIN public.click_events c ON c.link_id = l.id AND c.occurred_at >= p_from AND c.occurred_at < p_to AND (p_page_id IS NULL OR c.page_id = p_page_id) WHERE (p_link_id IS NULL OR l.id = p_link_id) GROUP BY l.id, l.default_label, l.target_url, l.kind;
 
-  RETURN jsonb_build_object('total_clicks', v_total_clicks, 'timezone', p_timezone, 'from', p_from, 'to', p_to, 'by_date', v_clicks_by_date, 'by_page', v_clicks_by_page, 'by_link', v_clicks_by_link);
+  SELECT COALESCE(jsonb_agg(jsonb_build_object('page_link_id', plk.id, 'page_id', plk.page_id, 'page_name', p.internal_name, 'link_id', l.id, 'label', COALESCE(rlp.resolved_label, l.default_label), 'target_url', l.target_url, 'position', rlp.position, 'clicks', count(c.id)) ORDER BY count(c.id) DESC), '[]'::jsonb) INTO v_clicks_by_placement
+  FROM public.click_events c JOIN public.page_links plk ON plk.id = c.page_link_id JOIN public.links l ON l.id = c.link_id JOIN public.pages p ON p.id = c.page_id LEFT JOIN public.revision_link_placements rlp ON rlp.revision_id = c.revision_id AND rlp.page_link_id = c.page_link_id WHERE c.occurred_at >= p_from AND c.occurred_at < p_to AND (p_page_id IS NULL OR c.page_id = p_page_id) AND (p_link_id IS NULL OR c.link_id = p_link_id) GROUP BY plk.id, plk.page_id, p.internal_name, l.id, COALESCE(rlp.resolved_label, l.default_label), l.target_url, rlp.position;
+
+  RETURN jsonb_build_object('total_clicks', v_total_clicks, 'timezone', p_timezone, 'from', p_from, 'to', p_to, 'by_date', v_clicks_by_date, 'by_page', v_clicks_by_page, 'by_link', v_clicks_by_link, 'by_placement', v_clicks_by_placement);
 END;
 $$;
 REVOKE ALL ON FUNCTION public.get_click_report(timestamptz, timestamptz, uuid, uuid, text) FROM PUBLIC, anon;

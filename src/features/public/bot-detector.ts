@@ -22,6 +22,9 @@ const KNOWN_BOT_PATTERNS = [
   "dotbot",
   "petalbot",
   "bytespider",
+  "smoketest",
+  "healthcheck",
+  "uptimebot",
 ];
 
 export function isBotUserAgent(userAgent?: string | null): boolean {
@@ -66,4 +69,3 @@ export function shouldSkipClickTracking(
 
   return false;
 }
-

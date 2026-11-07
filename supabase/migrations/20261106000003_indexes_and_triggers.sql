@@ -8,6 +8,7 @@ CREATE INDEX IF NOT EXISTS idx_placements_page_link_id ON public.revision_link_p
 CREATE INDEX IF NOT EXISTS idx_revision_media_asset_id ON public.revision_media_assets(media_asset_id);
 CREATE INDEX IF NOT EXISTS idx_click_events_page_time ON public.click_events(page_id, occurred_at);
 CREATE INDEX IF NOT EXISTS idx_click_events_link_time ON public.click_events(link_id, occurred_at);
+CREATE INDEX IF NOT EXISTS idx_click_events_page_link_time ON public.click_events(page_link_id, occurred_at);
 CREATE INDEX IF NOT EXISTS idx_click_events_occurred_at ON public.click_events(occurred_at);
 
 -- 2. Updated_at Triggers
