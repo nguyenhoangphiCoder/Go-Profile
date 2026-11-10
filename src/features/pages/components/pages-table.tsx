@@ -94,17 +94,17 @@ export function PagesTable({ initialPages }: PagesTableProps) {
       </div>
 
       {/* Pages Table */}
-      <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto">
+      <div className="rounded-2xl border border-border/80 bg-card shadow-2xs">
+        <div className="overflow-x-auto min-h-[280px]">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-border/70 bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                <th className="py-2.5 px-3.5 sm:px-4">Trang & Đường dẫn</th>
+                <th className="py-2.5 px-3.5 sm:px-4 rounded-tl-2xl">Trang & Đường dẫn</th>
                 <th className="py-2.5 px-3">Trạng thái</th>
                 <th className="py-2.5 px-3">Phiên bản</th>
                 <th className="py-2.5 px-3 text-center">Số link</th>
                 <th className="py-2.5 px-3">Cập nhật</th>
-                <th className="py-2.5 px-3.5 sm:px-4 text-right">Thao tác</th>
+                <th className="py-2.5 px-3.5 sm:px-4 text-right rounded-tr-2xl">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -118,8 +118,16 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                   </td>
                 </tr>
               ) : (
-                paginatedPages.map((page) => (
-                  <tr key={page.id} className="hover:bg-muted/30 transition-colors">
+                paginatedPages.map((page, index) => {
+                  const isNearBottom = index >= Math.max(1, paginatedPages.length - 2);
+                  const isMenuOpen = openMenuPageId === page.id;
+                  return (
+                    <tr
+                      key={page.id}
+                      className={`hover:bg-muted/30 transition-colors ${
+                        isMenuOpen ? "relative z-30" : ""
+                      }`}
+                    >
                     {/* Trang & Slug */}
                     <td className="py-2.5 px-3.5 sm:px-4">
                       <div className="flex flex-col gap-0.5 max-w-[280px] sm:max-w-xs">
@@ -195,15 +203,19 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                     </td>
 
                     {/* Thao tác */}
-                    <td className="py-2.5 px-3.5 sm:px-4 text-right whitespace-nowrap">
+                    <td
+                      className={`py-2.5 px-3.5 sm:px-4 text-right whitespace-nowrap ${
+                        isMenuOpen ? "relative z-40" : ""
+                      }`}
+                    >
                       <div className="relative inline-block text-left">
                         <button
                           type="button"
                           onClick={() =>
-                            setOpenMenuPageId(openMenuPageId === page.id ? null : page.id)
+                            setOpenMenuPageId(isMenuOpen ? null : page.id)
                           }
                           className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                            openMenuPageId === page.id
+                            isMenuOpen
                               ? "border-primary bg-primary/10 text-primary shadow-xs ring-2 ring-primary/20"
                               : "border-border hover:bg-muted text-muted-foreground hover:text-foreground"
                           }`}
@@ -212,16 +224,24 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
 
-                        {openMenuPageId === page.id && (
+                        {isMenuOpen && (
                           <>
                             {/* Backdrop đóng dropdown khi click ra ngoài */}
                             <div
-                              className="fixed inset-0 z-30"
+                              className="fixed inset-0 z-50"
                               onClick={() => setOpenMenuPageId(null)}
                             />
 
                             {/* Menu Thao Tác Dropdown */}
-                            <div className="absolute right-0 top-full mt-1.5 w-52 rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl p-1.5 z-40 text-xs animate-in fade-in-0 zoom-in-95 duration-150">
+                            <div
+                              className={`absolute right-0 ${
+                                isNearBottom
+                                  ? "bottom-full mb-1.5 origin-bottom-right"
+                                  : "top-full mt-1.5 origin-top-right"
+                              } w-52 rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl p-1.5 z-60 text-xs animate-in fade-in-0 ${
+                                isNearBottom ? "slide-in-from-bottom-2" : "slide-in-from-top-2"
+                              } zoom-in-95 duration-150`}
+                            >
                               <div className="px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 mb-1">
                                 Thao tác trang
                               </div>
@@ -291,8 +311,9 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
+                );
+              })
+            )}
             </tbody>
           </table>
         </div>

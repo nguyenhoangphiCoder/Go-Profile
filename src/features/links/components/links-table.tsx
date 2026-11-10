@@ -142,7 +142,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
       </div>
 
       {/* Links List */}
-      <div className="rounded-2xl border border-border/80 bg-card shadow-2xs overflow-hidden">
+      <div className="rounded-2xl border border-border/80 bg-card shadow-2xs">
         {filteredLinks.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <Globe className="w-8 h-8 text-muted-foreground mx-auto" />
@@ -154,20 +154,28 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto min-h-[280px]">
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/40 border-b border-border/60 text-muted-foreground font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
-                  <th className="py-2.5 px-3.5 sm:px-4">Tên hiển thị & URL</th>
+                  <th className="py-2.5 px-3.5 sm:px-4 rounded-tl-2xl">Tên hiển thị & URL</th>
                   <th className="py-2.5 px-3">Loại</th>
                   <th className="py-2.5 px-3">Trang sử dụng</th>
                   <th className="py-2.5 px-3">Trạng thái</th>
-                  <th className="py-2.5 px-3.5 sm:px-4 text-right">Thao tác</th>
+                  <th className="py-2.5 px-3.5 sm:px-4 text-right rounded-tr-2xl">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {paginatedLinks.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                {paginatedLinks.map((item, index) => {
+                  const isNearBottom = index >= Math.max(1, paginatedLinks.length - 2);
+                  const isMenuOpen = openMenuLinkId === item.id;
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-muted/30 transition-colors ${
+                        isMenuOpen ? "relative z-30" : ""
+                      }`}
+                    >
                     {/* Name & URL */}
                     <td className="py-2.5 px-3.5 sm:px-4">
                       <div className="space-y-0.5">
@@ -232,15 +240,19 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                     </td>
 
                     {/* Thao tác */}
-                    <td className="py-2 px-3.5 sm:px-4 text-right whitespace-nowrap">
+                    <td
+                      className={`py-2 px-3.5 sm:px-4 text-right whitespace-nowrap ${
+                        isMenuOpen ? "relative z-40" : ""
+                      }`}
+                    >
                       <div className="relative inline-block text-left">
                         <button
                           type="button"
                           onClick={() =>
-                            setOpenMenuLinkId(openMenuLinkId === item.id ? null : item.id)
+                            setOpenMenuLinkId(isMenuOpen ? null : item.id)
                           }
                           className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
-                            openMenuLinkId === item.id
+                            isMenuOpen
                               ? "border-primary bg-primary/10 text-primary shadow-xs ring-2 ring-primary/20"
                               : "border-border hover:bg-muted text-muted-foreground hover:text-foreground"
                           }`}
@@ -249,16 +261,24 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                           <MoreHorizontal className="w-4 h-4" />
                         </button>
 
-                        {openMenuLinkId === item.id && (
+                        {isMenuOpen && (
                           <>
                             {/* Backdrop đóng dropdown khi click ra ngoài */}
                             <div
-                              className="fixed inset-0 z-30"
+                              className="fixed inset-0 z-50"
                               onClick={() => setOpenMenuLinkId(null)}
                             />
 
                             {/* Menu Thao Tác Dropdown */}
-                            <div className="absolute right-0 top-full mt-1.5 w-48 rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl p-1.5 z-40 text-xs animate-in fade-in-0 zoom-in-95 duration-150">
+                            <div
+                              className={`absolute right-0 ${
+                                isNearBottom
+                                  ? "bottom-full mb-1.5 origin-bottom-right"
+                                  : "top-full mt-1.5 origin-top-right"
+                              } w-48 rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl p-1.5 z-60 text-xs animate-in fade-in-0 ${
+                                isNearBottom ? "slide-in-from-bottom-2" : "slide-in-from-top-2"
+                              } zoom-in-95 duration-150`}
+                            >
                               <div className="px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 mb-1">
                                 Thao tác liên kết
                               </div>
@@ -317,7 +337,8 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
