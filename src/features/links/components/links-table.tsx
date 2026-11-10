@@ -18,6 +18,7 @@ import dynamic from "next/dynamic";
 import type { LinkItem } from "@/features/links/types";
 import { toggleLinkStatusAction, archiveLinkAction } from "@/features/links/actions";
 import { TablePagination } from "@/components/admin/table-pagination";
+import { TableActionMenu } from "@/components/admin/table-action-menu";
 
 const LinkFormModal = dynamic(
   () => import("./link-form-modal").then((m) => m.LinkFormModal),
@@ -35,7 +36,6 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
   const [pageSize, setPageSize] = useState(10);
   const [selectedLink, setSelectedLink] = useState<LinkItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [openMenuLinkId, setOpenMenuLinkId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const filteredLinks = initialLinks.filter((l) => {
@@ -171,16 +171,11 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {paginatedLinks.map((item, index) => {
-                  const isNearBottom = index >= Math.max(1, paginatedLinks.length - 2);
-                  const isMenuOpen = openMenuLinkId === item.id;
-                  return (
-                    <tr
-                      key={item.id}
-                      className={`hover:bg-muted/30 transition-colors ${
-                        isMenuOpen ? "relative z-30" : ""
-                      }`}
-                    >
+                {paginatedLinks.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
                     {/* Name & URL */}
                     <td className="py-2.5 px-3.5 sm:px-4">
                       <div className="space-y-0.5">
@@ -245,105 +240,64 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                     </td>
 
                     {/* Thao tác */}
-                    <td
-                      className={`py-2 px-3.5 sm:px-4 text-right whitespace-nowrap ${
-                        isMenuOpen ? "relative z-40" : ""
-                      }`}
-                    >
-                      <div className="relative inline-block text-left">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpenMenuLinkId(isMenuOpen ? null : item.id)
-                          }
-                          className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
-                            isMenuOpen
-                              ? "border-primary bg-primary/10 text-primary shadow-xs ring-2 ring-primary/20"
-                              : "border-border hover:bg-muted text-muted-foreground hover:text-foreground"
-                          }`}
-                          title="Tùy chọn thao tác"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-
-                        {isMenuOpen && (
+                    <td className="py-2 px-3.5 sm:px-4 text-right whitespace-nowrap">
+                      <TableActionMenu title="Thao tác liên kết" widthClass="w-48" buttonClassName="p-1.5">
+                        {(close) => (
                           <>
-                            {/* Backdrop đóng dropdown khi click ra ngoài */}
-                            <div
-                              className="fixed inset-0 z-50"
-                              onClick={() => setOpenMenuLinkId(null)}
-                            />
-
-                            {/* Menu Thao Tác Dropdown */}
-                            <div
-                              className={`absolute right-0 ${
-                                isNearBottom
-                                  ? "bottom-full mb-1.5 origin-bottom-right"
-                                  : "top-full mt-1.5 origin-top-right"
-                              } w-48 rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl p-1.5 z-60 text-xs animate-in fade-in-0 ${
-                                isNearBottom ? "slide-in-from-bottom-2" : "slide-in-from-top-2"
-                              } zoom-in-95 duration-150`}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                close();
+                                handleEdit(item);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
                             >
-                              <div className="px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 mb-1">
-                                Thao tác liên kết
-                              </div>
+                              <Edit2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                              <span>Chỉnh sửa</span>
+                            </button>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenMenuLinkId(null);
-                                  handleEdit(item);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
-                              >
-                                <Edit2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                                <span>Chỉnh sửa</span>
-                              </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                close();
+                                handleToggle(item);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                            >
+                              <Power className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? "text-amber-500" : "text-emerald-500"}`} />
+                              <span>{item.isActive ? "Tắt hoạt động" : "Bật hoạt động"}</span>
+                            </button>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenMenuLinkId(null);
-                                  handleToggle(item);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
-                              >
-                                <Power className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? "text-amber-500" : "text-emerald-500"}`} />
-                                <span>{item.isActive ? "Tắt hoạt động" : "Bật hoạt động"}</span>
-                              </button>
+                            <a
+                              href={item.targetUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={close}
+                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                              <span>Mở liên kết</span>
+                            </a>
 
-                              <a
-                                href={item.targetUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={() => setOpenMenuLinkId(null)}
-                                className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                <span>Mở liên kết</span>
-                              </a>
+                            <div className="my-1 border-t border-border/50" />
 
-                              <div className="my-1 border-t border-border/50" />
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenMenuLinkId(null);
-                                  handleArchive(item);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-destructive/10 text-destructive font-medium transition-colors cursor-pointer text-left"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                <span>Lưu trữ (Xóa)</span>
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                close();
+                                handleArchive(item);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-destructive/10 text-destructive font-medium transition-colors cursor-pointer text-left"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                              <span>Lưu trữ (Xóa)</span>
+                            </button>
                           </>
                         )}
-                      </div>
+                      </TableActionMenu>
                     </td>
                   </tr>
-                );
-              })}
+                ))}
               </tbody>
             </table>
           </div>

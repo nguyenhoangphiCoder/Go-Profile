@@ -19,6 +19,7 @@ import {
 import type { PageListItem } from "../types";
 import { duplicatePageAction, archivePageAction } from "../actions";
 import { TablePagination } from "@/components/admin/table-pagination";
+import { TableActionMenu } from "@/components/admin/table-action-menu";
 
 const RenameSlugModal = dynamic(
   () => import("./rename-slug-modal").then((m) => m.RenameSlugModal),
@@ -34,7 +35,6 @@ export function PagesTable({ initialPages }: PagesTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedPageForSlug, setSelectedPageForSlug] = useState<PageListItem | null>(null);
-  const [openMenuPageId, setOpenMenuPageId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const filteredPages = initialPages.filter(
@@ -123,16 +123,11 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                   </td>
                 </tr>
               ) : (
-                paginatedPages.map((page, index) => {
-                  const isNearBottom = index >= Math.max(1, paginatedPages.length - 2);
-                  const isMenuOpen = openMenuPageId === page.id;
-                  return (
-                    <tr
-                      key={page.id}
-                      className={`hover:bg-muted/30 transition-colors ${
-                        isMenuOpen ? "relative z-30" : ""
-                      }`}
-                    >
+                paginatedPages.map((page) => (
+                  <tr
+                    key={page.id}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
                     {/* Trang & Slug */}
                     <td className="py-2.5 px-3.5 sm:px-4">
                       <div className="flex flex-col gap-0.5 max-w-[280px] sm:max-w-xs">
@@ -208,117 +203,76 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                     </td>
 
                     {/* Thao tác */}
-                    <td
-                      className={`py-2.5 px-3.5 sm:px-4 text-right whitespace-nowrap ${
-                        isMenuOpen ? "relative z-40" : ""
-                      }`}
-                    >
-                      <div className="relative inline-block text-left">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setOpenMenuPageId(isMenuOpen ? null : page.id)
-                          }
-                          className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                            isMenuOpen
-                              ? "border-primary bg-primary/10 text-primary shadow-xs ring-2 ring-primary/20"
-                              : "border-border hover:bg-muted text-muted-foreground hover:text-foreground"
-                          }`}
-                          title="Tùy chọn thao tác"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
-
-                        {isMenuOpen && (
+                    <td className="py-2.5 px-3.5 sm:px-4 text-right whitespace-nowrap">
+                      <TableActionMenu title="Thao tác trang">
+                        {(close) => (
                           <>
-                            {/* Backdrop đóng dropdown khi click ra ngoài */}
-                            <div
-                              className="fixed inset-0 z-50"
-                              onClick={() => setOpenMenuPageId(null)}
-                            />
-
-                            {/* Menu Thao Tác Dropdown */}
-                            <div
-                              className={`absolute right-0 ${
-                                isNearBottom
-                                  ? "bottom-full mb-1.5 origin-bottom-right"
-                                  : "top-full mt-1.5 origin-top-right"
-                              } w-52 rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl p-1.5 z-60 text-xs animate-in fade-in-0 ${
-                                isNearBottom ? "slide-in-from-bottom-2" : "slide-in-from-top-2"
-                              } zoom-in-95 duration-150`}
+                            <Link
+                              href={`/admin/pages/${page.id}`}
+                              onClick={close}
+                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
                             >
-                              <div className="px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 mb-1">
-                                Thao tác trang
-                              </div>
+                              <Edit3 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                              <span>Chỉnh sửa nội dung</span>
+                            </Link>
 
-                              <Link
-                                href={`/admin/pages/${page.id}`}
-                                onClick={() => setOpenMenuPageId(null)}
+                            {page.status === "published" && (
+                              <a
+                                href={`/${page.primarySlug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={close}
                                 className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
                               >
-                                <Edit3 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                                <span>Chỉnh sửa nội dung</span>
-                              </Link>
+                                <ExternalLink className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <span>Xem trang công khai</span>
+                              </a>
+                            )}
 
-                              {page.status === "published" && (
-                                <a
-                                  href={`/${page.primarySlug}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={() => setOpenMenuPageId(null)}
-                                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
-                                >
-                                  <ExternalLink className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                  <span>Xem trang công khai</span>
-                                </a>
-                              )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedPageForSlug(page);
+                                close();
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                            >
+                              <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                              <span>Đổi đường dẫn (Slug)</span>
+                            </button>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedPageForSlug(page);
-                                  setOpenMenuPageId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
-                              >
-                                <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                                <span>Đổi đường dẫn (Slug)</span>
-                              </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleDuplicate(page);
+                                close();
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                            >
+                              <Copy className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                              <span>Nhân bản trang</span>
+                            </button>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleDuplicate(page);
-                                  setOpenMenuPageId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
-                              >
-                                <Copy className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                                <span>Nhân bản trang</span>
-                              </button>
+                            <div className="my-1 border-t border-border/50" />
 
-                              <div className="my-1 border-t border-border/50" />
-
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleArchive(page);
-                                  setOpenMenuPageId(null);
-                                }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-red-500/10 font-medium text-red-600 dark:text-red-400 transition-colors cursor-pointer text-left"
-                              >
-                                <Archive className="w-4 h-4 text-red-500 shrink-0" />
-                                <span>Lưu trữ trang</span>
-                              </button>
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleArchive(page);
+                                close();
+                              }}
+                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-red-500/10 font-medium text-red-600 dark:text-red-400 transition-colors cursor-pointer text-left"
+                            >
+                              <Archive className="w-4 h-4 text-red-500 shrink-0" />
+                              <span>Lưu trữ trang</span>
+                            </button>
                           </>
                         )}
-                      </div>
+                      </TableActionMenu>
                     </td>
                   </tr>
-                );
-              })
-            )}
+                ))
+              )}
             </tbody>
           </table>
         </div>
