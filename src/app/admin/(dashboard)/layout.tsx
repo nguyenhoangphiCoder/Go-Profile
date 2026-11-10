@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShieldCheck, ExternalLink } from "lucide-react";
 import { requireActiveAdmin } from "@/features/auth/queries";
+import { getPrimaryPublicSlug } from "@/features/dashboard/queries";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { MobileSidebar } from "@/components/admin/mobile-sidebar";
@@ -9,7 +10,12 @@ import { MobileSidebar } from "@/components/admin/mobile-sidebar";
 export const instant = false;
 
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
-  const admin = await requireActiveAdmin();
+  const [admin, primarySlug] = await Promise.all([
+    requireActiveAdmin(),
+    getPrimaryPublicSlug(),
+  ]);
+
+  const publicUrl = primarySlug ? `/${primarySlug}` : null;
 
   return (
     <div className="h-screen h-dvh flex bg-slate-50/60 dark:bg-background text-foreground overflow-hidden">
@@ -84,14 +90,19 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             <span className="font-bold text-sm text-foreground">Gờ Cafe CMS</span>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline inline-flex items-center gap-1"
-              target="_blank"
-            >
-              <span>Xem Web</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
+            {publicUrl ? (
+              <Link
+                href={publicUrl}
+                className="text-xs text-blue-600 dark:text-blue-400 font-medium hover:underline inline-flex items-center gap-1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>Xem Web</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            ) : (
+              <span className="text-xs text-muted-foreground font-medium">Chưa có web</span>
+            )}
             <LogoutButton />
           </div>
         </header>
@@ -104,14 +115,24 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             <span className="text-blue-600 dark:text-blue-400 font-semibold">CMS</span>
           </div>
           <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 hover:bg-muted"
-              target="_blank"
-            >
-              <span>Xem trang công khai</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </Link>
+            {publicUrl ? (
+              <Link
+                href={publicUrl}
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 hover:bg-muted"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>Xem trang công khai ({publicUrl})</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            ) : (
+              <span
+                className="text-xs font-medium text-muted-foreground inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-border/80 cursor-default opacity-75"
+                title="Chưa có trang nào được xuất bản"
+              >
+                <span>Chưa có trang xuất bản</span>
+              </span>
+            )}
           </div>
         </header>
 

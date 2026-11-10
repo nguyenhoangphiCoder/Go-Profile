@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { Plus, Link2, BarChart3, FileText, ArrowUpRight, CheckCircle2 } from "lucide-react";
 import { requireActiveAdmin } from "@/features/auth/queries";
+import { getDashboardSummary } from "@/features/dashboard/queries";
 
 export const instant = false;
 
 export default async function AdminDashboardPage() {
-  const admin = await requireActiveAdmin();
+  const [admin, summary] = await Promise.all([
+    requireActiveAdmin(),
+    getDashboardSummary(),
+  ]);
 
   return (
     <div className="max-w-6xl space-y-8">
@@ -51,9 +55,11 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
           <div>
-            <span className="text-2xl font-bold text-slate-900">3 trang</span>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              /gocafe, /tuyendung, /nhuongquyen
+            <span className="text-2xl font-bold text-slate-900">
+              {summary.publishedPagesCount} trang
+            </span>
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+              {summary.pagesSummaryText}
             </p>
           </div>
           <div className="pt-2 border-t border-border/60">
@@ -76,9 +82,11 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
           <div>
-            <span className="text-2xl font-bold text-slate-900">8 liên kết</span>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              ShopeeFood, Grab, Menu, Maps, Hotline...
+            <span className="text-2xl font-bold text-slate-900">
+              {summary.totalLinksCount} liên kết
+            </span>
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+              {summary.linksSummaryText}
             </p>
           </div>
           <div className="pt-2 border-t border-border/60">
@@ -103,9 +111,11 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
           <div>
-            <span className="text-2xl font-bold text-slate-900">17 lượt</span>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              12 click (/gocafe) + 5 click (/tuyendung)
+            <span className="text-2xl font-bold text-slate-900">
+              {summary.totalClicksCount.toLocaleString("vi-VN")} lượt
+            </span>
+            <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+              {summary.clicksSummaryText}
             </p>
           </div>
           <div className="pt-2 border-t border-border/60">
