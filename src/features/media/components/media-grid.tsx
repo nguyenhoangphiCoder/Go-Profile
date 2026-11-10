@@ -2,10 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { Plus, Copy, Trash2, Check, Lock, Image as ImageIcon, Search } from "lucide-react";
+import dynamic from "next/dynamic";
 import type { MediaAssetItem } from "@/features/media/types";
-import { MediaUploadModal } from "./media-upload-modal";
 import { deleteMediaAction } from "@/features/media/actions";
 import { TablePagination } from "@/components/admin/table-pagination";
+
+const MediaUploadModal = dynamic(
+  () => import("./media-upload-modal").then((m) => m.MediaUploadModal),
+  { ssr: false }
+);
 
 interface MediaGridProps {
   initialAssets: MediaAssetItem[];
@@ -120,6 +125,7 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
                     alt={asset.originalFilename || "Media"}
                     className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
                     loading="lazy"
+                    decoding="async"
                   />
                 ) : (
                   <ImageIcon className="w-8 h-8 text-muted-foreground" />

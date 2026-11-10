@@ -14,10 +14,15 @@ import {
   Plus,
   MoreHorizontal,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import type { LinkItem } from "@/features/links/types";
-import { LinkFormModal } from "./link-form-modal";
 import { toggleLinkStatusAction, archiveLinkAction } from "@/features/links/actions";
 import { TablePagination } from "@/components/admin/table-pagination";
+
+const LinkFormModal = dynamic(
+  () => import("./link-form-modal").then((m) => m.LinkFormModal),
+  { ssr: false }
+);
 
 interface LinksTableProps {
   initialLinks: LinkItem[];

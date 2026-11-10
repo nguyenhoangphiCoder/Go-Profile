@@ -150,6 +150,7 @@ export function SeoEditor({ seo, onChange, availableMedia, onMediaAdded }: SeoEd
                 fill
                 className="object-cover"
                 unoptimized
+                loading="lazy"
               />
             </div>
           ) : (

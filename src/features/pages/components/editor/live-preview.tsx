@@ -473,6 +473,7 @@ export function LivePreview({
                               fill
                               className="object-cover"
                               unoptimized
+                              loading="lazy"
                             />
                           </div>
                         ) : (
@@ -519,6 +520,7 @@ export function LivePreview({
                                         fill
                                         className="object-cover"
                                         unoptimized
+                                        loading="lazy"
                                       />
                                     </div>
                                   )}
@@ -569,6 +571,7 @@ export function LivePreview({
                                       height={38}
                                       className="w-full h-full object-cover rounded-full"
                                       unoptimized
+                                      loading="lazy"
                                     />
                                   )}
                                 </div>
@@ -631,6 +634,7 @@ export function LivePreview({
                                     fill
                                     className="object-cover rounded-full"
                                     unoptimized
+                                    loading="lazy"
                                   />
                                 </div>
                               )}
@@ -709,6 +713,7 @@ export function LivePreview({
                                     fill
                                     className="object-cover"
                                     unoptimized
+                                    loading="lazy"
                                   />
                                 </div>
                               ) : (

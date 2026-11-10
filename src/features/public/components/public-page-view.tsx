@@ -287,6 +287,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                               fill
                               className="object-cover"
                               unoptimized
+                              loading="lazy"
                             />
                           </div>
                         ) : (
@@ -408,6 +409,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                                 height={45}
                                 className="w-full h-full object-cover rounded-full"
                                 unoptimized
+                                loading="lazy"
                               />
                             )}
                           </div>
@@ -470,6 +472,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                                 height={50}
                                 className="w-full h-full object-cover"
                                 unoptimized
+                                loading="lazy"
                               />
                             )}
                           </div>
@@ -535,6 +538,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                               height={48}
                               className="w-full h-full object-cover rounded-full"
                               unoptimized
+                              loading="lazy"
                             />
                           </div>
                         )}
@@ -572,6 +576,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                       fill
                       className="object-cover"
                       unoptimized
+                      loading="lazy"
                     />
                   </div>
                   {payload.caption && (

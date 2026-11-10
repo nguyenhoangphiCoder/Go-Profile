@@ -237,6 +237,7 @@ export function MediaPickerModal({
                             fill
                             className="object-contain group-hover:scale-105 transition-transform"
                             unoptimized
+                            loading="lazy"
                           />
                         </div>
                       ) : (

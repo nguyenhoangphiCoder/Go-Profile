@@ -2,6 +2,7 @@
 
 import { useState, useRef, useTransition } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import {
   UploadCloud,
   ImageIcon,
@@ -10,11 +11,13 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react";
-import {
-  MediaPickerModal,
-  type MediaOption,
-} from "./media-picker-modal";
+import type { MediaOption } from "./media-picker-modal";
 import { uploadMediaDirectAction } from "@/features/media/actions";
+
+const MediaPickerModal = dynamic(
+  () => import("./media-picker-modal").then((m) => m.MediaPickerModal),
+  { ssr: false }
+);
 
 export interface MediaPickerFieldProps {
   label: string;
@@ -121,6 +124,7 @@ export function MediaPickerField({
                 fill
                 className="object-cover"
                 unoptimized
+                loading="lazy"
               />
             </div>
 

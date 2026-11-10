@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Search,
   ExternalLink,
@@ -16,9 +17,13 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import type { PageListItem } from "../types";
-import { RenameSlugModal } from "./rename-slug-modal";
 import { duplicatePageAction, archivePageAction } from "../actions";
 import { TablePagination } from "@/components/admin/table-pagination";
+
+const RenameSlugModal = dynamic(
+  () => import("./rename-slug-modal").then((m) => m.RenameSlugModal),
+  { ssr: false }
+);
 
 interface PagesTableProps {
   initialPages: PageListItem[];
