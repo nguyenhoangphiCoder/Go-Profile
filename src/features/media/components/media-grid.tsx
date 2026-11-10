@@ -5,6 +5,7 @@ import { Plus, Copy, Trash2, Check, Lock, Image as ImageIcon, Search } from "luc
 import type { MediaAssetItem } from "@/features/media/types";
 import { MediaUploadModal } from "./media-upload-modal";
 import { deleteMediaAction } from "@/features/media/actions";
+import { TablePagination } from "@/components/admin/table-pagination";
 
 interface MediaGridProps {
   initialAssets: MediaAssetItem[];
@@ -12,12 +13,19 @@ interface MediaGridProps {
 
 export function MediaGrid({ initialAssets }: MediaGridProps) {
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const filteredAssets = initialAssets.filter((a) =>
     (a.originalFilename || a.objectPath).toLowerCase().includes(search.toLowerCase())
+  );
+
+  const paginatedAssets = filteredAssets.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
 
   const handleCopyUrl = (asset: MediaAssetItem) => {
@@ -66,7 +74,10 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Tìm kiếm hình ảnh theo tên..."
             className="w-full pl-10 pr-3.5 py-2 rounded-xl border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
@@ -83,7 +94,7 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
 
       {/* Grid */}
       {filteredAssets.length === 0 ? (
-        <div className="p-12 text-center border border-border rounded-2xl bg-white space-y-3">
+        <div className="p-12 text-center border border-border rounded-2xl bg-card space-y-3">
           <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto" />
           <h3 className="text-sm font-semibold">Chưa có hình ảnh nào</h3>
           <p className="text-xs text-muted-foreground max-w-xs mx-auto">
@@ -93,14 +104,15 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {filteredAssets.map((asset) => (
-            <div
-              key={asset.id}
-              className="group rounded-2xl border border-border bg-white overflow-hidden flex flex-col hover:border-blue-400 transition-colors shadow-xs"
-            >
-              {/* Thumbnail Container */}
-              <div className="relative aspect-square bg-slate-50 overflow-hidden flex items-center justify-center p-2">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {paginatedAssets.map((asset) => (
+              <div
+                key={asset.id}
+                className="group rounded-2xl border border-border/80 bg-card overflow-hidden flex flex-col hover:border-primary/50 transition-colors shadow-2xs"
+              >
+                {/* Thumbnail Container */}
+                <div className="relative aspect-square bg-muted/20 overflow-hidden flex items-center justify-center p-2">
                 {asset.publicUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -177,7 +189,21 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
             </div>
           ))}
         </div>
-      )}
+
+        <div className="rounded-2xl border border-border/80 bg-card shadow-2xs overflow-hidden">
+          <TablePagination
+            currentPage={currentPage}
+            totalItems={filteredAssets.length}
+            pageSize={pageSize}
+            pageSizeOptions={[10, 20, 50]}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+            itemName="hình ảnh"
+            className="border-t-0"
+          />
+        </div>
+      </div>
+    )}
 
       {/* Upload Modal */}
       {isUploadOpen && (

@@ -85,8 +85,8 @@ export async function executeProductionSmokeSuite(): Promise<SmokeTestCheckResul
     }))
   );
 
-  // 3. 3 trang công khai chính (/gocafe, /tuyendung, /nhuongquyen)
-  for (const slug of ["gocafe", "tuyendung", "nhuongquyen"]) {
+  // 3. 4 trang công khai chính (/gocafe, /tuyendung, /nhuongquyen, /hophuonganh.gocafe)
+  for (const slug of ["gocafe", "tuyendung", "nhuongquyen", "hophuonganh.gocafe"]) {
     results.push(
       await runSmokeCheck(`Public Page (/${slug})`, `/${slug}`, async (res, latency) => ({
         ok: res.status === 200 || res.status === 404,

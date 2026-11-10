@@ -359,3 +359,119 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     availableMedia,
   };
 }
+
+export async function getNewPageEditorData(): Promise<PageEditorData> {
+  const supabase = await createSupabaseServerClient();
+
+  // 1. Tải danh mục link chung đang hoạt động
+  const { data: linksData } = await supabase
+    .from("links")
+    .select(
+      "id, default_label, target_url, kind, default_media_id, is_active, media_assets(object_path)"
+    )
+    .is("archived_at", null)
+    .order("default_label", { ascending: true });
+
+  const availableLinks = ((linksData || []) as unknown as LinkQueryRow[]).map((l) => ({
+    id: l.id,
+    defaultLabel: l.default_label,
+    targetUrl: l.target_url,
+    kind: l.kind as "standard" | "social" | "contact",
+    defaultMediaId: l.default_media_id,
+    defaultMediaUrl: l.media_assets?.object_path
+      ? getPublicMediaUrl(l.media_assets.object_path)
+      : null,
+    isActive: l.is_active,
+  }));
+
+  // 2. Tải danh mục media sẵn sàng
+  const { data: mediaData } = await supabase
+    .from("media_assets")
+    .select("id, original_filename, object_path")
+    .eq("status", "ready")
+    .order("created_at", { ascending: false });
+
+  const availableMedia = ((mediaData || []) as unknown as MediaAssetQueryRow[]).map((m) => ({
+    id: m.id,
+    originalFilename: m.original_filename,
+    publicUrl: getPublicMediaUrl(m.object_path),
+  }));
+
+  const initialBlocks: EditorBlockItem[] = [
+    {
+      id: "initial-block-header",
+      type: "header",
+      position: 0,
+      isVisible: true,
+      payload: {
+        title: "GỜ CAFÉ",
+        bio: "Hệ thống cà phê chuẩn gu Việt Nam\n*Cà phê sạch - Chuẩn vị tươi ngon*",
+      },
+      placements: [],
+    },
+    {
+      id: "initial-block-link-list",
+      type: "link_list",
+      position: 1,
+      isVisible: true,
+      payload: { layout: "stack" },
+      placements: availableLinks.slice(0, 3).map((l, i) => ({
+        id: `initial-placement-link-${l.id || i}`,
+        linkId: l.id,
+        position: i,
+        defaultLabel: l.defaultLabel,
+        defaultUrl: l.targetUrl,
+        defaultKind: l.kind,
+        defaultMediaUrl: l.defaultMediaUrl,
+      })),
+    },
+    {
+      id: "initial-block-social-icons",
+      type: "social_icons",
+      position: 2,
+      isVisible: true,
+      payload: { style: "colored" },
+      placements: availableLinks
+        .filter((l) => l.kind === "social")
+        .slice(0, 4)
+        .map((l, i) => ({
+          id: `initial-placement-social-${l.id || i}`,
+          linkId: l.id,
+          position: i,
+          defaultLabel: l.defaultLabel,
+          defaultUrl: l.targetUrl,
+          defaultKind: l.kind,
+          defaultMediaUrl: l.defaultMediaUrl,
+        })),
+    },
+  ];
+
+  return {
+    page: {
+      id: "new",
+      internalName: "Trang hồ sơ mới",
+      status: "unpublished",
+      lockVersion: 1,
+      publishedRevisionId: null,
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+    primarySlug: "trang-moi",
+    aliases: [],
+    draftRevision: {
+      id: "new-draft",
+      revisionNo: 1,
+      state: "draft",
+      lockVersion: 1,
+      title: "GỜ CAFÉ",
+      description: "Trang hồ sơ liên kết của Gờ Cafe",
+      theme: { preset: "go-original" },
+      seo: {
+        metaTitle: "Gờ Cafe - Cà phê chuẩn gu",
+        metaDescription: "Hệ thống liên kết và thông tin chính thức của Gờ Cafe.",
+      },
+    },
+    blocks: initialBlocks,
+    availableLinks,
+    availableMedia,
+  };
+}

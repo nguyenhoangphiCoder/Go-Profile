@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-const PG_UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const PG_UUID_REGEX =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export const reportParamsSchema = z.object({
   preset: z.enum(["today", "last7days", "last30days", "thisMonth", "custom"]).default("last7days"),

@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS public.pages (
 
 -- 4. page_slugs
 CREATE TABLE IF NOT EXISTS public.page_slugs (
-  slug text PRIMARY KEY CHECK (length(slug) <= 80 AND slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  slug text PRIMARY KEY CHECK (length(slug) <= 80 AND slug ~ '^[a-z0-9]+([.-][a-z0-9]+)*$'),
   page_id uuid NOT NULL REFERENCES public.pages(id) ON DELETE RESTRICT,
   is_current boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now()

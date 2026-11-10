@@ -10,11 +10,28 @@
   --popover-foreground: #0f172a;
   --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --muted: #f1f5f9;
+  --muted: #f8fafc;
   --muted-foreground: #64748b;
   --border: #e2e8f0;
+  --input: #e2e8f0;
   --ring: #2563eb;
   --radius: 0.5rem;
+}
+
+.dark {
+  --background: #090d16;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --border: #1e293b;
+  --input: #334155;
+  --ring: #3b82f6;
 }
 
 @theme inline {
@@ -29,6 +46,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
   --color-ring: var(--ring);
   --font-sans: var(--font-be-vietnam-pro), var(--font-inter), system-ui, -apple-system, sans-serif;
 }
@@ -37,4 +55,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+/* Tối ưu viền mềm mại, tinh tế cho toàn bộ các input/select, tránh viền đen gắt */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea,
+select {
+  border-color: var(--input);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+textarea:hover,
+select:hover {
+  border-color: #cbd5e1;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+.dark textarea:hover,
+.dark select:hover {
+  border-color: #475569;
 }

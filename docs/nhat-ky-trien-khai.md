@@ -653,13 +653,63 @@ Trạng thái đợt công việc có thể là: `hoàn thành`, `đang thực h
 - Hoàn thành đầy đủ P10.01 đến P10.08.
 - Đánh dấu hoàn thành Phase P10 trên checklist tổng và checklist chi tiết.
 
+### LOG-013 — Bàn giao và kết thúc triển khai (P11)
+
+- **Ngày:** 2026-11-09 10:15.
+- **Người thực hiện:** Antigravity.
+- **Checklist liên quan:** P11.01, P11.02, P11.03, P11.04, P11.05, P11.06; hoàn tất P11 & kết thúc dự án.
+- **Trạng thái:** Hoàn thành.
+
+**Đã làm:**
+
+- Soạn thảo và hoàn thiện Hướng dẫn Sử dụng Hệ thống Quản trị CMS Gờ Cafe Profile (`docs/huong-dan-quan-tri-vien.md`) (P11.01):
+  - Hướng dẫn chi tiết quy trình đăng nhập an toàn, quản lý tài khoản qua `admin_users.is_active`.
+  - Hướng dẫn quản lý kho liên kết tập trung (`/admin/links`), giải thích cơ chế cập nhật URL gốc lan tỏa tức thì toàn hệ thống.
+  - Hướng dẫn quản lý kho ảnh số CDN (`/admin/media`), cơ chế bảo vệ chống xóa nhầm ảnh đang dùng.
+  - Hướng dẫn quản lý trang hồ sơ (`/admin/pages`), quy tắc đổi slug tự động tạo chuyển hướng vĩnh viễn (308 redirect) bảo vệ toàn bộ mã QR cũ đã in trên ly/standee.
+  - Hướng dẫn sử dụng Block Editor trực quan với 8 loại khối, bộ chọn theme preset chuẩn nhận diện Gờ Cafe, tùy chỉnh SEO OpenGraph và màn hình Live Preview thời gian thực.
+  - Hướng dẫn cơ chế lưu nháp độc lập (Optimistic Concurrency Control) và xuất bản nguyên tử (Atomic Publish).
+  - Hướng dẫn đọc hiểu báo cáo thống kê (`/admin/reports`), bộ lọc thời gian giờ Việt Nam (`UTC+7`), phân tích click theo vị trí đặt (placement) để tối ưu UX.
+- Hoàn thiện tài liệu kỹ thuật vận hành và bảo trì (`docs/trien-khai-production-va-van-hanh.md` & `docs/bien-ban-ban-giao-va-nghiem-thu.md`) (P11.02):
+  - Hướng dẫn chạy local development (`pnpm install`, `pnpm dev`, `pnpm test`, `pnpm build`).
+  - Hướng dẫn quy trình database migration có kiểm soát qua Supabase CLI, tuyệt đối không migrate trong `next build`.
+  - Hướng dẫn cấp và thu hồi quyền quản trị viên bằng SQL an toàn.
+  - Hướng dẫn giám sát sức khỏe tự động qua `/api/health`, công cụ smoke test `production-verify.ts` và quy trình Instant Rollback trên Vercel.
+- Lập Biên bản Bàn giao, Nghiệm thu và Thỏa thuận Vận hành (`docs/bien-ban-ban-giao-va-nghiem-thu.md`) (P11.03, P11.04, P11.05):
+  - Danh mục bàn giao tài sản kỹ thuật: Mã nguồn Git repository, Vercel Production (`sin1`), Supabase Production (`ap-southeast-1`), Tên miền/DNS và bộ 9 tài liệu kỹ thuật.
+  - Quy tắc chuyển giao quyền sở hữu an toàn (không ghi password hay credential trong tài liệu, sử dụng cơ chế invite owner).
+  - Thỏa thuận giới hạn thống kê (chính sách cookie-less, tôn trọng quyền riêng tư khách hàng, lọc bot/crawler/prefetch).
+  - Chính sách lưu trữ dữ liệu (Retention policy tối thiểu 180 ngày).
+  - Phân tích chi phí dịch vụ hạ tầng (tối ưu trong khoảng 0$ - 45$/tháng) và trách nhiệm hỗ trợ kỹ thuật sau bàn giao.
+  - Biên bản xác nhận nghiệm thu đạt 10/10 tiêu chí (P11.05).
+- Cập nhật toàn bộ checklist kế hoạch và nhật ký triển khai (P11.06):
+  - Đánh dấu hoàn thành 100% tất cả các phase từ P00 đến P11.
+  - Không còn bất kỳ lỗi kỹ thuật hay blocker nào tồn đọng.
+  - Đạt 80/80 test cases pass 100%.
+
+**File/bằng chứng:**
+
+- `docs/huong-dan-quan-tri-vien.md`
+- `docs/bien-ban-ban-giao-va-nghiem-thu.md`
+- `docs/trien-khai-production-va-van-hanh.md`
+- `docs/ke-hoach-trien-khai.md`
+- `docs/nhat-ky-trien-khai.md`
+
+**Kiểm tra và kết quả:**
+
+- Đã đối chiếu toàn bộ liên kết nội bộ Markdown, cú pháp UTF-8 tiếng Việt chuẩn xác.
+- Đạt 100% tiêu chí kết thúc của Phase 11.
+- Toàn bộ 12 Phase (P00 – P11) chính thức hoàn thành.
+
+**Cập nhật tiến độ:**
+
+- Hoàn thành đầy đủ P11.01 đến P11.06.
+- Đánh dấu hoàn thành Phase P11 trên checklist tổng và checklist chi tiết.
+- Đóng toàn bộ kế hoạch triển khai dự án.
+
 **Còn mở và tác động:**
 
-- Sẵn sàng chuyển sang Phase 11 (P11): Bàn giao và kết thúc triển khai.
-
-**Bước tiếp theo:**
-
-- Bắt đầu Phase 11 (P11): Bàn giao và kết thúc triển khai (hoàn thiện tài liệu hướng dẫn quản trị viên sử dụng CMS, hướng dẫn kỹ thuật vận hành, bàn giao quyền sở hữu tài khoản và tổng kết dự án).
+- Không còn lỗi chặn phát hành. Hệ thống sẵn sàng phục vụ toàn diện chuỗi thương hiệu Gờ Cafe.
 
 ## 3. Mẫu cho lần cập nhật tiếp theo
 

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#2d170c"/>
+      <stop offset="60%" stop-color="#180b05"/>
+      <stop offset="100%" stop-color="#0a0502"/>
+    </radialGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="50%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="creamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#fef3c7"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="200" cy="200" r="195" fill="url(#bgGrad)"/>
+
+  <!-- Outer Double Rings -->
+  <circle cx="200" cy="200" r="186" fill="none" stroke="url(#goldGrad)" stroke-width="3" opacity="0.6"/>
+  <circle cx="200" cy="200" r="176" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+
+  <!-- Decorative Stars -->
+  <g fill="url(#goldGrad)">
+    <polygon points="65,200 68,206 75,207 70,212 71,219 65,215 59,219 60,212 55,207 62,206" transform="scale(0.9) translate(10, 0)"/>
+    <polygon points="335,200 338,206 345,207 340,212 341,219 335,215 329,219 330,212 325,207 332,206" transform="scale(0.9) translate(30, 0)"/>
+  </g>
+
+  <!-- Coffee Bean Vector Art -->
+  <g transform="translate(200, 140) scale(1.15)">
+    <!-- Steam waves -->
+    <path d="M-18,-50 C-12,-40 -24,-30 -18,-20" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+    <path d="M0,-56 C6,-44 -6,-32 0,-20" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+    <path d="M18,-50 C24,-40 12,-30 18,-20" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+
+    <!-- Coffee Cup Body -->
+    <path d="M-36,-12 L36,-12 C34,22 24,38 0,38 C-24,38 -34,22 -36,-12 Z" fill="url(#goldGrad)"/>
+    <!-- Cup handle -->
+    <path d="M34,-4 C46,-4 46,18 32,20" fill="none" stroke="url(#goldGrad)" stroke-width="4.5" stroke-linecap="round"/>
+    <!-- Saucer -->
+    <path d="M-44,44 C-20,49 20,49 44,44" fill="none" stroke="url(#goldGrad)" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Inner coffee bean emblem on cup -->
+    <path d="M0,-2 C-10,-2 -15,8 -8,18 C-3,24 6,24 10,18 C16,9 10,-2 0,-2 Z" fill="#180b05"/>
+    <path d="M-1,0 C2,7 -2,15 1,22" fill="none" stroke="url(#goldGrad)" stroke-width="1.5"/>
+  </g>
+
+  <!-- Brand Typography -->
+  <!-- "GỜ CAFÉ" Main Name -->
+  <text x="200" y="245" font-family="'Montserrat', 'Be Vietnam Pro', 'Arial Black', sans-serif" font-size="44" font-weight="900" fill="url(#creamGrad)" text-anchor="middle" letter-spacing="4" filter="url(#glow)">
+    GỜ CAFÉ
+  </text>
+
+  <!-- Subtitle: "ROASTERY & COFFEE" -->
+  <text x="200" y="275" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="12" font-weight="800" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="5">
+    CÀ PHÊ NGUYÊN CHẤT
+  </text>
+
+  <!-- Tagline: "SINCE 2015 • SÀI GÒN" -->
+  <text x="200" y="325" font-family="'Be Vietnam Pro', 'Inter', sans-serif" font-size="10" font-weight="700" fill="#a1a1aa" text-anchor="middle" letter-spacing="3" opacity="0.8">
+    HỆ THỐNG 40+ QUÁN • TP.HCM
+  </text>
+</svg>

@@ -3,7 +3,8 @@
 import { useActionState, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Coffee, Lock, Mail, Eye, EyeOff, Loader2, ArrowLeft, AlertCircle } from "lucide-react";
+import Image from "next/image";
+import { Lock, Mail, Eye, EyeOff, Loader2, ArrowLeft, AlertCircle } from "lucide-react";
 import { loginAction } from "@/features/auth/actions";
 import type { AuthState } from "@/features/auth/types";
 
@@ -33,8 +34,15 @@ function LoginForm() {
       <div className="p-8 rounded-3xl border border-blue-100 bg-white shadow-lg shadow-blue-500/5 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 mb-2">
-            <Coffee className="w-7 h-7" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full overflow-hidden shadow-md bg-black mb-2">
+            <Image
+              src="/logo-gocafe.png"
+              alt="Gờ Cafe Logo"
+              width={64}
+              height={64}
+              className="w-full h-full object-cover"
+              priority
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Đăng nhập Quản trị</h1>
           <p className="text-xs text-muted-foreground">

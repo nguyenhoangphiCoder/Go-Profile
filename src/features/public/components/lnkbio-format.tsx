@@ -39,10 +39,7 @@ export function renderLnkBioFormattedText(
     if (emailMatch) {
       const [, prefix, email, suffix] = emailMatch;
       return (
-        <p
-          key={idx}
-          className="text-[14px] leading-[1.6] tracking-[0.6px] font-bold text-left"
-        >
+        <p key={idx} className="text-[14px] leading-[1.6] tracking-[0.6px] font-bold text-left">
           <span>{prefix}</span>
           <a
             href={`mailto:${email}`}
@@ -57,7 +54,7 @@ export function renderLnkBioFormattedText(
     }
 
     // 3. Dòng chứa số điện thoại dạng 0xxx.xx.xxxx hoặc 0xxx.xx.xx.xx kèm ghi chú
-    const phoneMatch = line.match(/^(\d{4}\.\d{2}\.\d{2}(?:\.\d{2}|\d{2}))(\s*\(.*\))?$/);
+    const phoneMatch = line.match(/^(\d{3,4}(?:\.\d{2,4})+)(\s*\(.*\))?$/);
     if (phoneMatch) {
       const [, phone, note] = phoneMatch;
       const cleanTel = phone.replace(/\./g, "");
@@ -73,11 +70,7 @@ export function renderLnkBioFormattedText(
           >
             {phone}
           </a>
-          {note && (
-            <span className="font-bold" style={{ color: accentColor }}>
-              {note}
-            </span>
-          )}
+          {note && <span className="font-normal opacity-90 pl-1 text-current">{note}</span>}
         </p>
       );
     }
@@ -96,13 +89,9 @@ export function renderLnkBioFormattedText(
 
     // 5. Đoạn văn bản thông thường
     return (
-      <p
-        key={idx}
-        className={`text-[14px] leading-[1.6] tracking-[0.6px] text-${defaultAlign}`}
-      >
+      <p key={idx} className={`text-[14px] leading-[1.6] tracking-[0.6px] text-${defaultAlign}`}>
         {line}
       </p>
     );
   });
 }
-

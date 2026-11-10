@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { isReservedSlug } from "@/config/reserved-slugs";
 
-// Regex kiểm tra slug: chỉ gồm chữ thường a-z, 0-9 và dấu gạch nối, không có dấu gạch nối liên tiếp hoặc ở đầu/cuối
-const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// Regex kiểm tra slug: chỉ gồm chữ thường a-z, 0-9, dấu chấm (.) và dấu gạch nối (-), không có ký tự phân cách liên tiếp hoặc ở đầu/cuối
+const SLUG_REGEX = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
 
 export const pageSlugSchema = z
   .string()
@@ -11,7 +11,7 @@ export const pageSlugSchema = z
   .max(64, "Đường dẫn (slug) không được vượt quá 64 ký tự")
   .regex(
     SLUG_REGEX,
-    "Đường dẫn chỉ được chứa chữ thường (a-z), chữ số (0-9) và dấu gạch nối (-) phân cách"
+    "Đường dẫn chỉ được chứa chữ thường (a-z), chữ số (0-9), dấu chấm (.) và dấu gạch nối (-) phân cách"
   )
   .refine((slug) => !isReservedSlug(slug), {
     message: "Đường dẫn này nằm trong danh mục từ khóa hệ thống được bảo lưu",
@@ -34,7 +34,8 @@ export const createPageSchema = z.object({
 export type CreatePageInput = z.infer<typeof createPageSchema>;
 
 // Regex kiểm tra UUID chuẩn PostgreSQL (hỗ trợ cả UUID v4 lẫn UUID seed như a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa)
-const PG_UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+const PG_UUID_REGEX =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 const pgUuid = (message = "UUID không hợp lệ") => z.string().regex(PG_UUID_REGEX, message);
 
 export const renameSlugSchema = z.object({

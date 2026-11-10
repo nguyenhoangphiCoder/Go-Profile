@@ -118,15 +118,15 @@ Sử dụng file [`supabase/production_bootstrap.sql`](../supabase/production_bo
 
 1. **Trang chủ thương hiệu (`/gocafe`):**
    - Tiêu đề: _Gờ Cafe - Cà phê đậm chất Sài Gòn_
-   - Giao diện: Theme `go-original`
+   - Giao diện: Theme chuẩn `go-original` (Gờ Signature Beacons Official)
    - Liên kết: ShopeeFood, GrabFood, Menu PDF, Google Maps, Hotline CSKH (`tel:1900123456`).
 2. **Trang Tuyển dụng (`/tuyendung`):**
    - Tiêu đề: _Gia đình Gờ Cafe Tuyển Dụng_
-   - Giao diện: Theme `coffee-morning`
+   - Giao diện: Theme chuẩn `go-original` (Gờ Signature Beacons Official)
    - Liên kết: Form ứng tuyển Barista, Email HR (`mailto:hr@gocafe.vn`), Xem Menu sản phẩm.
 3. **Trang Nhượng quyền (`/nhuongquyen`):**
    - Tiêu đề: _Hợp tác Nhượng quyền Thương hiệu Gờ Cafe_
-   - Giao diện: Theme `modern-clean`
+   - Giao diện: Theme chuẩn `go-original` (Gờ Signature Beacons Official)
    - Liên kết: Hồ sơ nhượng quyền PDF, Hotline tư vấn 24/7.
 
 ---

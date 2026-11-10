@@ -12,6 +12,19 @@ interface PageProps {
   }>;
 }
 
+const SLUG_ALIASES: Record<string, string> = {
+  "gocafe.official": "gocafe",
+  "gocafe-official": "gocafe",
+  "hophuonganh.gocafe": "hophuonganh-gocafe",
+  "gogang.official": "gogang",
+  "gogang": "gogang",
+};
+
+function resolveLookupSlug(slug: string): string {
+  const normalized = slug.trim().toLowerCase();
+  return SLUG_ALIASES[normalized] || normalized;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
 
@@ -19,7 +32,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Không tìm thấy trang" };
   }
 
-  const page = await fetchPublicPage(slug);
+  const lookupSlug = resolveLookupSlug(slug);
+  const page = await fetchPublicPage(lookupSlug);
 
   if (!page.found || page.is_alias) {
     return { title: "Không tìm thấy trang | Gờ Cafe" };
@@ -61,8 +75,9 @@ export default async function PublicSlugPage({ params }: PageProps) {
     notFound();
   }
 
-  // 2. Tra cứu dữ liệu trang công khai
-  const page = await fetchPublicPage(slug);
+  // 2. Tra cứu dữ liệu trang công khai (hỗ trợ alias gocafe.official, hophuonganh.gocafe)
+  const lookupSlug = resolveLookupSlug(slug);
+  const page = await fetchPublicPage(lookupSlug);
 
   // 3. Nếu là alias cũ, thực hiện chuyển hướng 308 (P07.03)
   if (page.found && page.is_alias && page.canonical_slug) {

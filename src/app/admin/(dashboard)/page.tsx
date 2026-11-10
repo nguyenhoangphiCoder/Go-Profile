@@ -24,7 +24,7 @@ export default async function AdminDashboardPage() {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Link
-            href="/admin/pages"
+            href="/admin/pages/new"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors"
           >
             <Plus className="w-4 h-4" />

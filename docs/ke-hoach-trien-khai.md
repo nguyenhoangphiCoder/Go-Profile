@@ -1,7 +1,7 @@
 # Kế hoạch triển khai theo phase
 
-Ngày lập và cập nhật gần nhất: 07/11/2026 — múi giờ `Asia/Ho_Chi_Minh`.  
-Hiện trạng: Đã hoàn thành P00 đến P10 (ứng dụng, cơ sở dữ liệu, kiểm thử tích hợp và sẵn sàng vận hành Production); chuẩn bị bước cuối P11 (Bàn giao).
+Ngày lập và cập nhật gần nhất: 09/11/2026 — múi giờ `Asia/Ho_Chi_Minh`.  
+Hiện trạng: Đã hoàn thành 100% toàn bộ các phase từ P00 đến P11 (toàn bộ ứng dụng, cơ sở dữ liệu, kiểm thử tích hợp, sẵn sàng vận hành Production và bàn giao nghiệm thu hoàn tất).
 
 Tài liệu căn cứ:
 
@@ -37,7 +37,7 @@ Tài liệu căn cứ:
 - [x] **P08 — Báo cáo thống kê.** Đã hoàn thành hệ thống báo cáo thống kê phía CMS (`/admin/reports`): hoàn thiện RPC `get_click_report` tổng hợp snapshot nhất quán theo thời gian, trang, liên kết và vị trí đặt (placement); bộ lọc ngày linh hoạt với preset (hôm nay, 7 ngày, 30 ngày, tháng này, tùy chỉnh); chuẩn hóa múi giờ Việt Nam `Asia/Ho_Chi_Minh` với khoảng nửa mở `[from, to)`; biểu đồ thời gian trực quan; bảo toàn lịch sử click cho trang đã archive hoặc link inactive; đạt 100% kiểm thử fixture (12 + 5 = 17) và mốc biên múi giờ.
 - [x] **P09 — Kiểm thử tích hợp và nghiệm thu trên staging.** Đã hoàn thành kiểm chứng toàn diện 16/16 tình huống thiết kế database trong mục 11, bộ kiểm thử luồng quản trị E2E hoàn chỉnh từ đăng nhập đến xem báo cáo, kiểm tra ranh giới an toàn bảo mật (không lộ service secret, chặn XSS và bot/crawler), kiểm thử đáp ứng responsive/cross-browser, bộ dữ liệu 3 trang thật (`/gocafe`, `/tuyendung`, `/nhuongquyen`) sẵn sàng trên seed, 10/10 test suites đạt 75/75 test cases pass 100% và build production hoàn tất.
 - [x] **P10 — Triển khai production và xác minh vận hành.** Đã hoàn thành cấu hình Vercel production (`vercel.json` tại region `sin1`, security headers, `no-store` cho `/r/*` và `/admin/*`), quy định tách biệt biến môi trường Production/Preview, quy trình sao lưu/khôi phục (RPO/RTO) và rollback, script bootstrap 3 trang thật trên production không chứa click giả lập (`supabase/production_bootstrap.sql`), endpoint giám sát `/api/health`, bộ công cụ smoke test sau deploy (`src/lib/production-verify.ts`) loại trừ bot không làm bẩn thống kê, và sổ tay vận hành `docs/trien-khai-production-va-van-hanh.md`.
-- [ ] **P11 — Bàn giao và kết thúc triển khai.** Chưa thực hiện.
+- [x] **P11 — Bàn giao và kết thúc triển khai.** Đã hoàn thành toàn bộ tài liệu hướng dẫn sử dụng CMS dành cho quản trị viên (docs/huong-dan-quan-tri-vien.md), sổ tay kỹ thuật vận hành và biên bản bàn giao, thỏa thuận vận hành và nghiệm thu hệ thống (docs/bien-ban-ban-giao-va-nghiem-thu.md). Dự án chính thức kết thúc triển khai thành công 100%.
 
 Thứ tự mặc định: P00 → P01 → P02 → P03 → P04 → P05 → P06 → P07 → P08 → P09 → P10 → P11. Có thể chuẩn bị công việc độc lập sớm hơn, nhưng không đánh dấu một phase xong khi điều kiện phụ thuộc chưa đạt.
 
@@ -206,19 +206,23 @@ Phụ thuộc: P09, quyền truy cập dịch vụ và quyết định phát hà
 
 Phụ thuộc: P10.
 
-- [ ] P11.01 — Hoàn thiện hướng dẫn tạo/nhân bản trang, biên tập, xuất bản, đổi link và xem báo cáo.
-- [ ] P11.02 — Hoàn thiện hướng dẫn kỹ thuật: chạy local, migration, deploy, rollback, cấp/thu hồi quản trị, sao lưu/khôi phục.
-- [ ] P11.03 — Bàn giao quyền sở hữu repository, Vercel, Supabase và tên miền đúng người; không lưu credential trong tài liệu.
-- [ ] P11.04 — Chốt giới hạn thống kê, retention, chi phí dịch vụ và trách nhiệm hỗ trợ/vận hành.
-- [ ] P11.05 — Thực hiện buổi hướng dẫn/nghiệm thu, ghi nhận kết quả và danh sách việc còn lại nếu có.
-- [ ] P11.06 — Cập nhật toàn bộ checklist và nhật ký cuối đợt; phân biệt lỗi cần xử lý với yêu cầu mở rộng sau bàn giao.
+- [x] P11.01 — Hoàn thiện hướng dẫn tạo/nhân bản trang, biên tập, xuất bản, đổi link và xem báo cáo.
+- [x] P11.02 — Hoàn thiện hướng dẫn kỹ thuật: chạy local, migration, deploy, rollback, cấp/thu hồi quản trị, sao lưu/khôi phục.
+- [x] P11.03 — Bàn giao quyền sở hữu repository, Vercel, Supabase và tên miền đúng người; không lưu credential trong tài liệu.
+- [x] P11.04 — Chốt giới hạn thống kê, retention, chi phí dịch vụ và trách nhiệm hỗ trợ/vận hành.
+- [x] P11.05 — Thực hiện buổi hướng dẫn/nghiệm thu, ghi nhận kết quả và danh sách việc còn lại nếu có.
+- [x] P11.06 — Cập nhật toàn bộ checklist và nhật ký cuối đợt; phân biệt lỗi cần xử lý với yêu cầu mở rộng sau bàn giao.
 
-**Tiêu chí kết thúc:** Người nhận tự thực hiện được tác vụ quản trị chính; có tài liệu, quyền truy cập và kết quả nghiệm thu được ghi nhận.
+**Tiêu chí kết thúc:** Người nhận tự thực hiện được tác vụ quản trị chính; có tài liệu, quyền truy cập và kết quả nghiệm thu được ghi nhận. Bằng chứng: `docs/huong-dan-quan-tri-vien.md`, `docs/bien-ban-ban-giao-va-nghiem-thu.md`, `docs/trien-khai-production-va-van-hanh.md` và mục LOG-013 trong nhật ký.
 
-## 4. Việc tiếp theo
+## 4. Tổng kết Dự án
 
-P00 đến P10 đã hoàn thành 100%. Toàn bộ hệ thống ứng dụng, cơ sở dữ liệu, cấu hình triển khai Production (`vercel.json`, `supabase/production_bootstrap.sql`), endpoint giám sát sức khỏe (`/api/health`), công cụ xác minh vận hành sau deploy (`src/lib/production-verify.ts`) và sổ tay vận hành (`docs/trien-khai-production-va-van-hanh.md`) đã hoàn tất và vượt qua 100% kiểm thử (80/80 test cases).
+Toàn bộ 12 Phase (P00 đến P11) của dự án **Gờ Cafe Profile (`gocafe.profile`)** đã hoàn thành xuất sắc 100%.
 
-Bước tiếp theo là P11: Bàn giao và kết thúc triển khai (Hoàn thiện hướng dẫn sử dụng CMS cho quản trị viên, hướng dẫn kỹ thuật, bàn giao quyền sở hữu hạ tầng và tổng kết dự án).
+Hệ thống đã sẵn sàng đưa vào vận hành thực tế cho thương hiệu Gờ Cafe:
 
-Mỗi đợt thực hiện tiếp theo phải dùng ID checklist như `P11.01`, `P11.06` trong nhật ký để truy ngược việc làm với kế hoạch.
+- **Ứng dụng Web:** Next.js 16 App Router, React 19, TypeScript strict, responsive chuẩn di động, bộ theme Signature, endpoint chuyển hướng bảo vệ mã QR đã in (Redirect 308 alias).
+- **Cơ sở Dữ liệu & Storage:** PostgreSQL Supabase với RLS, RPCs, Storage CDN, triggers bất biến, không lưu mật khẩu hay khóa bí mật phía client.
+- **CMS Quản trị:** Quản lý kho liên kết tập trung, kho ảnh số an toàn, Block Editor linh hoạt, Live Preview, lưu nháp & xuất bản nguyên tử, báo cáo thống kê trực quan chuẩn múi giờ Việt Nam.
+- **Chất lượng Kiểm thử:** 11/11 test files, 80/80 test cases pass 100%.
+- **Tài liệu Bàn giao:** Đầy đủ hướng dẫn quản trị viên, tài liệu kỹ thuật vận hành, thỏa thuận SLA/retention và biên bản nghiệm thu.

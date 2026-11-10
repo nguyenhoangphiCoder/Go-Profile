@@ -11,7 +11,7 @@ import {
 describe("Pages Schema Validation", () => {
   describe("pageSlugSchema", () => {
     it("chấp nhận slug hợp lệ chỉ chứa chữ thường, số và dấu gạch nối", () => {
-      const validSlugs = ["menu", "menu-chinh", "tuyen-dung-2026", "go-cafe-q1"];
+      const validSlugs = ["menu", "menu-chinh", "tuyen-dung-2026", "go-cafe-q1", "hophuonganh.gocafe"];
       for (const slug of validSlugs) {
         const result = pageSlugSchema.safeParse(slug);
         expect(result.success).toBe(true);

@@ -55,10 +55,7 @@ function ColorInputField({ label, description, value, onChange }: ColorInputFiel
             onChange={(e) => onChange(e.target.value)}
             className="sr-only"
           />
-          <span
-            className="block w-full h-full"
-            style={{ backgroundColor: value || pickerValue }}
-          />
+          <span className="block w-full h-full" style={{ backgroundColor: value || pickerValue }} />
         </label>
 
         {/* Hex Text Input */}
@@ -299,7 +296,7 @@ export function ThemeEditor({ themeConfig, onChange }: ThemeEditorProps) {
           />
         </div>
 
-        {/* Kiểu bo góc & Font chữ */}
+        {/* Kiểu bo góc, Font chữ & Hiệu ứng kính mờ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="p-3 rounded-xl border border-border bg-card/60 space-y-1.5">
             <label className="text-xs font-semibold block">Kiểu bo góc nút liên kết</label>
@@ -312,7 +309,7 @@ export function ThemeEditor({ themeConfig, onChange }: ThemeEditorProps) {
               }
               className="w-full px-3 py-1.5 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
-              <option value="full">Bo tròn viên thuốc Lnk.Bio (Full Pill)</option>
+              <option value="full">Bo tròn viên thuốc Lnk.Bio / Beacons (Full Pill)</option>
               <option value="md">Bo góc vừa (Medium)</option>
               <option value="sm">Bo góc nhẹ (Small)</option>
               <option value="none">Vuông góc (Square)</option>
@@ -335,14 +332,61 @@ export function ThemeEditor({ themeConfig, onChange }: ThemeEditorProps) {
             </select>
           </div>
         </div>
+
+        {/* Tuỳ chọn hiệu ứng Kính mờ (Glassmorphism) & Nền mờ nghệ thuật Beacons */}
+        <div className="p-3.5 rounded-xl border border-border bg-card/60 space-y-2.5 pt-3">
+          <span className="text-xs font-bold block text-foreground">
+            Hiệu ứng Beacons (Kính mờ & Nền mờ)
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="flex items-center gap-2.5 p-2 rounded-lg border border-border/80 bg-background/50 hover:bg-background cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={Boolean(resolvedTheme.cardBackdropBlur)}
+                onChange={(e) =>
+                  updateCustomTheme({
+                    cardBackdropBlur: e.target.checked,
+                  })
+                }
+                className="rounded border-slate-300 text-primary focus:ring-primary/30 w-4 h-4"
+              />
+              <div>
+                <span className="text-xs font-semibold block">Nút kính mờ (Backdrop Blur)</span>
+                <span className="text-[11px] text-muted-foreground block">
+                  Hiệu ứng kính xuyên thấu chuẩn Beacons
+                </span>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-2.5 p-2 rounded-lg border border-border/80 bg-background/50 hover:bg-background cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={Boolean(resolvedTheme.backgroundBlur)}
+                onChange={(e) =>
+                  updateCustomTheme({
+                    backgroundBlur: e.target.checked,
+                  })
+                }
+                className="rounded border-slate-300 text-primary focus:ring-primary/30 w-4 h-4"
+              />
+              <div>
+                <span className="text-xs font-semibold block">Nền mờ ánh sáng (Ambient Blur)</span>
+                <span className="text-[11px] text-muted-foreground block">
+                  Các quầng sáng mờ nghệ thuật nền trang
+                </span>
+              </div>
+            </label>
+          </div>
+        </div>
       </div>
 
-      {/* PHẦN 3: MẪU GIAO DIỆN CÓ SẴN (PRESETS) */}
+      {/* PHẦN 3: GIAO DIỆN CHUẨN GỜ CAFE */}
       <div className="space-y-3 pt-2 border-t border-border">
         <div>
-          <h3 className="text-sm font-bold">Mẫu phối màu nhanh (Theme Presets)</h3>
+          <h3 className="text-sm font-bold">Giao diện chuẩn Gờ Cafe (Official Theme)</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Chọn một mẫu nền tảng bên dưới, sau đó bạn có thể tự do đổi màu ở trên
+            Giao diện thương hiệu chuẩn Beacons Official của Gờ Cafe. Bạn có thể bấm để khôi phục
+            chuẩn mẫu hoặc tinh chỉnh các màu sắc chi tiết ở phía trên.
           </p>
         </div>
 
@@ -363,15 +407,32 @@ export function ThemeEditor({ themeConfig, onChange }: ThemeEditorProps) {
               >
                 {/* Theme Mini Card Preview */}
                 <div
-                  className="w-full h-24 rounded-xl p-3 flex flex-col justify-between mb-3 border border-black/10 shadow-inner"
+                  className="w-full h-24 rounded-xl p-3 flex flex-col justify-between mb-3 border border-black/10 shadow-inner relative overflow-hidden"
                   style={{
                     backgroundColor: preset.backgroundColor,
                     color: preset.textColor,
                   }}
                 >
-                  <div className="flex items-center justify-between">
+                  {/* Mini ambient glow if backgroundBlur */}
+                  {preset.backgroundBlur && (
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                      <div
+                        className="absolute -top-4 -right-4 w-16 h-16 rounded-full blur-xl opacity-60"
+                        style={{ backgroundColor: preset.accentColor }}
+                      />
+                      <div
+                        className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full blur-xl opacity-40"
+                        style={{
+                          backgroundColor:
+                            preset.backgroundVariant === "frosted-warm" ? "#f59e0b" : "#38bdf8",
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between relative z-10">
                     <div
-                      className="w-5 h-5 rounded-full"
+                      className="w-5 h-5 rounded-full ring-2 ring-white/30"
                       style={{ backgroundColor: preset.accentColor }}
                     />
                     <div
@@ -381,7 +442,9 @@ export function ThemeEditor({ themeConfig, onChange }: ThemeEditorProps) {
                   </div>
                   {/* Simulated Link Card */}
                   <div
-                    className="w-full py-1.5 px-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-center border truncate shadow-xs"
+                    className={`w-full py-1.5 px-2.5 rounded-full text-[10px] font-bold uppercase tracking-wider text-center border truncate shadow-xs relative z-10 ${
+                      preset.cardBackdropBlur ? "backdrop-blur-md" : ""
+                    }`}
                     style={{
                       backgroundColor: preset.cardBackground,
                       color: preset.cardTextColor,
@@ -414,4 +477,3 @@ export function ThemeEditor({ themeConfig, onChange }: ThemeEditorProps) {
     </div>
   );
 }
-

@@ -11,6 +11,8 @@ export interface HeaderBlockPayload {
   bio?: string;
   avatarMediaId?: string;
   avatarUrl?: string;
+  bannerMediaId?: string;
+  bannerUrl?: string;
 }
 
 export interface ImageBlockPayload {

@@ -81,8 +81,31 @@ export async function uploadMediaAction(
   // 3. Đánh dấu ready
   await supabase.from("media_assets").update({ status: "ready" }).eq("id", assetRecord.id);
 
+  const { data: publicUrlData } = adminClient.storage.from(bucketId).getPublicUrl(objectPath);
+
   revalidatePath("/admin/media");
-  return { success: true };
+  return {
+    success: true,
+    asset: {
+      id: assetRecord.id,
+      bucketId,
+      objectPath,
+      visibility: "public",
+      status: "ready",
+      mimeType: file.type,
+      sizeBytes: file.size,
+      width: null,
+      height: null,
+      originalFilename: file.name,
+      publicUrl: publicUrlData.publicUrl,
+      isReferenced: false,
+      createdAt: new Date().toISOString(),
+    },
+  };
+}
+
+export async function uploadMediaDirectAction(formData: FormData): Promise<MediaUploadState> {
+  return uploadMediaAction({}, formData);
 }
 
 export async function deleteMediaAction(id: string): Promise<{ success: boolean; error?: string }> {

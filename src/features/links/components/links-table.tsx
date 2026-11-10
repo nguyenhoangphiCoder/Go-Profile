@@ -12,10 +12,12 @@ import {
   Layers,
   Search,
   Plus,
+  MoreHorizontal,
 } from "lucide-react";
 import type { LinkItem } from "@/features/links/types";
 import { LinkFormModal } from "./link-form-modal";
 import { toggleLinkStatusAction, archiveLinkAction } from "@/features/links/actions";
+import { TablePagination } from "@/components/admin/table-pagination";
 
 interface LinksTableProps {
   initialLinks: LinkItem[];
@@ -24,8 +26,11 @@ interface LinksTableProps {
 export function LinksTable({ initialLinks }: LinksTableProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedLink, setSelectedLink] = useState<LinkItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openMenuLinkId, setOpenMenuLinkId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const filteredLinks = initialLinks.filter((l) => {
@@ -38,6 +43,11 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
       (statusFilter === "inactive" && !l.isActive);
     return matchesSearch && matchesStatus;
   });
+
+  const paginatedLinks = filteredLinks.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const handleEdit = (link: LinkItem) => {
     setSelectedLink(link);
@@ -88,20 +98,26 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Search & Filter */}
-        <div className="flex items-center gap-3 flex-1 max-w-md">
+        <div className="flex items-center gap-3 flex-1 max-w-lg">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="Tìm kiếm liên kết theo tên, URL..."
               className="w-full pl-10 pr-3.5 py-2 rounded-xl border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+            onChange={(e) => {
+              setStatusFilter(e.target.value as "all" | "active" | "inactive");
+              setCurrentPage(1);
+            }}
             className="px-3 py-2 rounded-xl border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
           >
             <option value="all">Tất cả trạng thái</option>
@@ -111,17 +127,22 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
         </div>
 
         {/* Create Button */}
-        <button
-          onClick={handleCreate}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Thêm liên kết mới</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
+            Tổng số: <strong className="font-mono text-foreground">{filteredLinks.length}</strong> liên kết
+          </span>
+          <button
+            onClick={handleCreate}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Thêm liên kết mới</span>
+          </button>
+        </div>
       </div>
 
       {/* Links List */}
-      <div className="rounded-2xl border border-border bg-white shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border/80 bg-card shadow-2xs overflow-hidden">
         {filteredLinks.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <Globe className="w-8 h-8 text-muted-foreground mx-auto" />
@@ -135,20 +156,20 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-blue-50/40 border-b border-border/60 text-muted-foreground font-semibold">
+              <thead className="bg-muted/40 border-b border-border/60 text-muted-foreground font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">Tên hiển thị & URL</th>
-                  <th className="py-3 px-4">Loại</th>
-                  <th className="py-3 px-4">Trang sử dụng</th>
-                  <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
+                  <th className="py-2.5 px-3.5 sm:px-4">Tên hiển thị & URL</th>
+                  <th className="py-2.5 px-3">Loại</th>
+                  <th className="py-2.5 px-3">Trang sử dụng</th>
+                  <th className="py-2.5 px-3">Trạng thái</th>
+                  <th className="py-2.5 px-3.5 sm:px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {filteredLinks.map((item) => (
-                  <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
+                {paginatedLinks.map((item) => (
+                  <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                     {/* Name & URL */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-2.5 px-3.5 sm:px-4">
                       <div className="space-y-0.5">
                         <span className="font-semibold text-foreground block">
                           {item.defaultLabel}
@@ -157,7 +178,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                           href={item.targetUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-muted-foreground hover:text-blue-600 inline-flex items-center gap-1 truncate max-w-sm"
+                          className="text-[11px] text-muted-foreground hover:text-blue-600 inline-flex items-center gap-1 truncate max-w-xs sm:max-w-sm"
                         >
                           <span className="truncate">{item.targetUrl}</span>
                           <ExternalLink className="w-2.5 h-2.5 shrink-0" />
@@ -166,7 +187,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                     </td>
 
                     {/* Kind */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-2.5 px-3 whitespace-nowrap">
                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-border bg-muted/40 text-[11px] font-medium capitalize">
                         {getKindIcon(item.kind)}
                         <span>{item.kind}</span>
@@ -174,11 +195,11 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                     </td>
 
                     {/* Usage */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-2.5 px-3 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
                           item.usageCount > 0
-                            ? "bg-blue-50 text-blue-600 border border-blue-200"
+                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
                             : "bg-muted text-muted-foreground"
                         }`}
                         title={
@@ -193,7 +214,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                     </td>
 
                     {/* Status */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
+                    <td className="py-2.5 px-3 whitespace-nowrap">
                       <button
                         onClick={() => handleToggle(item)}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium cursor-pointer transition-colors ${
@@ -210,30 +231,89 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                       </button>
                     </td>
 
-                    {/* Actions */}
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1.5">
+                    {/* Thao tác */}
+                    <td className="py-2 px-3.5 sm:px-4 text-right whitespace-nowrap">
+                      <div className="relative inline-block text-left">
                         <button
-                          onClick={() => handleEdit(item)}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                          title="Chỉnh sửa liên kết"
+                          type="button"
+                          onClick={() =>
+                            setOpenMenuLinkId(openMenuLinkId === item.id ? null : item.id)
+                          }
+                          className={`p-1.5 rounded-xl border transition-all cursor-pointer ${
+                            openMenuLinkId === item.id
+                              ? "border-primary bg-primary/10 text-primary shadow-xs ring-2 ring-primary/20"
+                              : "border-border hover:bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
+                          title="Tùy chọn thao tác"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <MoreHorizontal className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleToggle(item)}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                          title={item.isActive ? "Tắt liên kết" : "Bật liên kết"}
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleArchive(item)}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer"
-                          title="Lưu trữ liên kết"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+
+                        {openMenuLinkId === item.id && (
+                          <>
+                            {/* Backdrop đóng dropdown khi click ra ngoài */}
+                            <div
+                              className="fixed inset-0 z-30"
+                              onClick={() => setOpenMenuLinkId(null)}
+                            />
+
+                            {/* Menu Thao Tác Dropdown */}
+                            <div className="absolute right-0 top-full mt-1.5 w-48 rounded-2xl border border-border bg-popover text-popover-foreground shadow-xl p-1.5 z-40 text-xs animate-in fade-in-0 zoom-in-95 duration-150">
+                              <div className="px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border/50 mb-1">
+                                Thao tác liên kết
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuLinkId(null);
+                                  handleEdit(item);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <span>Chỉnh sửa</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuLinkId(null);
+                                  handleToggle(item);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                              >
+                                <Power className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? "text-amber-500" : "text-emerald-500"}`} />
+                                <span>{item.isActive ? "Tắt hoạt động" : "Bật hoạt động"}</span>
+                              </button>
+
+                              <a
+                                href={item.targetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => setOpenMenuLinkId(null)}
+                                className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                <span>Mở liên kết</span>
+                              </a>
+
+                              <div className="my-1 border-t border-border/50" />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuLinkId(null);
+                                  handleArchive(item);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-destructive/10 text-destructive font-medium transition-colors cursor-pointer text-left"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>Lưu trữ (Xóa)</span>
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -242,6 +322,15 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
             </table>
           </div>
         )}
+
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={filteredLinks.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+          itemName="liên kết"
+        />
       </div>
 
       {/* Modal */}

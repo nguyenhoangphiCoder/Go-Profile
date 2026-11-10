@@ -599,73 +599,99 @@ BEGIN
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
-        'page_id', p.id,
-        'internal_name', p.internal_name,
-        'slug', ps.slug,
-        'clicks', count(c.id)
-      ) ORDER BY count(c.id) DESC
+        'page_id', t.page_id,
+        'internal_name', t.internal_name,
+        'slug', t.slug,
+        'clicks', t.click_count
+      ) ORDER BY t.click_count DESC, t.internal_name ASC
     ),
     '[]'::jsonb
   ) INTO v_clicks_by_page
-  FROM public.pages p
-  LEFT JOIN public.page_slugs ps ON ps.page_id = p.id AND ps.is_current = true
-  LEFT JOIN public.click_events c
-    ON c.page_id = p.id
-    AND c.occurred_at >= p_from
-    AND c.occurred_at < p_to
-    AND (p_link_id IS NULL OR c.link_id = p_link_id)
-  WHERE (p_page_id IS NULL OR p.id = p_page_id)
-  GROUP BY p.id, p.internal_name, ps.slug;
+  FROM (
+    SELECT
+      p.id AS page_id,
+      p.internal_name,
+      ps.slug,
+      count(c.id) AS click_count
+    FROM public.pages p
+    LEFT JOIN public.page_slugs ps ON ps.page_id = p.id AND ps.is_current = true
+    LEFT JOIN public.click_events c
+      ON c.page_id = p.id
+      AND c.occurred_at >= p_from
+      AND c.occurred_at < p_to
+      AND (p_link_id IS NULL OR c.link_id = p_link_id)
+    WHERE (p_page_id IS NULL OR p.id = p_page_id)
+    GROUP BY p.id, p.internal_name, ps.slug
+  ) t;
 
   -- Thống kê theo link
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
-        'link_id', l.id,
-        'label', l.default_label,
-        'target_url', l.target_url,
-        'kind', l.kind,
-        'clicks', count(c.id)
-      ) ORDER BY count(c.id) DESC
+        'link_id', t.link_id,
+        'label', t.label,
+        'target_url', t.target_url,
+        'kind', t.kind,
+        'clicks', t.click_count
+      ) ORDER BY t.click_count DESC, t.label ASC
     ),
     '[]'::jsonb
   ) INTO v_clicks_by_link
-  FROM public.links l
-  LEFT JOIN public.click_events c
-    ON c.link_id = l.id
-    AND c.occurred_at >= p_from
-    AND c.occurred_at < p_to
-    AND (p_page_id IS NULL OR c.page_id = p_page_id)
-  WHERE (p_link_id IS NULL OR l.id = p_link_id)
-  GROUP BY l.id, l.default_label, l.target_url, l.kind;
+  FROM (
+    SELECT
+      l.id AS link_id,
+      l.default_label AS label,
+      l.target_url,
+      l.kind,
+      count(c.id) AS click_count
+    FROM public.links l
+    LEFT JOIN public.click_events c
+      ON c.link_id = l.id
+      AND c.occurred_at >= p_from
+      AND c.occurred_at < p_to
+      AND (p_page_id IS NULL OR c.page_id = p_page_id)
+    WHERE (p_link_id IS NULL OR l.id = p_link_id)
+    GROUP BY l.id, l.default_label, l.target_url, l.kind
+  ) t;
 
   -- Thống kê theo vị trí đặt liên kết (placement / position)
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
-        'page_link_id', plk.id,
-        'page_id', plk.page_id,
-        'page_name', p.internal_name,
-        'link_id', l.id,
-        'label', COALESCE(rlp.resolved_label, l.default_label),
-        'target_url', l.target_url,
-        'position', rlp.position,
-        'clicks', count(c.id)
-      ) ORDER BY count(c.id) DESC
+        'page_link_id', t.page_link_id,
+        'page_id', t.page_id,
+        'page_name', t.page_name,
+        'link_id', t.link_id,
+        'label', t.label,
+        'target_url', t.target_url,
+        'position', t.position,
+        'clicks', t.click_count
+      ) ORDER BY t.click_count DESC
     ),
     '[]'::jsonb
   ) INTO v_clicks_by_placement
-  FROM public.click_events c
-  JOIN public.page_links plk ON plk.id = c.page_link_id
-  JOIN public.links l ON l.id = c.link_id
-  JOIN public.pages p ON p.id = c.page_id
-  LEFT JOIN public.revision_link_placements rlp
-    ON rlp.revision_id = c.revision_id AND rlp.page_link_id = c.page_link_id
-  WHERE c.occurred_at >= p_from
-    AND c.occurred_at < p_to
-    AND (p_page_id IS NULL OR c.page_id = p_page_id)
-    AND (p_link_id IS NULL OR c.link_id = p_link_id)
-  GROUP BY plk.id, plk.page_id, p.internal_name, l.id, COALESCE(rlp.resolved_label, l.default_label), l.target_url, rlp.position;
+  FROM (
+    SELECT
+      plk.id AS page_link_id,
+      plk.page_id,
+      p.internal_name AS page_name,
+      l.id AS link_id,
+      COALESCE(rlp.resolved_label, l.default_label) AS label,
+      l.target_url,
+      rlp.position,
+      count(c.id) AS click_count
+    FROM public.click_events c
+    JOIN public.page_links plk ON plk.id = c.page_link_id
+    JOIN public.links l ON l.id = c.link_id
+    JOIN public.pages p ON p.id = c.page_id
+    LEFT JOIN public.revision_link_placements rlp
+      ON rlp.revision_id = c.revision_id AND rlp.page_link_id = c.page_link_id
+    WHERE c.occurred_at >= p_from
+      AND c.occurred_at < p_to
+      AND (p_page_id IS NULL OR c.page_id = p_page_id)
+      AND (p_link_id IS NULL OR c.link_id = p_link_id)
+    GROUP BY plk.id, plk.page_id, p.internal_name, l.id, COALESCE(rlp.resolved_label, l.default_label), l.target_url, rlp.position
+  ) t;
 
   RETURN jsonb_build_object(
     'total_clicks', v_total_clicks,

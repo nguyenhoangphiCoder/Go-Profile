@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X, Loader2, Plus, Sparkles } from "lucide-react";
 import { createPageAction } from "../actions";
@@ -131,32 +132,43 @@ export function CreatePageModal({ isOpen, onClose }: CreatePageModalProps) {
             />
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/60">
-            <button
-              type="button"
+          <div className="flex items-center justify-between pt-3 border-t border-border/60">
+            <Link
+              href="/admin/pages/new"
               onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2.5 text-xs font-medium rounded-xl border border-border hover:bg-muted transition-colors cursor-pointer"
+              className="text-xs text-primary font-semibold hover:underline flex items-center gap-1.5"
             >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={isPending || !internalName.trim() || !slug.trim()}
-              className="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-primary-foreground bg-primary rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer shadow-xs"
-            >
-              {isPending ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Đang khởi tạo...
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5" />
-                  Tạo và mở biên tập
-                </>
-              )}
-            </button>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Mở Studio cấu hình đầy đủ</span>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isPending}
+                className="px-4 py-2 text-xs font-medium rounded-xl border border-border hover:bg-muted transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={isPending || !internalName.trim() || !slug.trim()}
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-primary-foreground bg-primary rounded-xl hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer shadow-xs"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Đang khởi tạo...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5" />
+                    Tạo và mở biên tập
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
