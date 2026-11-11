@@ -392,9 +392,9 @@ export function BlockItemEditor({
                 helpText="Hiển thị đầu trang"
               />
 
-              {/* Banner picker (cho theme Beacons card/portrait) */}
+              {/* Banner picker */}
               <MediaPickerField
-                label="Ảnh bìa nền thẻ (Banner - cho giao diện Beacons)"
+                label="Ảnh bìa / Banner đầu trang (Banner)"
                 mediaId={(block.payload as HeaderBlockPayload).bannerMediaId}
                 mediaUrl={(block.payload as HeaderBlockPayload).bannerUrl}
                 onChange={(mId, mUrl) =>
@@ -406,7 +406,7 @@ export function BlockItemEditor({
                 availableMedia={availableMedia}
                 onMediaAdded={onMediaAdded}
                 aspectHint="banner"
-                helpText="Ảnh nền phía trên"
+                helpText="Hiển thị ảnh bìa phía trên avatar"
               />
             </div>
           )}

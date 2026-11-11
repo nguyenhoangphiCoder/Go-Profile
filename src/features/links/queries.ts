@@ -3,6 +3,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireActiveAdmin } from "@/features/auth/queries";
 import type { LinkItem, LinkKind } from "./types";
 
+function fromDbKind(kind: string, targetUrl: string): LinkKind {
+  if (targetUrl?.startsWith("tel:") || kind === "tel") return "tel";
+  if (targetUrl?.startsWith("mailto:") || kind === "mailto") return "mailto";
+  return "http";
+}
+
 export async function getLinks(
   searchQuery?: string,
   statusFilter: "all" | "active" | "inactive" = "all"
@@ -74,7 +80,7 @@ export async function getLinks(
       id: row.id,
       defaultLabel: row.default_label,
       targetUrl: row.target_url,
-      kind: row.kind as LinkKind,
+      kind: fromDbKind(row.kind, row.target_url),
       description: null,
       defaultMediaId: row.default_media_id,
       isActive: row.is_active,
@@ -144,7 +150,7 @@ export async function getLinkById(id: string): Promise<LinkItem | null> {
     id: row.id,
     defaultLabel: row.default_label,
     targetUrl: row.target_url,
-    kind: row.kind as LinkKind,
+    kind: fromDbKind(row.kind, row.target_url),
     description: null,
     defaultMediaId: row.default_media_id,
     isActive: row.is_active,

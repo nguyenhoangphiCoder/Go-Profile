@@ -188,7 +188,7 @@ export function PublicPageView({ page }: PublicPageViewProps) {
               return (
                 <div key={block.block_id} className="text-center w-full">
                   {bannerUrl && (
-                    <div className="relative w-full aspect-2/1 rounded-2xl overflow-hidden shadow-lg mb-4">
+                    <div className="relative w-full aspect-2/1 rounded-2xl overflow-hidden shadow-lg">
                       <Image
                         src={bannerUrl}
                         alt={displayTitle}
@@ -201,7 +201,13 @@ export function PublicPageView({ page }: PublicPageViewProps) {
                   )}
 
                   {avatarUrl && (
-                    <div className="relative w-[90px] h-[90px] mx-auto rounded-full overflow-hidden shadow-2xl ring-1 ring-white/10 mb-3">
+                    <div
+                      className={`relative w-[90px] h-[90px] sm:w-[96px] sm:h-[96px] mx-auto rounded-full overflow-hidden shadow-2xl z-20 ${
+                        bannerUrl
+                          ? "-mt-11 sm:-mt-12 ring-4 ring-black/50 bg-[#161819] mb-2"
+                          : "ring-1 ring-white/10 mb-3"
+                      }`}
+                    >
                       <Image
                         src={avatarUrl}
                         alt={displayTitle}

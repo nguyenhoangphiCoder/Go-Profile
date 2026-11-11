@@ -58,6 +58,12 @@ export function MediaPickerField({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Kích thước tệp vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn 5MB.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setIsUploading(true);
     startTransition(async () => {
       try {

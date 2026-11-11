@@ -38,6 +38,11 @@ export async function updateSession(request: NextRequest) {
   const isAccessingAdmin = request.nextUrl.pathname.startsWith("/admin");
   const isAccessingLogin = request.nextUrl.pathname === "/login";
 
+  // Không chuyển hướng các request không phải GET (ví dụ Server Actions POST)
+  if (request.method !== "GET") {
+    return response;
+  }
+
   // Nếu chưa đăng nhập mà truy cập /admin/* -> chuyển hướng về /login
   if (isAccessingAdmin && !user) {
     const redirectUrl = request.nextUrl.clone();

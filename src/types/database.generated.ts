@@ -98,7 +98,7 @@ export type Database = {
           id: string;
           default_label: string;
           target_url: string;
-          kind: "http" | "tel" | "mailto";
+          kind: "standard" | "contact" | "social" | "http" | "tel" | "mailto";
           description: string | null;
           default_media_id: string | null;
           is_active: boolean;
@@ -112,7 +112,7 @@ export type Database = {
           id?: string;
           default_label: string;
           target_url: string;
-          kind?: "http" | "tel" | "mailto";
+          kind?: "standard" | "contact" | "social" | "http" | "tel" | "mailto";
           description?: string | null;
           default_media_id?: string | null;
           is_active?: boolean;
@@ -126,7 +126,7 @@ export type Database = {
           id?: string;
           default_label?: string;
           target_url?: string;
-          kind?: "http" | "tel" | "mailto";
+          kind?: "standard" | "contact" | "social" | "http" | "tel" | "mailto";
           description?: string | null;
           default_media_id?: string | null;
           is_active?: boolean;

@@ -385,11 +385,28 @@ export function LivePreview({
 
                     return (
                       <div key={block.id} className="text-center pt-1">
+                        {p.bannerUrl && (
+                          <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden shadow-md">
+                            <Image
+                              src={p.bannerUrl}
+                              alt={displayTitle}
+                              fill
+                              className="object-cover"
+                              unoptimized
+                            />
+                          </div>
+                        )}
                         {p.avatarUrl && (
                           <div
-                            className="relative w-24 h-24 mx-auto rounded-full overflow-hidden block ring-3 ring-white/25 transition-transform hover:scale-105"
+                            className={`relative w-24 h-24 mx-auto rounded-full overflow-hidden block transition-transform hover:scale-105 z-20 ${
+                              p.bannerUrl
+                                ? "-mt-12 ring-4 ring-black/50 bg-[#161819] shadow-2xl"
+                                : "ring-3 ring-white/25"
+                            }`}
                             style={{
-                              boxShadow: `0 0 25px ${accentColor}40, 0 4px 16px rgba(0, 0, 0, 0.25)`,
+                              boxShadow: p.bannerUrl
+                                ? `0 12px 28px rgba(0,0,0,0.6), 0 0 20px ${accentColor}40`
+                                : `0 0 25px ${accentColor}40, 0 4px 16px rgba(0, 0, 0, 0.25)`,
                             }}
                           >
                             <Image

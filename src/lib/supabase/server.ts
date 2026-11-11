@@ -5,7 +5,20 @@ import type { Database } from "@/types/database.generated";
 import { clientEnv } from "@/lib/env.client";
 
 export async function createSupabaseServerClient() {
-  await connection();
+  try {
+    await connection();
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      typeof (error as { digest: unknown }).digest === "string" &&
+      (error as { digest: string }).digest.startsWith("DYNAMIC_SERVER_USAGE")
+    ) {
+      throw error;
+    }
+  }
+
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
