@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
+import { unstable_rethrow } from "next/navigation";
 import type { Database } from "@/types/database.generated";
 import { clientEnv } from "@/lib/env.client";
 
@@ -8,15 +9,10 @@ export async function createSupabaseServerClient() {
   try {
     await connection();
   } catch (error: unknown) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "digest" in error &&
-      typeof (error as { digest: unknown }).digest === "string" &&
-      (error as { digest: string }).digest.startsWith("DYNAMIC_SERVER_USAGE")
-    ) {
-      throw error;
-    }
+    // Bắt buộc ném lại các tín hiệu nội bộ của Next.js (dynamic usage, hanging promise khi
+    // prerender, prerender interrupted...). Nếu nuốt chúng, truy vấn Supabase sẽ chạy trong lúc
+    // prerender, bị hủy giữa chừng và trang công khai bị render thành "Không tìm thấy".
+    unstable_rethrow(error);
   }
 
   const cookieStore = await cookies();

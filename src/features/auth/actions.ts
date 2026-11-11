@@ -1,8 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { safeRedirectPath } from "@/lib/utils";
 import { loginSchema } from "./schemas";
 import type { AuthState } from "./types";
 
@@ -55,13 +56,11 @@ export async function loginAction(_prevState: AuthState, formData: FormData): Pr
     }
 
     revalidatePath("/", "layout");
-    redirect(redirectTo || "/admin");
+    redirect(safeRedirectPath(redirectTo, "/admin"));
   } catch (err: unknown) {
+    // Để Next.js tự xử lý redirect() thay vì nuốt lỗi
+    unstable_rethrow(err);
     console.error("[loginAction] CAUGHT ERROR:", err);
-    // If it's a redirect, rethrow it so Next.js handles the redirect!
-    if (err && typeof err === "object" && "digest" in err && typeof (err as { digest: unknown }).digest === "string" && (err as { digest: string }).digest.startsWith("NEXT_REDIRECT")) {
-      throw err;
-    }
     return {
       success: false,
       error: err instanceof Error ? err.message : "Đã có lỗi xảy ra",

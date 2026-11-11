@@ -16,6 +16,17 @@ export function getVietnamDateString(date: Date = new Date()): string {
 }
 
 /**
+ * Kiểm tra chuỗi ngày YYYY-MM-DD có tồn tại thật trên lịch (chặn "abc", "2026-13-45", "2026-02-31").
+ */
+export function isValidDateString(dateStr: unknown): dateStr is string {
+  if (typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  if (year < 2000 || year > 2100) return false;
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
+}
+
+/**
  * Chuyển đổi ngày YYYY-MM-DD theo giờ Việt Nam sang mốc thời gian UTC (ISO string).
  * Bắt đầu ngày lúc 00:00:00 +07:00 tương ứng 17:00:00 UTC của ngày hôm trước.
  */

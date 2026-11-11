@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import { requireActiveAdmin } from "@/features/auth/queries";
@@ -57,7 +58,10 @@ export async function uploadMediaAction(
 
     if (insertError || !assetRecord) {
       console.error("Error creating pending media asset:", insertError);
-      return { success: false, error: "Không thể khởi tạo bản ghi tài nguyên: " + (insertError?.message || "") };
+      return {
+        success: false,
+        error: "Không thể khởi tạo bản ghi tài nguyên: " + (insertError?.message || ""),
+      };
     }
 
     // 2. Upload file vào Supabase Storage
@@ -75,7 +79,10 @@ export async function uploadMediaAction(
       // Đánh dấu failed
       await adminClient.from("media_assets").update({ status: "failed" }).eq("id", assetRecord.id);
 
-      return { success: false, error: "Tải tệp lên bộ nhớ lưu trữ thất bại: " + storageError.message };
+      return {
+        success: false,
+        error: "Tải tệp lên bộ nhớ lưu trữ thất bại: " + storageError.message,
+      };
     }
 
     // 3. Đánh dấu ready
@@ -103,6 +110,7 @@ export async function uploadMediaAction(
       },
     };
   } catch (err: unknown) {
+    unstable_rethrow(err);
     console.error("Unexpected error in uploadMediaAction:", err);
     const message = err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định";
     return { success: false, error: message };
@@ -178,6 +186,7 @@ export async function deleteMediaAction(id: string): Promise<{ success: boolean;
     revalidatePath("/admin/media");
     return { success: true };
   } catch (err: unknown) {
+    unstable_rethrow(err);
     console.error("Unexpected error in deleteMediaAction:", err);
     const message = err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định";
     return { success: false, error: message };

@@ -35,7 +35,8 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isAccessingAdmin = request.nextUrl.pathname.startsWith("/admin");
+  const { pathname } = request.nextUrl;
+  const isAccessingAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const isAccessingLogin = request.nextUrl.pathname === "/login";
 
   // Không chuyển hướng các request không phải GET (ví dụ Server Actions POST)

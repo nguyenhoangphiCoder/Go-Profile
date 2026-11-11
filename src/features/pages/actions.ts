@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import type { Json } from "@/types/database.generated";
+import { getCurrentAdmin } from "@/features/auth/queries";
 import {
+  pageIdSchema,
   createPageSchema,
   renameSlugSchema,
   saveDraftSchema,
@@ -13,6 +15,10 @@ import {
   type SaveDraftInput,
   type CreatePageInput,
 } from "./schemas";
+
+const SESSION_ERROR = "Phiên đăng nhập đã hết hạn hoặc tài khoản không có quyền quản trị";
+const DRAFT_CONFLICT_ERROR =
+  "Bản nháp đã được lưu từ một phiên khác. Vui lòng tải lại trang để tránh ghi đè nội dung.";
 
 interface CreatePageResult {
   success: boolean;
@@ -137,114 +143,103 @@ export async function saveDraftAction(input: SaveDraftInput) {
     };
   }
 
-  const supabase = await createSupabaseServerClient();
-  const privileged = createSupabaseAdminClient();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData?.user) {
-    return { success: false, error: "Phiên đăng nhập đã hết hạn" };
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return { success: false, error: SESSION_ERROR };
   }
 
+  const privileged = createSupabaseAdminClient();
   const { pageId, draftId, expectedDraftVersion, title, description, theme, seo, blocks } =
     parsed.data;
 
-  // 1. Kiểm tra trạng thái revision hiện tại
-  let activeDraftId = draftId;
-  let newLockVersion = expectedDraftVersion + 1;
+  const revisionFields = {
+    title,
+    description: description || null,
+    theme,
+    seo,
+  };
 
-  if (activeDraftId) {
-    const { data: rev, error: revErr } = await supabase
+  // 0. Trang phải tồn tại và chưa bị lưu trữ
+  const { data: pageRow } = await privileged
+    .from("pages")
+    .select("id")
+    .eq("id", pageId)
+    .is("archived_at", null)
+    .maybeSingle();
+
+  if (!pageRow) {
+    return { success: false, error: "Trang không tồn tại hoặc đã bị lưu trữ" };
+  }
+
+  // 1. Xác định bản nháp đích
+  let currentDraft: { id: string; lock_version: number } | null = null;
+
+  if (draftId) {
+    const { data: rev } = await privileged
       .from("page_revisions")
-      .select("id, state, lock_version, revision_no")
-      .eq("id", activeDraftId)
-      .single();
+      .select("id, page_id, state, lock_version")
+      .eq("id", draftId)
+      .maybeSingle();
 
-    if (revErr || !rev) {
+    if (!rev || rev.page_id !== pageId) {
       return { success: false, error: "Không tìm thấy bản ghi revision" };
     }
 
-    if (rev.state === "sealed") {
-      // Kiểm tra xem trang đã có sẵn một bản nháp (draft) nào chưa
-      const { data: existingDraft } = await privileged
-        .from("page_revisions")
-        .select("id, lock_version")
-        .eq("page_id", pageId)
-        .eq("state", "draft")
-        .maybeSingle();
-
-      if (existingDraft) {
-        activeDraftId = existingDraft.id;
-        newLockVersion = Number(existingDraft.lock_version) + 1;
-
-        await privileged
-          .from("page_revisions")
-          .update({
-            title,
-            description: description || null,
-            theme,
-            seo,
-            lock_version: newLockVersion,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", activeDraftId);
-      } else {
-        // Chưa có bản nháp nào -> sinh draft revision mới
-        const { data: maxRevData } = await supabase
-          .from("page_revisions")
-          .select("revision_no")
-          .eq("page_id", pageId)
-          .order("revision_no", { ascending: false })
-          .limit(1)
-          .single();
-
-        const nextRevNo = (maxRevData?.revision_no || 1) + 1;
-
-        const { data: newRev, error: newRevErr } = await privileged
-          .from("page_revisions")
-          .insert({
-            page_id: pageId,
-            revision_no: nextRevNo,
-            state: "draft",
-            lock_version: 1,
-            title,
-            description: description || null,
-            theme,
-            seo,
-            created_by: userData.user.id,
-          })
-          .select("id, lock_version")
-          .single();
-
-        if (newRevErr || !newRev) {
-          return { success: false, error: "Không thể khởi tạo bản nháp mới sau xuất bản" };
-        }
-
-        activeDraftId = newRev.id;
-        newLockVersion = Number(newRev.lock_version);
+    if (rev.state === "draft") {
+      // Optimistic locking: chặn ghi đè khi bản nháp đã được lưu bởi phiên khác
+      if (Number(rev.lock_version) !== expectedDraftVersion) {
+        return { success: false, error: DRAFT_CONFLICT_ERROR };
       }
-    } else {
-      // Revision đang ở trạng thái draft -> cập nhật nội dung và tăng lock_version
-      newLockVersion = Number(rev.lock_version) + 1;
-
-      const { error: updateRevErr } = await privileged
-        .from("page_revisions")
-        .update({
-          title,
-          description: description || null,
-          theme,
-          seo,
-          lock_version: newLockVersion,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", activeDraftId);
-
-      if (updateRevErr) {
-        return { success: false, error: "Xung đột phiên bản khi lưu bản nháp" };
-      }
+      currentDraft = { id: rev.id, lock_version: Number(rev.lock_version) };
     }
+  }
+
+  if (!currentDraft) {
+    // Revision đã sealed hoặc chưa có draftId (ví dụ: trang vừa tạo bằng RPC create_page,
+    // RPC này đã sinh sẵn 1 bản nháp) -> dùng lại bản nháp hiện có của trang nếu có.
+    // Mỗi trang chỉ được phép có 1 draft (unique index uq_page_revisions_draft).
+    const { data: existingDraft } = await privileged
+      .from("page_revisions")
+      .select("id, lock_version")
+      .eq("page_id", pageId)
+      .eq("state", "draft")
+      .maybeSingle();
+
+    if (existingDraft) {
+      currentDraft = { id: existingDraft.id, lock_version: Number(existingDraft.lock_version) };
+    }
+  }
+
+  let activeDraftId: string;
+  let newLockVersion: number;
+
+  if (currentDraft) {
+    newLockVersion = currentDraft.lock_version + 1;
+
+    const { data: updatedRev, error: updateRevErr } = await privileged
+      .from("page_revisions")
+      .update({
+        ...revisionFields,
+        lock_version: newLockVersion,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", currentDraft.id)
+      .eq("state", "draft")
+      .eq("lock_version", currentDraft.lock_version)
+      .select("id");
+
+    if (updateRevErr) {
+      console.error("Lỗi cập nhật bản nháp:", updateRevErr);
+      return { success: false, error: "Không thể cập nhật bản nháp" };
+    }
+    if (!updatedRev || updatedRev.length === 0) {
+      return { success: false, error: DRAFT_CONFLICT_ERROR };
+    }
+
+    activeDraftId = currentDraft.id;
   } else {
-    // Chưa có draftId -> tạo mới draft
-    const { data: maxRevData } = await supabase
+    // Chưa có bản nháp nào -> sinh draft revision mới
+    const { data: maxRevData } = await privileged
       .from("page_revisions")
       .select("revision_no")
       .eq("page_id", pageId)
@@ -260,27 +255,40 @@ export async function saveDraftAction(input: SaveDraftInput) {
         revision_no: nextRevNo,
         state: "draft",
         lock_version: 1,
-        title,
-        description: description || null,
-        theme,
-        seo,
-        created_by: userData.user.id,
+        ...revisionFields,
+        created_by: admin.userId,
       })
       .select("id, lock_version")
       .single();
 
     if (newRevErr || !newRev) {
+      console.error("Lỗi tạo bản nháp:", newRevErr);
       return { success: false, error: "Không thể tạo bản nháp" };
     }
 
     activeDraftId = newRev.id;
-    newLockVersion = 1;
+    newLockVersion = Number(newRev.lock_version);
   }
 
   // 2. Đồng bộ các khối (page_blocks) & link placements
   // Xóa placements cũ trước, sau đó xóa các blocks cũ của draft này (đảm bảo toàn vẹn khóa ngoại)
-  await privileged.from("revision_link_placements").delete().eq("revision_id", activeDraftId);
-  await privileged.from("page_blocks").delete().eq("revision_id", activeDraftId);
+  const { error: delPlacementsErr } = await privileged
+    .from("revision_link_placements")
+    .delete()
+    .eq("revision_id", activeDraftId);
+  if (delPlacementsErr) {
+    console.error("Lỗi xóa placements cũ:", delPlacementsErr);
+    return { success: false, error: "Không thể cập nhật danh sách liên kết của bản nháp" };
+  }
+
+  const { error: delBlocksErr } = await privileged
+    .from("page_blocks")
+    .delete()
+    .eq("revision_id", activeDraftId);
+  if (delBlocksErr) {
+    console.error("Lỗi xóa blocks cũ:", delBlocksErr);
+    return { success: false, error: "Không thể cập nhật danh sách khối nội dung" };
+  }
 
   // Chuẩn hóa thứ tự position (1, 2, 3...) để không bao giờ trùng lặp constraint (revision_id, position)
   const normalizedBlocks = blocks.map((b, index) => ({
@@ -292,7 +300,7 @@ export async function saveDraftAction(input: SaveDraftInput) {
     // Thêm các blocks mới (luôn sinh UUID mới cho mỗi revision để không đụng khóa chính với revision đã sealed)
     const blockInsertRows = normalizedBlocks.map((b) => ({
       page_id: pageId,
-      revision_id: activeDraftId!,
+      revision_id: activeDraftId,
       type: b.type,
       position: b.normalizedPosition,
       is_visible: b.isVisible,
@@ -316,55 +324,82 @@ export async function saveDraftAction(input: SaveDraftInput) {
     });
 
     // 3. Đồng bộ link placements
+    // Tải toàn bộ page_links của trang một lần để: (a) chỉ chấp nhận pageLinkId thuộc đúng trang này,
+    // (b) tránh truy vấn lặp cho từng placement.
+    const { data: pageLinksData, error: pageLinksErr } = await privileged
+      .from("page_links")
+      .select("id, link_id, archived_at")
+      .eq("page_id", pageId);
+
+    if (pageLinksErr) {
+      console.error("Lỗi tải page_links:", pageLinksErr);
+      return { success: false, error: "Không thể tải danh sách liên kết của trang" };
+    }
+
+    const pageLinkIds = new Set<string>();
+    const activePageLinkByLinkId = new Map<string, string>();
+    for (const pl of pageLinksData || []) {
+      pageLinkIds.add(pl.id);
+      if (!pl.archived_at && !activePageLinkByLinkId.has(pl.link_id)) {
+        activePageLinkByLinkId.set(pl.link_id, pl.id);
+      }
+    }
+
+    // Mỗi page_link chỉ được xuất hiện 1 lần trong 1 revision (uq_placements_revision_link)
+    const usedPageLinkIds = new Set<string>();
+
     for (const block of normalizedBlocks) {
-      if (block.placements && block.placements.length > 0) {
-        const realBlockId = blockIdByPosition.get(block.normalizedPosition);
-        if (!realBlockId) continue;
+      if (!block.placements || block.placements.length === 0) continue;
 
-        for (let pIdx = 0; pIdx < block.placements.length; pIdx++) {
-          const placement = block.placements[pIdx];
-          const placementPosition = pIdx + 1;
-          // Đảm bảo có liên kết page_links(page_id, link_id)
-          let pageLinkId = placement.pageLinkId;
+      const realBlockId = blockIdByPosition.get(block.normalizedPosition);
+      if (!realBlockId) continue;
 
-          if (!pageLinkId) {
-            const { data: existingPlk } = await privileged
-              .from("page_links")
-              .select("id")
-              .eq("page_id", pageId)
-              .eq("link_id", placement.linkId)
-              .is("archived_at", null)
-              .maybeSingle();
+      let placementPosition = 0;
+      for (const placement of block.placements) {
+        let pageLinkId =
+          placement.pageLinkId && pageLinkIds.has(placement.pageLinkId)
+            ? placement.pageLinkId
+            : activePageLinkByLinkId.get(placement.linkId);
 
-            if (existingPlk) {
-              pageLinkId = existingPlk.id;
-            } else {
-              const { data: newPlk, error: plkErr } = await privileged
-                .from("page_links")
-                .insert({
-                  page_id: pageId,
-                  link_id: placement.linkId,
-                })
-                .select("id")
-                .single();
-
-              if (!plkErr && newPlk) {
-                pageLinkId = newPlk.id;
-              }
-            }
-          }
-
-          if (pageLinkId) {
-            await privileged.from("revision_link_placements").insert({
+        if (!pageLinkId) {
+          const { data: newPlk, error: plkErr } = await privileged
+            .from("page_links")
+            .insert({
               page_id: pageId,
-              revision_id: activeDraftId!,
-              block_id: realBlockId,
-              page_link_id: pageLinkId,
-              position: placementPosition,
-              label_override: placement.labelOverride || null,
-              media_override_id: placement.mediaOverrideId || null,
-            });
+              link_id: placement.linkId,
+            })
+            .select("id")
+            .single();
+
+          if (plkErr || !newPlk) {
+            console.error("Lỗi tạo page_link:", plkErr);
+            return {
+              success: false,
+              error: "Không thể gắn liên kết vào trang (liên kết có thể đã bị xóa)",
+            };
           }
+          pageLinkId = newPlk.id;
+          pageLinkIds.add(newPlk.id);
+          activePageLinkByLinkId.set(placement.linkId, newPlk.id);
+        }
+
+        if (usedPageLinkIds.has(pageLinkId)) continue;
+        usedPageLinkIds.add(pageLinkId);
+        placementPosition += 1;
+
+        const { error: placementErr } = await privileged.from("revision_link_placements").insert({
+          page_id: pageId,
+          revision_id: activeDraftId,
+          block_id: realBlockId,
+          page_link_id: pageLinkId,
+          position: placementPosition,
+          label_override: placement.labelOverride || null,
+          media_override_id: placement.mediaOverrideId || null,
+        });
+
+        if (placementErr) {
+          console.error("Lỗi lưu placement:", placementErr);
+          return { success: false, error: "Không thể lưu vị trí liên kết trong khối nội dung" };
         }
       }
     }
@@ -466,13 +501,17 @@ export async function unpublishPageAction(pageId: string, expectedPageVersion: n
 }
 
 export async function duplicatePageAction(sourcePageId: string) {
+  if (!pageIdSchema.safeParse(sourcePageId).success) {
+    return { success: false, error: "ID trang không hợp lệ" };
+  }
+
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return { success: false, error: SESSION_ERROR };
+  }
+
   const supabase = await createSupabaseServerClient();
   const privileged = createSupabaseAdminClient();
-  const { data: userData } = await supabase.auth.getUser();
-
-  if (!userData?.user) {
-    return { success: false, error: "Phiên đăng nhập đã hết hạn" };
-  }
 
   // 1. Lấy thông tin trang nguồn
   const { data: sourcePage, error: pErr } = await supabase
@@ -616,20 +655,39 @@ export async function duplicatePageAction(sourcePageId: string) {
 }
 
 export async function archivePageAction(pageId: string) {
+  if (!pageIdSchema.safeParse(pageId).success) {
+    return { success: false, error: "ID trang không hợp lệ" };
+  }
+
+  // Bắt buộc kiểm tra quyền: action này dùng service-role (bỏ qua RLS) và có thể được gọi
+  // trực tiếp qua HTTP POST mà không cần đi qua giao diện admin.
+  const admin = await getCurrentAdmin();
+  if (!admin) {
+    return { success: false, error: SESSION_ERROR };
+  }
+
   const privileged = createSupabaseAdminClient();
 
-  const { error } = await privileged
+  const { data: archived, error } = await privileged
     .from("pages")
     .update({
       archived_at: new Date().toISOString(),
       status: "unpublished",
     })
-    .eq("id", pageId);
+    .eq("id", pageId)
+    .is("archived_at", null)
+    .select("id");
 
   if (error) {
+    console.error("Lỗi lưu trữ trang:", error);
     return { success: false, error: "Không thể lưu trữ trang" };
   }
 
+  if (!archived || archived.length === 0) {
+    return { success: false, error: "Trang không tồn tại hoặc đã được lưu trữ trước đó" };
+  }
+
   revalidatePath("/admin/pages");
+  revalidatePath("/", "layout");
   return { success: true };
 }

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isReservedSlug } from "@/config/reserved-slugs";
 
 // Regex kiểm tra slug: chỉ gồm chữ thường a-z, 0-9, dấu chấm (.) và dấu gạch nối (-), không có ký tự phân cách liên tiếp hoặc ở đầu/cuối
-const SLUG_REGEX = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
+export const SLUG_REGEX = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
 
 export const pageSlugSchema = z
   .string()
@@ -37,6 +37,8 @@ export type CreatePageInput = z.infer<typeof createPageSchema>;
 const PG_UUID_REGEX =
   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 const pgUuid = (message = "UUID không hợp lệ") => z.string().regex(PG_UUID_REGEX, message);
+
+export const pageIdSchema = pgUuid("ID trang không hợp lệ");
 
 export const renameSlugSchema = z.object({
   pageId: pgUuid("ID trang không hợp lệ"),

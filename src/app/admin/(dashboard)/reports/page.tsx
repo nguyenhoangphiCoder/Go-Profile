@@ -1,7 +1,11 @@
 import { BarChart3 } from "lucide-react";
 import { requireActiveAdmin } from "@/features/auth/queries";
 import { getClickReport, getReportFilterOptions } from "@/features/reports/queries";
-import { getPresetDateStrings, vietnamDateRangeToUtc } from "@/features/reports/timezone";
+import {
+  getPresetDateStrings,
+  isValidDateString,
+  vietnamDateRangeToUtc,
+} from "@/features/reports/timezone";
 import { ReportFilters } from "@/features/reports/components/report-filters";
 import { ReportSummaryCards } from "@/features/reports/components/report-summary-cards";
 import { ReportChart } from "@/features/reports/components/report-chart";
@@ -12,6 +16,8 @@ import type { DatePresetKey } from "@/features/reports/types";
 
 export const instant = false;
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface AdminReportsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
@@ -21,24 +27,21 @@ export default async function AdminReportsPage({ searchParams }: AdminReportsPag
   const resolvedParams = await searchParams;
 
   const rawPreset = typeof resolvedParams.preset === "string" ? resolvedParams.preset : "last7days";
-  const preset: DatePresetKey = [
-    "today",
-    "last7days",
-    "last30days",
-    "thisMonth",
-    "custom",
-  ].includes(rawPreset)
+  let preset: DatePresetKey = ["today", "last7days", "last30days", "thisMonth", "custom"].includes(
+    rawPreset
+  )
     ? (rawPreset as DatePresetKey)
     : "last7days";
 
   const rawFrom = typeof resolvedParams.from === "string" ? resolvedParams.from : "";
   const rawTo = typeof resolvedParams.to === "string" ? resolvedParams.to : "";
+  // ID không phải UUID sẽ làm RPC lỗi -> bỏ qua bộ lọc thay vì trả lỗi 500
   const pageId =
-    typeof resolvedParams.pageId === "string" && resolvedParams.pageId
+    typeof resolvedParams.pageId === "string" && UUID_REGEX.test(resolvedParams.pageId)
       ? resolvedParams.pageId
       : undefined;
   const linkId =
-    typeof resolvedParams.linkId === "string" && resolvedParams.linkId
+    typeof resolvedParams.linkId === "string" && UUID_REGEX.test(resolvedParams.linkId)
       ? resolvedParams.linkId
       : undefined;
 
@@ -46,10 +49,12 @@ export default async function AdminReportsPage({ searchParams }: AdminReportsPag
   let startDateStr: string;
   let endDateStr: string;
 
-  if (preset === "custom" && rawFrom && rawTo) {
-    startDateStr = rawFrom;
-    endDateStr = rawTo;
+  if (preset === "custom" && isValidDateString(rawFrom) && isValidDateString(rawTo)) {
+    // Tự đảo lại nếu người dùng chọn ngày bắt đầu sau ngày kết thúc
+    [startDateStr, endDateStr] = rawFrom <= rawTo ? [rawFrom, rawTo] : [rawTo, rawFrom];
   } else {
+    // Ngày tùy chỉnh thiếu hoặc sai định dạng -> quay về mặc định 7 ngày gần nhất
+    if (preset === "custom") preset = "last7days";
     const range = getPresetDateStrings(preset);
     startDateStr = range.startDate;
     endDateStr = range.endDate;

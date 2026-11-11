@@ -1,10 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import { requireActiveAdmin } from "@/features/auth/queries";
 import { linkSchema } from "./schemas";
 import type { LinkActionState } from "./types";
+
+const STALE_LINK_ERROR =
+  "Liên kết không tồn tại hoặc đã bị thay đổi bởi người khác. Vui lòng tải lại trang và thử lại.";
 
 function toDbKind(kind: string): "standard" | "contact" | "social" {
   if (kind === "tel" || kind === "mailto" || kind === "contact") {
@@ -29,7 +33,9 @@ export async function upsertLinkAction(
       targetUrl: formData.get("targetUrl"),
       kind: formData.get("kind"),
       description: formData.get("description") || null,
-      defaultMediaId: formData.get("defaultMediaId") ? String(formData.get("defaultMediaId")) : null,
+      defaultMediaId: formData.get("defaultMediaId")
+        ? String(formData.get("defaultMediaId"))
+        : null,
       lockVersion: formData.get("lockVersion") || 1,
     };
 
@@ -63,7 +69,8 @@ export async function upsertLinkAction(
       if (currentLink.lock_version !== lockVersion) {
         return {
           success: false,
-          error: "Dữ liệu liên kết đã bị thay đổi bởi người khác. Vui lòng tải lại trang và thử lại.",
+          error:
+            "Dữ liệu liên kết đã bị thay đổi bởi người khác. Vui lòng tải lại trang và thử lại.",
         };
       }
 
@@ -110,6 +117,7 @@ export async function upsertLinkAction(
     revalidatePath("/", "layout");
     return { success: true };
   } catch (err: unknown) {
+    unstable_rethrow(err);
     console.error("Unexpected error in upsertLinkAction:", err);
     const message = err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định";
     return { success: false, error: message };
@@ -125,7 +133,7 @@ export async function toggleLinkStatusAction(
     await requireActiveAdmin();
     const adminClient = createSupabaseAdminClient();
 
-    const { error } = await adminClient
+    const { data: updated, error } = await adminClient
       .from("links")
       .update({
         is_active: !currentStatus,
@@ -133,17 +141,23 @@ export async function toggleLinkStatusAction(
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("lock_version", expectedVersion);
+      .eq("lock_version", expectedVersion)
+      .select("id");
 
     if (error) {
       console.error("Toggle link status error:", error);
       return { success: false, error: "Không thể thay đổi trạng thái liên kết: " + error.message };
     }
 
+    if (!updated || updated.length === 0) {
+      return { success: false, error: STALE_LINK_ERROR };
+    }
+
     revalidatePath("/admin/links");
     revalidatePath("/", "layout");
     return { success: true };
   } catch (err: unknown) {
+    unstable_rethrow(err);
     console.error("Unexpected error in toggleLinkStatusAction:", err);
     const message = err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định";
     return { success: false, error: message };
@@ -158,7 +172,7 @@ export async function archiveLinkAction(
     await requireActiveAdmin();
     const adminClient = createSupabaseAdminClient();
 
-    const { error } = await adminClient
+    const { data: updated, error } = await adminClient
       .from("links")
       .update({
         is_active: false,
@@ -167,17 +181,23 @@ export async function archiveLinkAction(
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("lock_version", expectedVersion);
+      .eq("lock_version", expectedVersion)
+      .select("id");
 
     if (error) {
       console.error("Archive link error:", error);
       return { success: false, error: "Không thể lưu trữ liên kết: " + error.message };
     }
 
+    if (!updated || updated.length === 0) {
+      return { success: false, error: STALE_LINK_ERROR };
+    }
+
     revalidatePath("/admin/links");
     revalidatePath("/", "layout");
     return { success: true };
   } catch (err: unknown) {
+    unstable_rethrow(err);
     console.error("Unexpected error in archiveLinkAction:", err);
     const message = err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định";
     return { success: false, error: message };

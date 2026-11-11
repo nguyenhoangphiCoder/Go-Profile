@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound, redirect, RedirectType } from "next/navigation";
 import { isReservedSlug } from "@/config/reserved-slugs";
 import { fetchPublicPage } from "@/features/public/queries";
+import { SLUG_REGEX } from "@/features/pages/schemas";
 import { PublicPageView } from "@/features/public/components/public-page-view";
 
 export const instant = false;
@@ -17,12 +18,17 @@ const SLUG_ALIASES: Record<string, string> = {
   "gocafe-official": "gocafe",
   "hophuonganh.gocafe": "hophuonganh-gocafe",
   "gogang.official": "gogang",
-  "gogang": "gogang",
+  gogang: "gogang",
 };
 
 function resolveLookupSlug(slug: string): string {
   const normalized = slug.trim().toLowerCase();
   return SLUG_ALIASES[normalized] || normalized;
+}
+
+/** Slug sai định dạng (null byte, emoji, ký tự đặc biệt, quá dài) -> 404 ngay, không truy vấn DB. */
+function isLookupableSlug(slug: string): boolean {
+  return slug.length <= 80 && SLUG_REGEX.test(slug);
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -33,6 +39,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const lookupSlug = resolveLookupSlug(slug);
+  if (!isLookupableSlug(lookupSlug)) {
+    return { title: "Không tìm thấy trang | Gờ Cafe" };
+  }
   const page = await fetchPublicPage(lookupSlug);
 
   if (!page.found || page.is_alias) {
@@ -77,6 +86,9 @@ export default async function PublicSlugPage({ params }: PageProps) {
 
   // 2. Tra cứu dữ liệu trang công khai (hỗ trợ alias gocafe.official, hophuonganh.gocafe)
   const lookupSlug = resolveLookupSlug(slug);
+  if (!isLookupableSlug(lookupSlug)) {
+    notFound();
+  }
   const page = await fetchPublicPage(lookupSlug);
 
   // 3. Nếu là alias cũ, thực hiện chuyển hướng 308 (P07.03)
