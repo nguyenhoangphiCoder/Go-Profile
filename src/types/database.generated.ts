@@ -291,7 +291,13 @@ export type Database = {
             | "link_list"
             | "social_icons"
             | "spacer"
-            | "divider";
+            | "divider"
+            | "button"
+            | "gallery"
+            | "menu_card"
+            | "accordion"
+            | "video_embed"
+            | "map";
           position: number;
           is_visible: boolean;
           payload: Json;
@@ -310,7 +316,13 @@ export type Database = {
             | "link_list"
             | "social_icons"
             | "spacer"
-            | "divider";
+            | "divider"
+            | "button"
+            | "gallery"
+            | "menu_card"
+            | "accordion"
+            | "video_embed"
+            | "map";
           position: number;
           is_visible?: boolean;
           payload?: Json;
@@ -329,7 +341,13 @@ export type Database = {
             | "link_list"
             | "social_icons"
             | "spacer"
-            | "divider";
+            | "divider"
+            | "button"
+            | "gallery"
+            | "menu_card"
+            | "accordion"
+            | "video_embed"
+            | "map";
           position?: number;
           is_visible?: boolean;
           payload?: Json;

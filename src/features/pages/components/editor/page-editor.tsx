@@ -31,6 +31,12 @@ import {
   Sparkles,
   Undo2,
   Redo2,
+  MousePointerClick,
+  Images,
+  UtensilsCrossed,
+  ListCollapse,
+  PlaySquare,
+  MapPin,
 } from "lucide-react";
 import type {
   PageEditorData,
@@ -41,6 +47,26 @@ import type {
 } from "../../types";
 import { LivePreview } from "./live-preview";
 import { useUndoHistory } from "./use-undo-history";
+import { BLOCK_REGISTRY } from "@/features/renderer/blocks/registry";
+
+// Khối mới (giai đoạn 4): payload mặc định lấy từ registry
+const V2_BLOCKS = [
+  { type: "button", label: "Nút nổi bật", Icon: MousePointerClick, tone: "rose" },
+  { type: "gallery", label: "Thư viện ảnh", Icon: Images, tone: "orange" },
+  { type: "menu_card", label: "Thẻ món", Icon: UtensilsCrossed, tone: "yellow" },
+  { type: "accordion", label: "Hỏi đáp", Icon: ListCollapse, tone: "teal" },
+  { type: "video_embed", label: "Video", Icon: PlaySquare, tone: "red" },
+  { type: "map", label: "Bản đồ", Icon: MapPin, tone: "green" },
+] as const;
+
+const TONE_CLASSES: Record<(typeof V2_BLOCKS)[number]["tone"], string> = {
+  rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+  orange: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+  yellow: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
+  teal: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+  red: "bg-red-500/10 text-red-600 dark:text-red-400",
+  green: "bg-green-500/10 text-green-600 dark:text-green-400",
+};
 import { ThemeEditor } from "./theme-editor";
 import { SeoEditor } from "./seo-editor";
 import { BlockItemEditor } from "./block-item-editor";
@@ -179,7 +205,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     }
   };
 
-  // Thêm khối mới (Hỗ trợ toàn bộ 8 loại khối chuẩn)
+  // Thêm khối mới (8 loại khối gốc + 6 loại khối mới của giai đoạn 4)
   const handleAddBlock = (type: BlockType) => {
     let payload: Record<string, unknown> = {};
     if (type === "header") {
@@ -207,6 +233,9 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     if (type === "social_icons") payload = { style: "colored" };
     if (type === "spacer") payload = { height: "md" };
     if (type === "divider") payload = { style: "solid" };
+    if (V2_BLOCKS.some((b) => b.type === type)) {
+      payload = structuredClone(BLOCK_REGISTRY[type].defaultPayload);
+    }
 
     const newBlock: EditorBlockItem = {
       id: crypto.randomUUID(),
@@ -240,6 +269,8 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
         return "Khoảng cách";
       case "divider":
         return "Đường kẻ";
+      default:
+        return BLOCK_REGISTRY[type]?.label ?? type;
     }
   };
 
@@ -1041,7 +1072,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                   </div>
                 </div>
 
-                {/* Quick Add Block Toolbar: ALL 8 BLOCK TYPES */}
+                {/* Quick Add Block Toolbar: toàn bộ 14 loại khối */}
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-foreground">Thêm khối nội dung:</span>
@@ -1135,6 +1166,20 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                       </div>
                       <span className="truncate">Đường kẻ</span>
                     </button>
+
+                    {V2_BLOCKS.map(({ type, label, Icon, tone }) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => handleAddBlock(type)}
+                        className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
+                      >
+                        <div className={`p-1.5 rounded-lg group-hover:scale-110 transition-transform ${TONE_CLASSES[tone]}`}>
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="truncate">{label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 

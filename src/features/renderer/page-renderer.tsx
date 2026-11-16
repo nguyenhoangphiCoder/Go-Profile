@@ -6,6 +6,8 @@ import {
   type ThemeTokens,
 } from "@/config/theme-tokens";
 import { getBlockDefinition } from "./blocks/registry";
+import { BlockFrame, readBlockStyle } from "./block-frame";
+import "./renderer.css";
 import { tint } from "./primitives";
 import type { RenderBlock, RenderContext, RenderMode } from "./types";
 
@@ -100,11 +102,15 @@ export function PageRenderer({ title, theme, blocks, mode }: PageRendererProps) 
                 Chưa có khối nội dung nào. Thêm khối ở cột bên trái để bắt đầu.
               </div>
             ) : (
-              blocks.map((block) => {
+              blocks.map((block, index) => {
                 const def = getBlockDefinition(block.type);
                 if (!def) return null;
                 const { Render } = def;
-                return <Render key={block.id} block={block} ctx={ctx} />;
+                return (
+                  <BlockFrame key={block.id} style={readBlockStyle(block.payload)} index={index}>
+                    <Render block={block} ctx={ctx} />
+                  </BlockFrame>
+                );
               })
             )}
           </main>

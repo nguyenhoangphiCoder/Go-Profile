@@ -285,10 +285,15 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 
 ### Giai đoạn 4 — Style từng khối và khối mới (≈ 6–10 ngày)
 
-- [ ] Cột `page_blocks.style` + `BlockStyle` + form style chung cho mọi khối.
-- [ ] Khối `button`, `gallery`, `menu_card`, `accordion`, `video_embed`, `map`.
-- [ ] Animation nhẹ, `hideOn` theo thiết bị.
-- [ ] (Sau cùng) khối `columns` lồng nhau.
+- [x] `BlockStyle` + form "Kiểu khối" chung cho mọi khối: căn lề, khoảng đệm, nền thẻ nổi, hiệu ứng, ẩn theo thiết bị (16/11/2026). **Lưu trong `payload.blockStyle` thay vì cột riêng** — RPC `get_public_page` / `publish_page` đã sao chép payload nên không phải sửa RPC.
+- [x] Khối `button` (CTA, có ghi nhận click qua `/r`), `gallery` (lưới / trượt ngang, tối đa 12 ảnh), `menu_card` (tên, giá, mô tả, nhãn, ảnh; tối đa 30 món), `accordion` (tối đa 20 mục), `video_embed` (YouTube / TikTok, whitelist + `sandbox`), `map` (địa chỉ, link Google Maps, bản đồ nhúng không cần API key).
+- [x] Hiệu ứng "trượt lên" (tôn trọng `prefers-reduced-motion`), ẩn theo thiết bị bằng container query (đúng cả trong preview).
+- [x] [Migration](../supabase/migrations/20261116000002_block_types_v2.sql) mở rộng CHECK `page_blocks.type`.
+- [ ] Khối `countdown`, `columns` lồng nhau.
+
+> **Lưu ý:**
+> - Nút "Chỉ đường" của khối bản đồ mở thẳng Google Maps, không đi qua `/r` nên không có trong báo cáo click.
+> - Bảng `revision_media_assets` hiện không được ghi khi lưu nháp (kể cả với khối ảnh cũ), nên kho media chưa biết ảnh nào đang được trang sử dụng. Nên bổ sung ở một bước sau.
 
 ### Giai đoạn 5 (tùy chọn) — Mở cho nhiều người dùng tự quản trang (≈ 10–15 ngày)
 

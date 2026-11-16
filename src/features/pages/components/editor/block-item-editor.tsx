@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
   ChevronUp,
   ChevronDown,
@@ -19,7 +18,12 @@ import {
   Maximize2,
   Minus,
   ChevronRight,
-  ExternalLink,
+  MousePointerClick,
+  Images,
+  UtensilsCrossed,
+  ListCollapse,
+  PlaySquare,
+  MapPin,
 } from "lucide-react";
 import type {
   EditorBlockItem,
@@ -35,6 +39,15 @@ import type {
   DividerBlockPayload,
 } from "../../types";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
+import {
+  AccordionBlockEditor,
+  BlockStyleEditor,
+  ButtonBlockEditor,
+  GalleryBlockEditor,
+  MapBlockEditor,
+  MenuCardBlockEditor,
+  VideoBlockEditor,
+} from "./block-editors-v2";
 
 interface BlockItemEditorProps {
   block: EditorBlockItem;
@@ -53,7 +66,11 @@ interface BlockItemEditorProps {
     originalFilename: string | null;
     publicUrl: string | null;
   }[];
-  onMediaAdded?: (newMedia: { id: string; originalFilename: string | null; publicUrl: string | null }) => void;
+  onMediaAdded?: (newMedia: {
+    id: string;
+    originalFilename: string | null;
+    publicUrl: string | null;
+  }) => void;
   onUpdateBlock: (updated: EditorBlockItem) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -100,6 +117,18 @@ export function BlockItemEditor({
         return <Maximize2 className="w-4 h-4 text-slate-500" />;
       case "divider":
         return <Minus className="w-4 h-4 text-slate-500" />;
+      case "button":
+        return <MousePointerClick className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
+      case "gallery":
+        return <Images className="w-4 h-4 text-orange-600 dark:text-orange-400" />;
+      case "menu_card":
+        return <UtensilsCrossed className="w-4 h-4 text-yellow-700 dark:text-yellow-400" />;
+      case "accordion":
+        return <ListCollapse className="w-4 h-4 text-teal-600 dark:text-teal-400" />;
+      case "video_embed":
+        return <PlaySquare className="w-4 h-4 text-red-600 dark:text-red-400" />;
+      case "map":
+        return <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" />;
     }
   };
 
@@ -121,6 +150,18 @@ export function BlockItemEditor({
         return "Khoảng cách (Spacer)";
       case "divider":
         return "Đường kẻ (Divider)";
+      case "button":
+        return "Nút nổi bật (Button)";
+      case "gallery":
+        return "Thư viện ảnh (Gallery)";
+      case "menu_card":
+        return "Thẻ món (Menu)";
+      case "accordion":
+        return "Hỏi đáp / Thông tin (FAQ)";
+      case "video_embed":
+        return "Video YouTube / TikTok";
+      case "map":
+        return "Bản đồ / Địa chỉ (Map)";
     }
   };
 
@@ -136,7 +177,9 @@ export function BlockItemEditor({
       }
       case "text": {
         const p = block.payload as TextBlockPayload;
-        return p.content ? p.content.slice(0, 45) + (p.content.length > 45 ? "..." : "") : "Đoạn văn bản trống";
+        return p.content
+          ? p.content.slice(0, 45) + (p.content.length > 45 ? "..." : "")
+          : "Đoạn văn bản trống";
       }
       case "image": {
         const p = block.payload as ImageBlockPayload;
@@ -158,6 +201,20 @@ export function BlockItemEditor({
         const p = block.payload as DividerBlockPayload;
         return `Kiểu nét: ${p.style || "solid"}`;
       }
+      case "button":
+        return block.placements?.[0]
+          ? `Nút: ${block.placements[0].labelOverride || block.placements[0].defaultLabel}`
+          : "Chưa chọn liên kết";
+      case "gallery":
+        return `${((block.payload as { images?: unknown[] }).images || []).length} ảnh`;
+      case "menu_card":
+        return `${((block.payload as { items?: unknown[] }).items || []).length} món`;
+      case "accordion":
+        return `${((block.payload as { items?: unknown[] }).items || []).length} mục`;
+      case "video_embed":
+        return (block.payload as { url?: string }).url || "Chưa có link video";
+      case "map":
+        return (block.payload as { address?: string }).address || "Chưa nhập địa chỉ";
       default:
         return "";
     }
@@ -168,6 +225,15 @@ export function BlockItemEditor({
       ...block,
       payload: { ...block.payload, ...partial },
     });
+  };
+
+  const v2Props = {
+    block,
+    updatePayload,
+    onUpdateBlock,
+    availableLinks,
+    availableMedia,
+    onMediaAdded,
   };
 
   const handleAddLinkPlacement = () => {
@@ -238,25 +304,25 @@ export function BlockItemEditor({
           : "border-dashed border-border/60 bg-muted/30 opacity-75"
       }`}
     >
-      {/* Block Header */}
-      <div className="flex items-center justify-between p-3 sm:p-3.5 border-b border-border/60 bg-muted/20 gap-2">
+      {/* Block Header: trên điện thoại tên khối ở hàng trên, nút thao tác xuống hàng dưới */}
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between p-2.5 sm:p-3.5 border-b border-border/60 bg-muted/20 gap-x-2 gap-y-1.5">
         <div
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2.5 cursor-pointer select-none flex-1 min-w-0"
+          className="order-1 flex items-center gap-2.5 cursor-pointer select-none flex-1 min-w-0"
         >
           <div className="p-1.5 rounded-xl bg-background border border-border/80 shadow-2xs shrink-0">
             {getBlockIcon(block.type)}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <span className="text-xs font-bold truncate text-foreground">
                 {getBlockTitle(block.type)}
               </span>
-              <span className="font-mono text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.2 rounded shrink-0">
+              <span className="font-mono text-[10px] text-muted-foreground bg-muted/60 px-1.5 rounded shrink-0">
                 #{block.position + 1}
               </span>
               {!block.isVisible && (
-                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded shrink-0">
+                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 rounded shrink-0">
                   Đã ẩn
                 </span>
               )}
@@ -269,14 +335,29 @@ export function BlockItemEditor({
           </div>
         </div>
 
+        {/* Thu gọn / mở rộng */}
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="order-2 sm:order-3 w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted cursor-pointer transition-colors shrink-0"
+          title={isExpanded ? "Thu gọn khối" : "Mở rộng khối"}
+          aria-label={isExpanded ? "Thu gọn khối" : "Mở rộng khối"}
+          aria-expanded={isExpanded}
+        >
+          <ChevronRight
+            className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+          />
+        </button>
+
         {/* Action Controls */}
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="order-3 sm:order-2 w-full sm:w-auto flex items-center justify-end gap-1 shrink-0 pt-1.5 sm:pt-0 border-t border-border/40 sm:border-0">
           <button
             type="button"
             onClick={onMoveUp}
             disabled={index === 0}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer transition-colors"
+            className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer transition-colors"
             title="Di chuyển lên"
+            aria-label="Di chuyển lên"
           >
             <ChevronUp className="w-4 h-4" />
           </button>
@@ -284,8 +365,9 @@ export function BlockItemEditor({
             type="button"
             onClick={onMoveDown}
             disabled={index === totalBlocks - 1}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer transition-colors"
+            className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer transition-colors"
             title="Di chuyển xuống"
+            aria-label="Di chuyển xuống"
           >
             <ChevronDown className="w-4 h-4" />
           </button>
@@ -294,22 +376,24 @@ export function BlockItemEditor({
             <button
               type="button"
               onClick={onDuplicate}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer transition-colors"
+              className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer transition-colors"
               title="Nhân bản khối này"
+              aria-label="Nhân bản khối này"
             >
-              <Copy className="w-3.5 h-3.5" />
+              <Copy className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
             </button>
           )}
 
           <button
             type="button"
             onClick={() => onUpdateBlock({ ...block, isVisible: !block.isVisible })}
-            className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+            className={`w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg cursor-pointer transition-colors ${
               block.isVisible
                 ? "text-muted-foreground hover:text-foreground hover:bg-muted"
                 : "text-amber-500 bg-amber-500/10 hover:bg-amber-500/20"
             }`}
             title={block.isVisible ? "Ẩn khối khỏi trang hiển thị" : "Hiện khối trở lại"}
+            aria-label={block.isVisible ? "Ẩn khối khỏi trang hiển thị" : "Hiện khối trở lại"}
           >
             {block.isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
           </button>
@@ -317,30 +401,18 @@ export function BlockItemEditor({
           <button
             type="button"
             onClick={onDelete}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer transition-colors"
+            className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer transition-colors"
             title="Xóa khối này"
+            aria-label="Xóa khối này"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer transition-colors ml-0.5"
-            title={isExpanded ? "Thu gọn khối" : "Mở rộng khối"}
-          >
-            <ChevronRight
-              className={`w-4 h-4 transition-transform duration-200 ${
-                isExpanded ? "rotate-90" : ""
-              }`}
-            />
           </button>
         </div>
       </div>
 
       {/* Block Form Content */}
       {isExpanded && (
-        <div className="p-4 pb-6 space-y-4 text-xs bg-card">
+        <div className="p-3 sm:p-4 pb-5 sm:pb-6 space-y-4 text-xs bg-card">
           {/* 1. Header block editor */}
           {block.type === "header" && (
             <div className="space-y-3.5">
@@ -363,7 +435,8 @@ export function BlockItemEditor({
                     Tiểu sử / Giới thiệu ngắn (Bio)
                   </label>
                   <span className="text-[10px] text-muted-foreground">
-                    Gợi ý: Dùng <code className="text-primary font-mono">*chữ nghiêng*</code> để tô màu điểm nhấn
+                    Gợi ý: Dùng <code className="text-primary font-mono">*chữ nghiêng*</code> để tô
+                    màu điểm nhấn
                   </span>
                 </div>
                 <textarea
@@ -473,7 +546,7 @@ export function BlockItemEditor({
                       key={al}
                       type="button"
                       onClick={() => updatePayload({ align: al })}
-                      className={`flex-1 py-1.5 rounded-xl border cursor-pointer capitalize transition-all ${
+                      className={`flex-1 min-h-10 sm:min-h-0 py-1.5 rounded-xl border cursor-pointer capitalize transition-all ${
                         ((block.payload as TextBlockPayload).align || "center") === al
                           ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
                           : "border-border hover:bg-muted text-muted-foreground"
@@ -536,13 +609,13 @@ export function BlockItemEditor({
           {/* 5. Link List block editor */}
           {block.type === "link_list" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-border/60">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-border/60">
                 <span className="font-semibold text-muted-foreground">Bố cục hiển thị nút</span>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 sm:flex gap-2">
                   <button
                     type="button"
                     onClick={() => updatePayload({ layout: "stack" })}
-                    className={`px-3 py-1.5 rounded-xl border cursor-pointer transition-all ${
+                    className={`min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl border cursor-pointer transition-all whitespace-nowrap ${
                       ((block.payload as LinkListBlockPayload).layout || "stack") === "stack"
                         ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
                         : "border-border text-muted-foreground hover:bg-muted"
@@ -553,7 +626,7 @@ export function BlockItemEditor({
                   <button
                     type="button"
                     onClick={() => updatePayload({ layout: "grid" })}
-                    className={`px-3 py-1.5 rounded-xl border cursor-pointer transition-all ${
+                    className={`min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl border cursor-pointer transition-all whitespace-nowrap ${
                       (block.payload as LinkListBlockPayload).layout === "grid"
                         ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
                         : "border-border text-muted-foreground hover:bg-muted"
@@ -572,7 +645,8 @@ export function BlockItemEditor({
 
                 {(block.placements || []).length === 0 ? (
                   <div className="p-4 text-center rounded-xl bg-muted/20 border border-dashed border-border text-muted-foreground text-xs">
-                    Chưa có liên kết nào. Chọn liên kết ở ô bên dưới và bấm &quot;Thêm vào khối&quot;.
+                    Chưa có liên kết nào. Chọn liên kết ở ô bên dưới và bấm &quot;Thêm vào
+                    khối&quot;.
                   </div>
                 ) : (
                   (block.placements || []).map((pl, pIdx) => {
@@ -580,12 +654,12 @@ export function BlockItemEditor({
                     return (
                       <div
                         key={pl.id}
-                        className="p-3 rounded-xl border border-border bg-background shadow-2xs space-y-2"
+                        className="p-2 sm:p-3 rounded-xl border border-border bg-background shadow-2xs space-y-2"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div
                             onClick={() => togglePlacementExpand(pl.id)}
-                            className="flex items-center gap-2 truncate flex-1 cursor-pointer select-none"
+                            className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer select-none"
                           >
                             <span className="font-mono text-[10px] text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded">
                               #{pIdx + 1}
@@ -598,12 +672,12 @@ export function BlockItemEditor({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                             <button
                               type="button"
                               onClick={() => handleMovePlacement(pIdx, "up")}
                               disabled={pIdx === 0}
-                              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer"
+                              className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer"
                               title="Di chuyển lên"
                             >
                               <ChevronUp className="w-3.5 h-3.5" />
@@ -612,7 +686,7 @@ export function BlockItemEditor({
                               type="button"
                               onClick={() => handleMovePlacement(pIdx, "down")}
                               disabled={pIdx === (block.placements || []).length - 1}
-                              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer"
+                              className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer"
                               title="Di chuyển xuống"
                             >
                               <ChevronDown className="w-3.5 h-3.5" />
@@ -620,7 +694,7 @@ export function BlockItemEditor({
                             <button
                               type="button"
                               onClick={() => togglePlacementExpand(pl.id)}
-                              className="p-1 rounded-md text-muted-foreground hover:bg-muted cursor-pointer"
+                              className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted cursor-pointer"
                               title="Tùy biến nhãn & icon"
                             >
                               <ChevronRight
@@ -632,7 +706,7 @@ export function BlockItemEditor({
                             <button
                               type="button"
                               onClick={() => handleRemovePlacement(pl.id)}
-                              className="p-1 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer"
+                              className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer shrink-0"
                               title="Xóa liên kết khỏi khối"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -727,7 +801,7 @@ export function BlockItemEditor({
                       key={st}
                       type="button"
                       onClick={() => updatePayload({ style: st })}
-                      className={`flex-1 py-1.5 rounded-xl border cursor-pointer capitalize transition-all ${
+                      className={`flex-1 min-h-10 sm:min-h-0 py-1.5 rounded-xl border cursor-pointer capitalize transition-all ${
                         ((block.payload as SocialIconsBlockPayload).style || "colored") === st
                           ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
                           : "border-border hover:bg-muted text-muted-foreground"
@@ -756,20 +830,20 @@ export function BlockItemEditor({
                   (block.placements || []).map((pl) => (
                     <div
                       key={pl.id}
-                      className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background shadow-2xs"
+                      className="flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-xl border border-border bg-background shadow-2xs"
                     >
-                      <div className="flex items-center gap-2 truncate">
+                      <div className="flex items-center gap-2 min-w-0">
                         <span className="font-bold truncate text-foreground">
                           {pl.labelOverride || pl.defaultLabel}
                         </span>
-                        <span className="text-[10px] text-muted-foreground truncate">
+                        <span className="text-[10px] text-muted-foreground truncate hidden sm:inline">
                           ({pl.defaultUrl})
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemovePlacement(pl.id)}
-                        className="p-1 rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer"
+                        className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer shrink-0"
                         title="Xóa icon"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -875,6 +949,17 @@ export function BlockItemEditor({
               </div>
             </div>
           )}
+
+          {/* 9. Khối mới (v2) */}
+          {block.type === "button" && <ButtonBlockEditor {...v2Props} />}
+          {block.type === "gallery" && <GalleryBlockEditor {...v2Props} />}
+          {block.type === "menu_card" && <MenuCardBlockEditor {...v2Props} />}
+          {block.type === "accordion" && <AccordionBlockEditor {...v2Props} />}
+          {block.type === "video_embed" && <VideoBlockEditor {...v2Props} />}
+          {block.type === "map" && <MapBlockEditor {...v2Props} />}
+
+          {/* Kiểu khối: căn lề, nền, hiệu ứng, ẩn theo thiết bị */}
+          <BlockStyleEditor block={block} updatePayload={updatePayload} />
         </div>
       )}
     </div>
