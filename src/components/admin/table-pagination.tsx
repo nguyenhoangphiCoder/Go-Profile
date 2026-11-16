@@ -68,10 +68,7 @@ export function TablePagination({
           <span className="font-semibold text-foreground font-mono">
             {startItem}-{endItem}
           </span>{" "}
-          trên tổng số{" "}
-          <span className="font-semibold text-foreground font-mono">
-            {totalItems}
-          </span>{" "}
+          trên tổng số <span className="font-semibold text-foreground font-mono">{totalItems}</span>{" "}
           {itemName}
         </div>
 
@@ -103,7 +100,7 @@ export function TablePagination({
           type="button"
           onClick={() => onPageChange(1)}
           disabled={safeCurrentPage <= 1}
-          className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+          className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
           title="Trang đầu"
         >
           <ChevronsLeft className="w-3.5 h-3.5" />
@@ -114,7 +111,7 @@ export function TablePagination({
           type="button"
           onClick={() => onPageChange(safeCurrentPage - 1)}
           disabled={safeCurrentPage <= 1}
-          className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+          className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
           title="Trang trước"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
@@ -139,7 +136,7 @@ export function TablePagination({
                 key={p}
                 type="button"
                 onClick={() => onPageChange(p)}
-                className={`min-w-7 h-7 px-2 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer ${
+                className={`min-w-9 h-9 sm:min-w-7 sm:h-7 px-2 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "border border-border hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -156,7 +153,7 @@ export function TablePagination({
           type="button"
           onClick={() => onPageChange(safeCurrentPage + 1)}
           disabled={safeCurrentPage >= totalPages}
-          className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+          className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
           title="Trang sau"
         >
           <ChevronRight className="w-3.5 h-3.5" />
@@ -167,7 +164,7 @@ export function TablePagination({
           type="button"
           onClick={() => onPageChange(totalPages)}
           disabled={safeCurrentPage >= totalPages}
-          className="p-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+          className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
           title="Trang cuối"
         >
           <ChevronsRight className="w-3.5 h-3.5" />

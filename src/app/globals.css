@@ -62,7 +62,9 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 textarea,
 select {
   border-color: var(--input);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
@@ -75,4 +77,23 @@ select:hover {
 .dark textarea:hover,
 .dark select:hover {
   border-color: #475569;
+}
+
+/*
+ * Mobile (màn hình cảm ứng nhỏ): iOS Safari tự phóng to trang khi focus vào ô nhập có
+ * font-size < 16px, làm vỡ bố cục editor. Ép 16px chỉ trên thiết bị cảm ứng, desktop giữ nguyên.
+ */
+@media (max-width: 1023px) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not(
+      [type="file"]
+    ),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Chừa vùng an toàn (tai thỏ / thanh home) cho các thanh cố định ở mép dưới trên iPhone */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }

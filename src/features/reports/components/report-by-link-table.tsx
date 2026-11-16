@@ -37,10 +37,10 @@ export function ReportByLinkTable({ data, totalClicks }: ReportByLinkTableProps)
           <thead>
             <tr className="border-b border-border/60 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/40">
               <th className="py-2.5 px-3.5 sm:px-4">Tên hiển thị</th>
-              <th className="py-2.5 px-3.5 sm:px-4">Địa chỉ đích</th>
-              <th className="py-2.5 px-3.5 sm:px-4 text-center">Phân loại</th>
+              <th className="py-2.5 px-3.5 sm:px-4 hidden md:table-cell">Địa chỉ đích</th>
+              <th className="py-2.5 px-3.5 sm:px-4 text-center hidden sm:table-cell">Phân loại</th>
               <th className="py-2.5 px-3.5 sm:px-4 text-right">Lượt click</th>
-              <th className="py-2.5 px-3.5 sm:px-4 text-right w-40">Tỷ lệ</th>
+              <th className="py-2.5 px-3.5 sm:px-4 text-right w-40 hidden sm:table-cell">Tỷ lệ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50 text-xs">
@@ -56,7 +56,7 @@ export function ReportByLinkTable({ data, totalClicks }: ReportByLinkTableProps)
                       <span className="font-semibold">{item.label}</span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-3.5 sm:px-4 max-w-xs truncate font-mono text-[11px] text-muted-foreground">
+                  <td className="py-2.5 px-3.5 sm:px-4 max-w-xs truncate font-mono text-[11px] text-muted-foreground hidden md:table-cell">
                     <a
                       href={item.target_url}
                       target="_blank"
@@ -67,7 +67,7 @@ export function ReportByLinkTable({ data, totalClicks }: ReportByLinkTableProps)
                       <ExternalLink className="w-3 h-3 shrink-0" />
                     </a>
                   </td>
-                  <td className="py-2.5 px-3.5 sm:px-4 text-center">
+                  <td className="py-2.5 px-3.5 sm:px-4 text-center hidden sm:table-cell">
                     <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase bg-muted/60 text-muted-foreground border border-border/60">
                       {item.kind}
                     </span>
@@ -75,7 +75,7 @@ export function ReportByLinkTable({ data, totalClicks }: ReportByLinkTableProps)
                   <td className="py-2.5 px-3.5 sm:px-4 text-right font-mono tabular-nums font-bold text-foreground">
                     {item.clicks.toLocaleString("vi-VN")}
                   </td>
-                  <td className="py-2.5 px-3.5 sm:px-4 text-right">
+                  <td className="py-2.5 px-3.5 sm:px-4 text-right hidden sm:table-cell">
                     <div className="flex items-center justify-end gap-2.5">
                       <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
                         <div

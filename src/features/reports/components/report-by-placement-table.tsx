@@ -30,12 +30,12 @@ export function ReportByPlacementTable({ data, totalClicks }: ReportByPlacementT
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-border/60 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/40">
-              <th className="py-2.5 px-3.5 sm:px-4">Trang hồ sơ</th>
+              <th className="py-2.5 px-3.5 sm:px-4 hidden md:table-cell">Trang hồ sơ</th>
               <th className="py-2.5 px-3.5 sm:px-4 text-center">Vị trí</th>
               <th className="py-2.5 px-3.5 sm:px-4">Nhãn hiển thị</th>
-              <th className="py-2.5 px-3.5 sm:px-4">URL đích</th>
+              <th className="py-2.5 px-3.5 sm:px-4 hidden md:table-cell">URL đích</th>
               <th className="py-2.5 px-3.5 sm:px-4 text-right">Lượt click</th>
-              <th className="py-2.5 px-3.5 sm:px-4 text-right w-40">Tỷ lệ</th>
+              <th className="py-2.5 px-3.5 sm:px-4 text-right w-40 hidden sm:table-cell">Tỷ lệ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50 text-xs">
@@ -48,7 +48,7 @@ export function ReportByPlacementTable({ data, totalClicks }: ReportByPlacementT
                   key={`${item.page_link_id}-${item.position ?? idx}`}
                   className="hover:bg-muted/30 transition-colors"
                 >
-                  <td className="py-2.5 px-3.5 sm:px-4 font-medium text-foreground">
+                  <td className="py-2.5 px-3.5 sm:px-4 font-medium text-foreground hidden md:table-cell">
                     <div className="flex items-center gap-2">
                       <Layers className="w-3.5 h-3.5 text-muted-foreground/80 shrink-0" />
                       <span className="font-semibold">{item.page_name}</span>
@@ -59,8 +59,13 @@ export function ReportByPlacementTable({ data, totalClicks }: ReportByPlacementT
                       {item.position !== null ? `#${item.position + 1}` : "—"}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3.5 sm:px-4 font-semibold text-foreground">{item.label}</td>
-                  <td className="py-2.5 px-3.5 sm:px-4 max-w-xs truncate font-mono text-[11px] text-muted-foreground">
+                  <td className="py-2.5 px-3.5 sm:px-4 font-semibold text-foreground">
+                    {item.label}
+                    <span className="md:hidden block text-[11px] font-normal text-muted-foreground">
+                      {item.page_name}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3.5 sm:px-4 max-w-xs truncate font-mono text-[11px] text-muted-foreground hidden md:table-cell">
                     <a
                       href={item.target_url}
                       target="_blank"
@@ -74,7 +79,7 @@ export function ReportByPlacementTable({ data, totalClicks }: ReportByPlacementT
                   <td className="py-2.5 px-3.5 sm:px-4 text-right font-mono tabular-nums font-bold text-foreground">
                     {item.clicks.toLocaleString("vi-VN")}
                   </td>
-                  <td className="py-2.5 px-3.5 sm:px-4 text-right">
+                  <td className="py-2.5 px-3.5 sm:px-4 text-right hidden sm:table-cell">
                     <div className="flex items-center justify-end gap-2.5">
                       <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
                         <div

@@ -118,98 +118,98 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
               >
                 {/* Thumbnail Container */}
                 <div className="relative aspect-square bg-muted/20 overflow-hidden flex items-center justify-center p-2">
-                {asset.publicUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={asset.publicUrl}
-                    alt={asset.originalFilename || "Media"}
-                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                )}
+                  {asset.publicUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={asset.publicUrl}
+                      alt={asset.originalFilename || "Media"}
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                  )}
 
-                {/* Status Badges */}
-                <div className="absolute top-2 left-2 flex items-center gap-1">
-                  {asset.isReferenced ? (
+                  {/* Status Badges */}
+                  <div className="absolute top-2 left-2 flex items-center gap-1">
+                    {asset.isReferenced ? (
+                      <span
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-600/90 text-white text-[10px] font-medium shadow-xs"
+                        title="Đang được sử dụng trên trang hoặc liên kết"
+                      >
+                        <Lock className="w-2.5 h-2.5" />
+                        <span>Đang dùng</span>
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Info & Actions */}
+                <div className="p-3 flex-1 flex flex-col justify-between space-y-2 border-t border-border/60">
+                  <div className="min-w-0">
                     <span
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-600/90 text-white text-[10px] font-medium shadow-xs"
-                      title="Đang được sử dụng trên trang hoặc liên kết"
+                      className="text-xs font-semibold block truncate"
+                      title={asset.originalFilename || asset.objectPath}
                     >
-                      <Lock className="w-2.5 h-2.5" />
-                      <span>Đang dùng</span>
+                      {asset.originalFilename || "Tệp không tên"}
                     </span>
-                  ) : null}
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">
+                      {formatFileSize(asset.sizeBytes)} • {asset.mimeType?.split("/")[1] || "img"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-border/40">
+                    <button
+                      onClick={() => handleCopyUrl(asset)}
+                      className="inline-flex items-center gap-1 min-h-9 sm:min-h-0 -ml-1 px-1 rounded-md text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      title="Sao chép URL CDN"
+                    >
+                      {copiedId === asset.id ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-500" />
+                          <span className="text-emerald-500">Đã chép</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy URL</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(asset)}
+                      disabled={asset.isReferenced}
+                      className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center -mr-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      title={
+                        asset.isReferenced
+                          ? "Không thể xóa ảnh đang được sử dụng"
+                          : "Xóa ảnh khỏi kho lưu trữ"
+                      }
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
 
-              {/* Info & Actions */}
-              <div className="p-3 flex-1 flex flex-col justify-between space-y-2 border-t border-border/60">
-                <div className="min-w-0">
-                  <span
-                    className="text-xs font-semibold block truncate"
-                    title={asset.originalFilename || asset.objectPath}
-                  >
-                    {asset.originalFilename || "Tệp không tên"}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground block mt-0.5">
-                    {formatFileSize(asset.sizeBytes)} • {asset.mimeType?.split("/")[1] || "img"}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between pt-1 border-t border-border/40">
-                  <button
-                    onClick={() => handleCopyUrl(asset)}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    title="Sao chép URL CDN"
-                  >
-                    {copiedId === asset.id ? (
-                      <>
-                        <Check className="w-3 h-3 text-emerald-500" />
-                        <span className="text-emerald-500">Đã chép</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" />
-                        <span>Copy URL</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(asset)}
-                    disabled={asset.isReferenced}
-                    className="p-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                    title={
-                      asset.isReferenced
-                        ? "Không thể xóa ảnh đang được sử dụng"
-                        : "Xóa ảnh khỏi kho lưu trữ"
-                    }
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+          <div className="rounded-2xl border border-border/80 bg-card shadow-2xs overflow-hidden">
+            <TablePagination
+              currentPage={currentPage}
+              totalItems={filteredAssets.length}
+              pageSize={pageSize}
+              pageSizeOptions={[10, 20, 50]}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              itemName="hình ảnh"
+              className="border-t-0"
+            />
+          </div>
         </div>
-
-        <div className="rounded-2xl border border-border/80 bg-card shadow-2xs overflow-hidden">
-          <TablePagination
-            currentPage={currentPage}
-            totalItems={filteredAssets.length}
-            pageSize={pageSize}
-            pageSizeOptions={[10, 20, 50]}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={setPageSize}
-            itemName="hình ảnh"
-            className="border-t-0"
-          />
-        </div>
-      </div>
-    )}
+      )}
 
       {/* Upload Modal */}
       {isUploadOpen && (
