@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -29,6 +29,8 @@ import {
   Maximize2,
   Minus,
   Sparkles,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import type {
   PageEditorData,
@@ -38,6 +40,7 @@ import type {
   BlockType,
 } from "../../types";
 import { LivePreview } from "./live-preview";
+import { useUndoHistory } from "./use-undo-history";
 import { ThemeEditor } from "./theme-editor";
 import { SeoEditor } from "./seo-editor";
 import { BlockItemEditor } from "./block-item-editor";
@@ -276,11 +279,9 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
         ? original.placements.map((p) => ({ ...p, id: crypto.randomUUID() }))
         : [],
     };
-    const updated = [
-      ...blocks.slice(0, index + 1),
-      duplicated,
-      ...blocks.slice(index + 1),
-    ].map((b, i) => ({ ...b, position: i }));
+    const updated = [...blocks.slice(0, index + 1), duplicated, ...blocks.slice(index + 1)].map(
+      (b, i) => ({ ...b, position: i })
+    );
     setBlocks(updated);
     setIsDirty(true);
     showToast(`Đã nhân bản khối "${getBlockName(original.type)}".`, "info");
@@ -392,17 +393,58 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     showToast,
   ]);
 
-  // Phím tắt Ctrl+S / Cmd+S để lưu nhanh
+  // Hoàn tác / làm lại: theo dõi toàn bộ nội dung có thể chỉnh sửa của trang
+  const editorSnapshot = useMemo(
+    () => ({ title, description, themeConfig, seo, blocks }),
+    [title, description, themeConfig, seo, blocks]
+  );
+  const applySnapshot = useCallback((snap: typeof editorSnapshot) => {
+    setTitle(snap.title);
+    setDescription(snap.description);
+    setThemeConfig(snap.themeConfig);
+    setSeo(snap.seo);
+    setBlocks(snap.blocks);
+    setIsDirty(true);
+  }, []);
+  const history = useUndoHistory(editorSnapshot, applySnapshot);
+
+  // Phím tắt: Ctrl+S lưu nhanh; Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y hoàn tác & làm lại
+  // (trong ô nhập liệu thì để trình duyệt tự xử lý hoàn tác chữ)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const key = e.key.toLowerCase();
+      if (key === "s") {
         e.preventDefault();
         handleSaveDraft();
+        return;
+      }
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        !!target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      if (isTyping) return;
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        history.undo();
+      } else if ((key === "z" && e.shiftKey) || key === "y") {
+        e.preventDefault();
+        history.redo();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleSaveDraft]);
+  }, [handleSaveDraft, history]);
+
+  // Ảnh trong trang dùng để gợi ý bảng màu
+  const pageImageUrls = useMemo(
+    () =>
+      blocks.flatMap((b) => {
+        const p = b.payload as { avatarUrl?: string; bannerUrl?: string; imageUrl?: string };
+        return [p.avatarUrl, p.bannerUrl, p.imageUrl].filter((u): u is string => Boolean(u));
+      }),
+    [blocks]
+  );
 
   // Xuất bản (Publish - hỗ trợ cả tạo mới và xuất bản ngay)
   const handlePublish = () => {
@@ -415,7 +457,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
         setConfirmModal(null);
         startTransition(async () => {
           let targetPageId = page.id;
-          let targetDraftId = draftRev.id;
+          const targetDraftId = draftRev.id;
           let targetPageLockVersion = page.lockVersion;
           let targetDraftLockVersion = draftRev.lockVersion;
 
@@ -530,265 +572,322 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
   return (
     <div
-      className="flex flex-col h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden select-none"
+      className="flex flex-col h-screen h-dvh w-full bg-slate-50 dark:bg-slate-950 overflow-hidden select-none"
       suppressHydrationWarning
     >
       {/* 1. TOP STUDIO NAVBAR */}
-      <header className="h-14 md:h-16 px-3 sm:px-5 border-b border-border/80 bg-background flex items-center justify-between gap-3 shrink-0 z-30 shadow-2xs">
-        {/* Left Section: Navigation & Page Info */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Link
-            href="/admin/pages"
-            className="p-2 rounded-xl border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
-            title="Quay lại danh sách trang"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-
-          {/* Quick Admin Navigation Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setAdminMenuOpen(!adminMenuOpen)}
-              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              title="Menu quản trị nhanh"
+      <header className="border-b border-border/80 bg-background shrink-0 z-30 shadow-2xs">
+        <div className="h-14 md:h-16 px-2 sm:px-5 flex items-center justify-between gap-2 sm:gap-3">
+          {/* Left Section: Navigation & Page Info */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
+            <Link
+              href="/admin/pages"
+              className="w-9 h-9 flex items-center justify-center rounded-xl border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
+              title="Quay lại danh sách trang"
+              aria-label="Quay lại danh sách trang"
             >
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
 
-            {adminMenuOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setAdminMenuOpen(false)}
-                />
-                <div className="absolute left-0 top-full mt-1.5 w-52 rounded-2xl border border-border bg-popover shadow-xl p-1.5 z-50 text-xs">
-                  <div className="px-2 py-1.5 font-bold text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60 mb-1">
-                    Chuyển đến quản trị
-                  </div>
-                  <Link
-                    href="/admin"
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
-                  >
-                    <LayoutDashboard className="w-4 h-4 text-blue-600" />
-                    <span>Bảng điều khiển</span>
-                  </Link>
-                  <Link
-                    href="/admin/pages"
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors font-semibold"
-                  >
-                    <FileText className="w-4 h-4 text-emerald-600" />
-                    <span>Quản lý trang hồ sơ</span>
-                  </Link>
-                  <Link
-                    href="/admin/links"
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
-                  >
-                    <Link2 className="w-4 h-4 text-purple-600" />
-                    <span>Danh mục liên kết</span>
-                  </Link>
-                  <Link
-                    href="/admin/media"
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
-                  >
-                    <ImageIcon className="w-4 h-4 text-amber-600" />
-                    <span>Kho hình ảnh</span>
-                  </Link>
-                  <Link
-                    href="/admin/reports"
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
-                  >
-                    <BarChart3 className="w-4 h-4 text-pink-600" />
-                    <span>Báo cáo thống kê</span>
-                  </Link>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="h-5 w-px bg-border/80 hidden sm:block" />
-
-          {/* Page Title & Slug Badge */}
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xs sm:text-sm font-bold truncate max-w-[140px] sm:max-w-xs text-foreground" suppressHydrationWarning>
-                {internalName || (isCreatingNew ? "Tạo trang mới" : page.internalName)}
-              </h1>
+            {/* Quick Admin Navigation Dropdown (ẩn trên điện thoại, đã có nút quay lại) */}
+            <div className="relative hidden sm:block">
               <button
                 type="button"
-                onClick={copySlugLink}
-                className="font-mono text-[11px] text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer shrink-0"
-                title="Sao chép link trang"
+                onClick={() => setAdminMenuOpen(!adminMenuOpen)}
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title="Menu quản trị nhanh"
               >
-                <span>/{slug || initialData.primarySlug}</span>
-                <Copy className="w-3 h-3 opacity-70" />
+                <ChevronDown className="w-3.5 h-3.5" />
               </button>
-            </div>
-            <div className="flex items-center gap-2 mt-0.5" suppressHydrationWarning>
-              {isCreatingNew ? (
-                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  Đang khởi tạo trang mới
-                </span>
-              ) : page.status === "published" ? (
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Đang xuất bản
-                </span>
-              ) : (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  Bản nháp
-                </span>
-              )}
 
-              {isDirty && (
-                <span className="text-[10px] text-amber-500 font-medium">
-                  • Chưa lưu thay đổi
-                </span>
+              {adminMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
+                  <div className="absolute left-0 top-full mt-1.5 w-52 rounded-2xl border border-border bg-popover shadow-xl p-1.5 z-50 text-xs">
+                    <div className="px-2 py-1.5 font-bold text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60 mb-1">
+                      Chuyển đến quản trị
+                    </div>
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-blue-600" />
+                      <span>Bảng điều khiển</span>
+                    </Link>
+                    <Link
+                      href="/admin/pages"
+                      className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors font-semibold"
+                    >
+                      <FileText className="w-4 h-4 text-emerald-600" />
+                      <span>Quản lý trang hồ sơ</span>
+                    </Link>
+                    <Link
+                      href="/admin/links"
+                      className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
+                    >
+                      <Link2 className="w-4 h-4 text-purple-600" />
+                      <span>Danh mục liên kết</span>
+                    </Link>
+                    <Link
+                      href="/admin/media"
+                      className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4 text-amber-600" />
+                      <span>Kho hình ảnh</span>
+                    </Link>
+                    <Link
+                      href="/admin/reports"
+                      className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
+                    >
+                      <BarChart3 className="w-4 h-4 text-pink-600" />
+                      <span>Báo cáo thống kê</span>
+                    </Link>
+                  </div>
+                </>
               )}
+            </div>
+
+            <div className="h-5 w-px bg-border/80 hidden sm:block" />
+
+            {/* Page Title & Slug Badge */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <h1
+                  className="text-[13px] sm:text-sm font-bold truncate sm:max-w-xs text-foreground leading-tight"
+                  suppressHydrationWarning
+                >
+                  {internalName || (isCreatingNew ? "Tạo trang mới" : page.internalName)}
+                </h1>
+                <button
+                  type="button"
+                  onClick={copySlugLink}
+                  className="hidden sm:flex font-mono text-[11px] text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-lg items-center gap-1 transition-colors cursor-pointer shrink-0"
+                  title="Sao chép link trang"
+                >
+                  <span>/{slug || initialData.primarySlug}</span>
+                  <Copy className="w-3 h-3 opacity-70" />
+                </button>
+              </div>
+              <div
+                className="flex items-center gap-1.5 sm:gap-2 mt-0.5 min-w-0 text-[10px] sm:text-[11px]"
+                suppressHydrationWarning
+              >
+                {isCreatingNew ? (
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 shrink-0">
+                    <Sparkles className="w-3 h-3" />
+                    <span className="sm:hidden">Trang mới</span>
+                    <span className="hidden sm:inline">Đang khởi tạo trang mới</span>
+                  </span>
+                ) : page.status === "published" ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Đang xuất bản
+                  </span>
+                ) : (
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    Bản nháp
+                  </span>
+                )}
+
+                {/* Slug rút gọn trên điện thoại (bấm để sao chép link) */}
+                <button
+                  type="button"
+                  onClick={copySlugLink}
+                  className="sm:hidden font-mono text-primary truncate min-w-0 cursor-pointer"
+                  title="Sao chép link trang"
+                >
+                  /{slug || initialData.primarySlug}
+                </button>
+
+                {isDirty && (
+                  <span className="text-amber-500 font-medium shrink-0">
+                    <span className="sm:hidden" title="Chưa lưu thay đổi">
+                      •
+                    </span>
+                    <span className="hidden sm:inline">• Chưa lưu thay đổi</span>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Center Section: Device Switcher & Zoom Scale (Hidden on small mobile) */}
-        <div className="hidden md:flex items-center gap-2">
-          {/* Device Frame Switcher */}
-          <div className="flex items-center rounded-xl border border-border p-1 bg-muted/40">
-            <button
-              type="button"
-              onClick={() => setPreviewMode("mobile")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                previewMode === "mobile"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Điện thoại</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreviewMode("desktop")}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                previewMode === "desktop"
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Monitor className="w-3.5 h-3.5" />
-              <span>Máy tính</span>
-            </button>
-          </div>
-
-          {/* Zoom Level Switcher */}
-          <div className="flex items-center rounded-xl border border-border p-1 bg-muted/40 text-xs">
-            {([1, 0.9, 0.8] as const).map((z) => (
+          {/* Center Section: Device Switcher & Zoom Scale (desktop only) */}
+          <div className="hidden lg:flex items-center gap-2">
+            <div className="flex items-center rounded-xl border border-border p-1 bg-muted/40">
               <button
-                key={z}
                 type="button"
-                onClick={() => setZoomScale(z)}
-                className={`px-2 py-1 rounded-lg font-mono text-[11px] transition-colors cursor-pointer ${
-                  zoomScale === z
-                    ? "bg-background text-foreground font-bold shadow-xs"
+                onClick={() => setPreviewMode("mobile")}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  previewMode === "mobile"
+                    ? "bg-background text-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title={`Thu phóng ${Math.round(z * 100)}%`}
               >
-                {Math.round(z * 100)}%
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Điện thoại</span>
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setPreviewMode("desktop")}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  previewMode === "desktop"
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Monitor className="w-3.5 h-3.5" />
+                <span>Máy tính</span>
+              </button>
+            </div>
+
+            <div className="flex items-center rounded-xl border border-border p-1 bg-muted/40 text-xs">
+              {([1, 0.9, 0.8] as const).map((z) => (
+                <button
+                  key={z}
+                  type="button"
+                  onClick={() => setZoomScale(z)}
+                  className={`px-2 py-1 rounded-lg font-mono text-[11px] transition-colors cursor-pointer ${
+                    zoomScale === z
+                      ? "bg-background text-foreground font-bold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title={`Thu phóng ${Math.round(z * 100)}%`}
+                >
+                  {Math.round(z * 100)}%
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Right Section: Actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Open live page */}
+            {!isCreatingNew && page.status === "published" && (
+              <a
+                href={`/${slug || initialData.primarySlug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden xl:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Xem trang</span>
+              </a>
+            )}
+
+            {/* Undo / Redo */}
+            <div className="hidden sm:flex items-center rounded-xl border border-border">
+              <button
+                type="button"
+                onClick={history.undo}
+                disabled={!history.canUndo}
+                className="h-9 w-9 flex items-center justify-center rounded-l-xl text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-35 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed"
+                title="Hoàn tác (Ctrl+Z)"
+                aria-label="Hoàn tác"
+              >
+                <Undo2 className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={history.redo}
+                disabled={!history.canRedo}
+                className="h-9 w-9 flex items-center justify-center rounded-r-xl border-l border-border text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-35 disabled:hover:bg-transparent cursor-pointer disabled:cursor-not-allowed"
+                title="Làm lại (Ctrl+Shift+Z)"
+                aria-label="Làm lại"
+              >
+                <Redo2 className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Save Draft */}
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={isPending}
+              className={`relative flex items-center justify-center gap-1.5 h-9 min-w-9 px-2.5 sm:px-3.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer disabled:opacity-50 ${
+                isDirty || isCreatingNew
+                  ? "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10"
+                  : "border-border hover:bg-muted text-foreground"
+              }`}
+              title="Lưu bản nháp (Phím tắt: Ctrl+S)"
+              aria-label={isCreatingNew ? "Lưu tạo trang" : "Lưu nháp"}
+            >
+              {isPending ? (
+                <Loader2 className="w-4 h-4 sm:w-3.5 sm:h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+              )}
+              <span className="hidden sm:inline">
+                {isCreatingNew ? "Lưu tạo trang" : "Lưu nháp"}
+              </span>
+              <span className="text-[10px] opacity-60 hidden md:inline font-mono">⌘S</span>
+              {isDirty && (
+                <span className="sm:hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-background" />
+              )}
+            </button>
+
+            {/* Unpublish button if published */}
+            {!isCreatingNew && page.status === "published" && (
+              <button
+                type="button"
+                onClick={handleUnpublish}
+                disabled={isPending}
+                className="hidden sm:flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-red-500/30 text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <span>Ẩn trang</span>
+              </button>
+            )}
+
+            {/* Publish Button */}
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={isPending}
+              className="flex items-center gap-1.5 h-9 px-3 sm:px-4 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+            >
+              {isPending ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Globe className="w-3.5 h-3.5" />
+              )}
+              <span className="sm:hidden">Xuất bản</span>
+              <span className="hidden sm:inline">
+                {isCreatingNew ? "Tạo & Xuất bản" : "Xuất bản"}
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* Right Section: Mobile Mode Switcher & Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile Tab Toggle (< lg screens only) */}
-          <div className="flex lg:hidden items-center rounded-xl border border-border p-0.5 bg-muted/50">
+        {/* Mobile/Tablet: chuyển giữa Chỉnh sửa và Xem trước (< lg) */}
+        <div className="lg:hidden px-2 sm:px-5 pb-2">
+          <div className="grid grid-cols-2 rounded-xl border border-border p-1 bg-muted/50">
             <button
               type="button"
               onClick={() => setMobileViewMode("edit")}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              aria-pressed={mobileViewMode === "edit"}
+              className={`flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 mobileViewMode === "edit"
                   ? "bg-background text-foreground shadow-xs"
                   : "text-muted-foreground"
               }`}
             >
+              <Layers className="w-3.5 h-3.5" />
               Chỉnh sửa
             </button>
             <button
               type="button"
               onClick={() => setMobileViewMode("preview")}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              aria-pressed={mobileViewMode === "preview"}
+              className={`flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 mobileViewMode === "preview"
                   ? "bg-background text-foreground shadow-xs"
                   : "text-muted-foreground"
               }`}
             >
+              <Smartphone className="w-3.5 h-3.5" />
               Xem trước
             </button>
           </div>
-
-          {/* Open live page */}
-          {!isCreatingNew && page.status === "published" && (
-            <a
-              href={`/${slug || initialData.primarySlug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden xl:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span>Xem trang</span>
-            </a>
-          )}
-
-          {/* Save Draft */}
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            disabled={isPending}
-            className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer disabled:opacity-50 ${
-              isDirty || isCreatingNew
-                ? "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10"
-                : "border-border hover:bg-muted text-foreground"
-            }`}
-            title="Lưu bản nháp (Phím tắt: Ctrl+S)"
-          >
-            {isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Save className="w-3.5 h-3.5" />
-            )}
-            <span className="hidden sm:inline">{isCreatingNew ? "Lưu tạo trang" : "Lưu nháp"}</span>
-            <span className="text-[10px] opacity-60 hidden md:inline font-mono">⌘S</span>
-          </button>
-
-          {/* Unpublish button if published */}
-          {!isCreatingNew && page.status === "published" && (
-            <button
-              type="button"
-              onClick={handleUnpublish}
-              disabled={isPending}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-red-500/30 text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <span>Ẩn trang</span>
-            </button>
-          )}
-
-          {/* Publish Button */}
-          <button
-            type="button"
-            onClick={handlePublish}
-            disabled={isPending}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
-          >
-            {isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Globe className="w-3.5 h-3.5" />
-            )}
-            <span>{isCreatingNew ? "Tạo & Xuất bản" : "Xuất bản"}</span>
-          </button>
         </div>
       </header>
 
@@ -808,50 +907,61 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
           }}
         >
           {/* Studio Tabs Navigation */}
-          <div className="flex items-center px-4 border-b border-border/80 bg-muted/20 shrink-0">
+          <div
+            role="tablist"
+            className="flex items-stretch px-1 sm:px-4 border-b border-border/80 bg-muted/20 shrink-0"
+          >
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === "blocks"}
               onClick={() => setActiveTab("blocks")}
-              className={`flex items-center gap-2 py-3 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 min-h-11 py-2.5 px-2 sm:px-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
                 activeTab === "blocks"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Layers className="w-4 h-4" />
+              <Layers className="w-4 h-4 shrink-0" />
               <span>Nội dung</span>
-              <span className="bg-muted px-1.5 py-0.2 rounded-full text-[10px] font-mono">
+              <span className="bg-muted px-1.5 rounded-full text-[10px] font-mono">
                 {blocks.length}
               </span>
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === "theme"}
               onClick={() => setActiveTab("theme")}
-              className={`flex items-center gap-2 py-3 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 min-h-11 py-2.5 px-2 sm:px-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
                 activeTab === "theme"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Palette className="w-4 h-4" />
-              <span>Giao diện (Theme)</span>
+              <Palette className="w-4 h-4 shrink-0" />
+              <span>Giao diện</span>
+              <span className="hidden sm:inline">(Theme)</span>
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === "seo"}
               onClick={() => setActiveTab("seo")}
-              className={`flex items-center gap-2 py-3 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 sm:gap-2 min-h-11 py-2.5 px-2 sm:px-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
                 activeTab === "seo"
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Settings className="w-4 h-4" />
-              <span>Cài đặt & SEO</span>
+              <Settings className="w-4 h-4 shrink-0" />
+              <span className="sm:hidden">SEO</span>
+              <span className="hidden sm:inline">Cài đặt & SEO</span>
             </button>
           </div>
 
           {/* Studio Tab Content (Independent scroll) */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 pb-32 sm:pb-40 space-y-6">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5 pb-24 sm:pb-40 space-y-6">
             {activeTab === "blocks" && (
               <div className="space-y-6">
                 {/* 1. Core Page Settings: Internal Name & Slug & Title */}
@@ -934,12 +1044,10 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                 {/* Quick Add Block Toolbar: ALL 8 BLOCK TYPES */}
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-foreground">
-                      Thêm khối nội dung:
-                    </span>
+                    <span className="text-xs font-bold text-foreground">Thêm khối nội dung:</span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4 gap-2">
                     <button
                       type="button"
                       onClick={() => handleAddBlock("header")}
@@ -1042,7 +1150,10 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                     <div className="p-8 text-center rounded-2xl border-2 border-dashed border-border/80 text-muted-foreground text-xs space-y-2">
                       <Layers className="w-8 h-8 mx-auto opacity-40 text-muted-foreground" />
                       <p className="font-semibold text-foreground">Trang chưa có khối nào</p>
-                      <p>Nhấn vào các nút phía trên để thêm Tiêu đề, Danh sách liên kết hoặc Hình ảnh.</p>
+                      <p>
+                        Nhấn vào các nút phía trên để thêm Tiêu đề, Danh sách liên kết hoặc Hình
+                        ảnh.
+                      </p>
                     </div>
                   ) : (
                     blocks.map((block, idx) => (
@@ -1069,6 +1180,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             {activeTab === "theme" && (
               <ThemeEditor
                 themeConfig={themeConfig}
+                imageUrls={pageImageUrls}
                 onChange={(newTheme) => {
                   setThemeConfig(newTheme);
                   setIsDirty(true);
@@ -1122,7 +1234,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
         {/* Right Panel: Live Studio Preview */}
         <div
-          className={`flex-1 bg-slate-100/70 dark:bg-slate-900/40 flex flex-col items-center justify-center p-3 sm:p-6 overflow-hidden relative ${
+          className={`flex-1 bg-slate-100/70 dark:bg-slate-900/40 flex flex-col items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden relative ${
             mobileViewMode === "edit" ? "hidden lg:flex" : "flex"
           }`}
         >
@@ -1133,12 +1245,15 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
           />
 
           {/* Current Theme Pill Info */}
-          <div className="absolute top-3 left-4 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border/60 text-[11px] text-muted-foreground shadow-2xs z-20">
+          <div className="absolute top-3 left-4 hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border/60 text-[11px] text-muted-foreground shadow-2xs z-20">
             <span className="w-2 h-2 rounded-full bg-primary" />
-            <span>Mẫu: <strong className="text-foreground">{themeConfig.preset}</strong></span>
+            <span>
+              Mẫu: <strong className="text-foreground">{themeConfig.preset}</strong>
+            </span>
           </div>
 
           <LivePreview
+            key={previewMode}
             themeConfig={themeConfig}
             title={title}
             blocks={blocks}
@@ -1150,26 +1265,34 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
       {/* 3. CONFIRMATION MODAL */}
       {confirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setConfirmModal(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-border bg-card p-5 sm:p-6 pb-safe sm:pb-6 shadow-2xl space-y-4"
+          >
             <div className="space-y-1.5">
               <h3 className="text-base font-bold text-foreground">{confirmModal.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-sm sm:text-xs text-muted-foreground leading-relaxed break-words">
                 {confirmModal.description}
               </p>
             </div>
-            <div className="flex items-center justify-end gap-2.5 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setConfirmModal(null)}
-                className="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted text-foreground transition-colors cursor-pointer"
+                className="h-11 sm:h-auto px-4 sm:py-2 rounded-xl border border-border text-sm sm:text-xs font-semibold hover:bg-muted text-foreground transition-colors cursor-pointer"
               >
                 Hủy bỏ
               </button>
               <button
                 type="button"
                 onClick={confirmModal.onConfirm}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs ${
+                className={`h-11 sm:h-auto px-4 sm:py-2 rounded-xl text-sm sm:text-xs font-bold transition-all cursor-pointer shadow-xs ${
                   confirmModal.confirmVariant === "danger"
                     ? "bg-red-600 hover:bg-red-700 text-white shadow-red-500/20"
                     : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20"
@@ -1184,11 +1307,15 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
       {/* 4. FLOATING TOAST NOTIFICATION */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xl text-xs font-medium animate-in slide-in-from-bottom-3 duration-200">
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-4 left-3 right-3 sm:left-auto sm:bottom-5 sm:right-5 sm:max-w-sm z-50 flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xl text-xs font-medium animate-in slide-in-from-bottom-3 duration-200"
+        >
           {toast.type === "success" && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
           {toast.type === "error" && <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />}
           {toast.type === "info" && <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />}
-          <span>{toast.message}</span>
+          <span className="min-w-0 break-words">{toast.message}</span>
         </div>
       )}
     </div>
