@@ -845,12 +845,10 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                     <button
                       type="button"
                       onClick={() => {
-                        const stops = gradient.stops
-                          .slice(0, -1)
-                          .map((s, i, arr) => ({
-                            ...s,
-                            at: Math.round((i / (arr.length - 1)) * 100),
-                          }));
+                        const stops = gradient.stops.slice(0, -1).map((s, i, arr) => ({
+                          ...s,
+                          at: Math.round((i / (arr.length - 1)) * 100),
+                        }));
                         setGradient({ stops });
                       }}
                       className="px-2.5 py-1 rounded-lg text-[11px] border border-border hover:bg-muted cursor-pointer"
