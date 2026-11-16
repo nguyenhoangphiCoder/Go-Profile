@@ -229,6 +229,8 @@ export interface PageEditorData {
     defaultMediaUrl?: string | null;
     isActive: boolean;
   }[];
+  /** false với viewer: editor chỉ xem, không lưu / xuất bản được. */
+  canEdit: boolean;
   availableMedia: {
     id: string;
     originalFilename: string | null;

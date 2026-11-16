@@ -1,7 +1,8 @@
 "use server";
 
 import { z } from "zod";
-import { getCurrentAdmin } from "@/features/auth/queries";
+import { getWorkspaceForAction } from "@/features/workspace/context";
+import { FORBIDDEN_ERROR } from "@/features/workspace/types";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import type { Json } from "@/types/database.generated";
 import {
@@ -11,7 +12,6 @@ import {
   type SavedThemePreset,
 } from "./schemas";
 
-const SESSION_ERROR = "Phiên đăng nhập đã hết hạn hoặc bạn không có quyền quản trị.";
 const MIGRATION_HINT =
   "Chưa có bảng theme_presets. Hãy áp dụng migration 20261116000001_theme_presets.sql.";
 const MAX_PRESETS = 50;
@@ -26,13 +26,14 @@ function isMissingTable(error: { code?: string; message?: string } | null): bool
 }
 
 export async function listThemePresetsAction(): Promise<ActionResult<SavedThemePreset[]>> {
-  const admin = await getCurrentAdmin();
-  if (!admin) return { success: false, error: SESSION_ERROR };
+  const ctx = await getWorkspaceForAction("viewer");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
 
   const db = createSupabaseAdminClient();
   const { data, error } = await db
     .from("theme_presets")
     .select("id, name, config, created_at")
+    .eq("workspace_id", ctx.workspace.id)
     .is("archived_at", null)
     .order("created_at", { ascending: false })
     .limit(MAX_PRESETS);
@@ -63,14 +64,15 @@ export async function saveThemePresetAction(
     return { success: false, error: parsed.error.issues[0]?.message || "Dữ liệu mẫu không hợp lệ" };
   }
 
-  const admin = await getCurrentAdmin();
-  if (!admin) return { success: false, error: SESSION_ERROR };
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
 
   const db = createSupabaseAdminClient();
 
   const { count, error: countError } = await db
     .from("theme_presets")
     .select("id", { count: "exact", head: true })
+    .eq("workspace_id", ctx.workspace.id)
     .is("archived_at", null);
   if (countError) {
     return {
@@ -87,7 +89,8 @@ export async function saveThemePresetAction(
     .insert({
       name: parsed.data.name,
       config: parsed.data.config as unknown as Json,
-      created_by: admin.userId,
+      created_by: ctx.user.userId,
+      workspace_id: ctx.workspace.id,
     })
     .select("id, name, created_at")
     .single();
@@ -105,14 +108,15 @@ export async function saveThemePresetAction(
 export async function archiveThemePresetAction(id: string): Promise<ActionResult<null>> {
   if (!z.uuid().safeParse(id).success) return { success: false, error: "ID mẫu không hợp lệ" };
 
-  const admin = await getCurrentAdmin();
-  if (!admin) return { success: false, error: SESSION_ERROR };
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
 
   const db = createSupabaseAdminClient();
   const { error } = await db
     .from("theme_presets")
     .update({ archived_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("workspace_id", ctx.workspace.id)
     .is("archived_at", null);
 
   if (error) {

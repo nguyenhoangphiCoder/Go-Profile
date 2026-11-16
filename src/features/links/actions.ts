@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
-import { requireActiveAdmin } from "@/features/auth/queries";
+import { getWorkspaceForAction } from "@/features/workspace/context";
+import { FORBIDDEN_ERROR } from "@/features/workspace/types";
 import { linkSchema } from "./schemas";
 import type { LinkActionState } from "./types";
 
@@ -25,7 +26,9 @@ export async function upsertLinkAction(
   formData: FormData
 ): Promise<LinkActionState> {
   try {
-    const admin = await requireActiveAdmin();
+    const ctx = await getWorkspaceForAction("editor");
+    if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
+    const workspaceId = ctx.workspace.id;
 
     const rawData = {
       id: formData.get("id") ? String(formData.get("id")) : undefined,
@@ -51,12 +54,27 @@ export async function upsertLinkAction(
     const adminClient = createSupabaseAdminClient();
     const dbKind = toDbKind(kind);
 
+    // Ảnh đại diện phải thuộc cùng workspace (service role bỏ qua RLS nên kiểm tra tại đây)
+    if (defaultMediaId) {
+      const { data: media } = await adminClient
+        .from("media_assets")
+        .select("id")
+        .eq("id", defaultMediaId)
+        .eq("workspace_id", workspaceId)
+        .is("archived_at", null)
+        .maybeSingle();
+      if (!media) {
+        return { success: false, error: "Ảnh đã chọn không thuộc workspace hiện tại." };
+      }
+    }
+
     if (id) {
       // Cập nhật link có kiểm tra optimistic locking
       const { data: currentLink, error: fetchError } = await adminClient
         .from("links")
         .select("lock_version")
         .eq("id", id)
+        .eq("workspace_id", workspaceId)
         .single();
 
       if (fetchError || !currentLink) {
@@ -84,7 +102,8 @@ export async function upsertLinkAction(
           lock_version: lockVersion + 1,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("workspace_id", workspaceId);
 
       if (updateError) {
         console.error("Update link error:", updateError);
@@ -96,11 +115,12 @@ export async function upsertLinkAction(
     } else {
       // Thêm link mới
       const { error: insertError } = await adminClient.from("links").insert({
+        workspace_id: workspaceId,
         default_label: defaultLabel,
         target_url: targetUrl,
         kind: dbKind,
         default_media_id: defaultMediaId,
-        created_by: admin.userId,
+        created_by: ctx.user.userId,
         lock_version: 1,
       });
 
@@ -130,7 +150,8 @@ export async function toggleLinkStatusAction(
   expectedVersion: number
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await requireActiveAdmin();
+    const ctx = await getWorkspaceForAction("editor");
+    if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
     const adminClient = createSupabaseAdminClient();
 
     const { data: updated, error } = await adminClient
@@ -141,6 +162,7 @@ export async function toggleLinkStatusAction(
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
+      .eq("workspace_id", ctx.workspace.id)
       .eq("lock_version", expectedVersion)
       .select("id");
 
@@ -169,7 +191,8 @@ export async function archiveLinkAction(
   expectedVersion: number
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await requireActiveAdmin();
+    const ctx = await getWorkspaceForAction("editor");
+    if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
     const adminClient = createSupabaseAdminClient();
 
     const { data: updated, error } = await adminClient
@@ -181,6 +204,7 @@ export async function archiveLinkAction(
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
+      .eq("workspace_id", ctx.workspace.id)
       .eq("lock_version", expectedVersion)
       .select("id");
 

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { requireActiveAdmin } from "@/features/auth/queries";
+import { requireWorkspace } from "@/features/workspace/context";
 import { VIETNAM_TIMEZONE } from "./timezone";
 import type { ClickReportDTO, ClickReportParams, ReportFilterOptions } from "./types";
 
@@ -17,7 +17,8 @@ function formatToDateStr(isoString: string, timeZone: string = VIETNAM_TIMEZONE)
 
 async function queryClickReportDirectly(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  params: ClickReportParams
+  params: ClickReportParams,
+  workspaceId: string
 ): Promise<ClickReportDTO> {
   const tz = params.timezone || VIETNAM_TIMEZONE;
 
@@ -32,8 +33,14 @@ async function queryClickReportDirectly(
 
   const [clicksRes, pagesRes, linksRes, placementsRes] = await Promise.all([
     clicksQuery,
-    supabase.from("pages").select("id, internal_name, page_slugs(slug, is_current)"),
-    supabase.from("links").select("id, default_label, target_url, kind"),
+    supabase
+      .from("pages")
+      .select("id, internal_name, page_slugs(slug, is_current)")
+      .eq("workspace_id", workspaceId),
+    supabase
+      .from("links")
+      .select("id, default_label, target_url, kind")
+      .eq("workspace_id", workspaceId),
     supabase
       .from("revision_link_placements")
       .select("revision_id, page_link_id, position, resolved_label"),
@@ -43,8 +50,10 @@ async function queryClickReportDirectly(
     throw new Error(`Không thể tải dữ liệu click: ${clicksRes.error.message}`);
   }
 
-  const clicks = clicksRes.data || [];
   const pages = pagesRes.data || [];
+  // Chỉ giữ click của trang thuộc workspace hiện tại
+  const workspacePageIds = new Set(pages.map((p) => p.id));
+  const clicks = (clicksRes.data || []).filter((c) => workspacePageIds.has(c.page_id));
   const links = linksRes.data || [];
   const placements = placementsRes.data || [];
 
@@ -137,7 +146,7 @@ async function queryClickReportDirectly(
 }
 
 export async function getClickReport(params: ClickReportParams): Promise<ClickReportDTO> {
-  await requireActiveAdmin();
+  const { workspace } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
   const rpcArgs = {
@@ -146,6 +155,7 @@ export async function getClickReport(params: ClickReportParams): Promise<ClickRe
     p_page_id: params.pageId || undefined,
     p_link_id: params.linkId || undefined,
     p_timezone: params.timezone || VIETNAM_TIMEZONE,
+    p_workspace_id: workspace.id,
   };
 
   const { data, error } = await supabase.rpc("get_click_report", rpcArgs);
@@ -156,7 +166,7 @@ export async function getClickReport(params: ClickReportParams): Promise<ClickRe
       error.message
     );
     try {
-      return await queryClickReportDirectly(supabase, params);
+      return await queryClickReportDirectly(supabase, params, workspace.id);
     } catch {
       throw new Error(`Không thể tải dữ liệu báo cáo: ${error.message}`);
     }
@@ -209,17 +219,19 @@ export async function getClickReport(params: ClickReportParams): Promise<ClickRe
 }
 
 export async function getReportFilterOptions(): Promise<ReportFilterOptions> {
-  await requireActiveAdmin();
+  const { workspace } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
   const [pagesRes, linksRes] = await Promise.all([
     supabase
       .from("pages")
       .select("id, internal_name, archived_at, page_slugs(slug, is_current)")
+      .eq("workspace_id", workspace.id)
       .order("internal_name", { ascending: true }),
     supabase
       .from("links")
       .select("id, default_label, target_url, kind, is_active, archived_at")
+      .eq("workspace_id", workspace.id)
       .order("default_label", { ascending: true }),
   ]);
 

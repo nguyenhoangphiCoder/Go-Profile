@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ShieldCheck, ExternalLink } from "lucide-react";
-import { requireActiveAdmin } from "@/features/auth/queries";
+import { requireWorkspace } from "@/features/workspace/context";
+import { ROLE_LABELS } from "@/features/workspace/types";
+import { WorkspaceSwitcher } from "@/components/admin/workspace-switcher";
 import { getPrimaryPublicSlug } from "@/features/dashboard/queries";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { LogoutButton } from "@/components/admin/logout-button";
@@ -10,7 +12,19 @@ import { MobileSidebar } from "@/components/admin/mobile-sidebar";
 export const instant = false;
 
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
-  const [admin, primarySlug] = await Promise.all([requireActiveAdmin(), getPrimaryPublicSlug()]);
+  const ctx = await requireWorkspace();
+  const primarySlug = await getPrimaryPublicSlug(ctx.workspace.id);
+  const admin = {
+    userId: ctx.user.userId,
+    email: ctx.user.email,
+    displayName: ctx.user.displayName,
+  };
+  const switcher = {
+    workspaces: ctx.workspaces.map((w) => ({ id: w.id, name: w.name })),
+    currentId: ctx.workspace.id,
+    role: ctx.role,
+    isPlatformAdmin: ctx.isPlatformAdmin,
+  };
 
   const publicUrl = primarySlug ? `/${primarySlug}` : null;
 
@@ -40,6 +54,11 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
           </div>
         </div>
 
+        {/* Workspace đang làm việc */}
+        <div className="px-4 py-3 border-b border-border/60 shrink-0">
+          <WorkspaceSwitcher {...switcher} />
+        </div>
+
         {/* Navigation Links */}
         <div className="flex-1 p-4 overflow-y-auto">
           <AdminNav />
@@ -62,8 +81,8 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
           </div>
           <div className="flex items-center justify-between pt-1">
             <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Admin</span>
+              {ctx.isPlatformAdmin && <ShieldCheck className="w-3.5 h-3.5" />}
+              <span>{ctx.isPlatformAdmin ? "Quản trị hệ thống" : ROLE_LABELS[ctx.role]}</span>
             </span>
             <LogoutButton />
           </div>
@@ -76,17 +95,9 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
         <header className="h-16 border-b border-border/60 flex items-center justify-between px-4 md:hidden bg-card/95 backdrop-blur-md shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-2.5">
             <MobileSidebar admin={admin} />
-            <div className="w-8 h-8 rounded-full overflow-hidden shadow-xs shrink-0 bg-black flex items-center justify-center">
-              <Image
-                src="/logo-gocafe.png"
-                alt="Gờ Cafe"
-                width={32}
-                height={32}
-                className="w-full h-full object-cover"
-                priority
-              />
+            <div className="max-w-[9rem]">
+              <WorkspaceSwitcher {...switcher} compact />
             </div>
-            <span className="font-bold text-sm text-foreground">Gờ Cafe CMS</span>
           </div>
           <div className="flex items-center gap-2">
             {publicUrl ? (
@@ -111,7 +122,9 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>Khu vực quản trị</span>
             <span>/</span>
-            <span className="text-blue-600 dark:text-blue-400 font-semibold">CMS</span>
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">
+              {ctx.workspace.name}
+            </span>
           </div>
           <div className="flex items-center gap-4">
             {publicUrl ? (

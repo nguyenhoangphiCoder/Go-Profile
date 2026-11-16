@@ -9,6 +9,47 @@ import {
 import { pageSlugSchema, saveDraftSchema } from "@/features/pages/schemas";
 
 // Mocks cho Database, Auth, và RPC
+vi.mock("@/features/workspace/context", () => ({
+  requireWorkspace: vi.fn(() =>
+    Promise.resolve({
+      user: {
+        userId: "admin-user-id-01",
+        email: "admin@gocafe.vn",
+        displayName: "Quản trị viên Gờ",
+      },
+      isPlatformAdmin: true,
+      workspace: {
+        id: "ws-test",
+        name: "Gờ Cafe",
+        role: "owner",
+        maxPages: 1000,
+        maxMediaBytes: 1e10,
+      },
+      role: "owner",
+      workspaces: [],
+    })
+  ),
+  getWorkspaceForAction: vi.fn(() =>
+    Promise.resolve({
+      user: {
+        userId: "admin-user-id-01",
+        email: "admin@gocafe.vn",
+        displayName: "Quản trị viên Gờ",
+      },
+      isPlatformAdmin: true,
+      workspace: {
+        id: "ws-test",
+        name: "Gờ Cafe",
+        role: "owner",
+        maxPages: 1000,
+        maxMediaBytes: 1e10,
+      },
+      role: "owner",
+      workspaces: [],
+    })
+  ),
+}));
+
 vi.mock("@/features/auth/queries", () => ({
   requireActiveAdmin: vi.fn(() =>
     Promise.resolve({

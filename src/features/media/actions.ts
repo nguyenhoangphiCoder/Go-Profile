@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
-import { requireActiveAdmin } from "@/features/auth/queries";
+import { getWorkspaceForAction } from "@/features/workspace/context";
+import { FORBIDDEN_ERROR } from "@/features/workspace/types";
 import { mediaUploadSchema } from "./schemas";
 import { isMediaUsedByActiveRevision } from "./usage";
 import type { MediaUploadState } from "./types";
@@ -14,7 +14,8 @@ export async function uploadMediaAction(
   formData: FormData
 ): Promise<MediaUploadState> {
   try {
-    const admin = await requireActiveAdmin();
+    const ctx = await getWorkspaceForAction("editor");
+    if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
     const file = formData.get("file") as File | null;
 
     if (!file || !(file instanceof File) || file.size === 0) {
@@ -36,6 +37,24 @@ export async function uploadMediaAction(
 
     const adminClient = createSupabaseAdminClient();
 
+    // Giới hạn dung lượng ảnh của workspace
+    const { data: usedRows, error: usedError } = await adminClient
+      .from("media_assets")
+      .select("size_bytes")
+      .eq("workspace_id", ctx.workspace.id)
+      .is("archived_at", null);
+    if (usedError) {
+      return { success: false, error: "Không kiểm tra được dung lượng đã dùng của workspace." };
+    }
+    const usedBytes = (usedRows ?? []).reduce((sum, r) => sum + Number(r.size_bytes ?? 0), 0);
+    if (usedBytes + file.size > ctx.workspace.maxMediaBytes) {
+      const mb = (n: number) => (n / 1024 / 1024).toFixed(1);
+      return {
+        success: false,
+        error: `Workspace đã dùng ${mb(usedBytes)}/${mb(ctx.workspace.maxMediaBytes)} MB. Hãy xoá bớt ảnh không dùng hoặc liên hệ quản trị hệ thống để nâng giới hạn.`,
+      };
+    }
+
     const bucketId = "public_media";
     const cleanFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").toLowerCase();
     const uniqueKey = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -52,7 +71,8 @@ export async function uploadMediaAction(
         mime_type: file.type,
         size_bytes: file.size,
         original_filename: file.name,
-        created_by: admin.userId,
+        created_by: ctx.user.userId,
+        workspace_id: ctx.workspace.id,
       })
       .select("id")
       .single();
@@ -124,12 +144,25 @@ export async function uploadMediaDirectAction(formData: FormData): Promise<Media
 
 export async function deleteMediaAction(id: string): Promise<{ success: boolean; error?: string }> {
   try {
-    await requireActiveAdmin();
-    const supabase = await createSupabaseServerClient();
+    const ctx = await getWorkspaceForAction("editor");
+    if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
     const adminClient = createSupabaseAdminClient();
 
-    // 1. Kiểm tra tham chiếu an toàn
-    const { data: linkUsage } = await supabase
+    // 0. Ảnh phải thuộc workspace hiện tại
+    const { data: owned } = await adminClient
+      .from("media_assets")
+      .select("id")
+      .eq("id", id)
+      .eq("workspace_id", ctx.workspace.id)
+      .is("archived_at", null)
+      .maybeSingle();
+    if (!owned) {
+      return { success: false, error: "Hình ảnh không tồn tại trong workspace hiện tại." };
+    }
+
+    // 1. Kiểm tra tham chiếu trên TOÀN hệ thống (service role): trang ở workspace khác có thể
+    //    đang dùng URL công khai của ảnh này
+    const { data: linkUsage } = await adminClient
       .from("links")
       .select("id")
       .eq("default_media_id", id)
@@ -145,7 +178,7 @@ export async function deleteMediaAction(id: string): Promise<{ success: boolean;
 
     // Ảnh nằm trong bản đang xuất bản hoặc bản nháp của trang (avatar, banner, khối ảnh,
     // thư viện, thẻ món, nền theme, icon liên kết...) — xem migration 20261116000003.
-    if (await isMediaUsedByActiveRevision(supabase, id)) {
+    if (await isMediaUsedByActiveRevision(adminClient, id)) {
       return {
         success: false,
         error:

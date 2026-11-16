@@ -9,25 +9,38 @@ export interface DashboardSummary {
   clicksSummaryText: string;
 }
 
-export async function getDashboardSummary(): Promise<DashboardSummary> {
+export async function getDashboardSummary(workspaceId: string): Promise<DashboardSummary> {
   const supabase = await createSupabaseServerClient();
 
-  const [pagesRes, linksRes, clicksCountRes, clickEventsRes] = await Promise.all([
+  const [pagesRes, linksRes] = await Promise.all([
     supabase
       .from("pages")
       .select("id, internal_name, status, page_slugs(slug, is_current)")
+      .eq("workspace_id", workspaceId)
       .is("archived_at", null)
       .order("updated_at", { ascending: false }),
     supabase
       .from("links")
       .select("id, default_label, is_active")
+      .eq("workspace_id", workspaceId)
       .is("archived_at", null)
       .order("created_at", { ascending: false }),
-    supabase.from("click_events").select("*", { count: "exact", head: true }),
-    supabase.from("click_events").select("page_id").limit(200),
   ]);
 
   const pages = pagesRes.data || [];
+
+  // Click của các trang thuộc workspace
+  const pageIds = pages.map((p) => p.id);
+  const [clicksCountRes, clickEventsRes] =
+    pageIds.length > 0
+      ? await Promise.all([
+          supabase
+            .from("click_events")
+            .select("*", { count: "exact", head: true })
+            .in("page_id", pageIds),
+          supabase.from("click_events").select("page_id").in("page_id", pageIds).limit(200),
+        ])
+      : [{ count: 0 }, { data: [] as { page_id: string }[] }];
   const links = linksRes.data || [];
   const totalClicks = clicksCountRes.count ?? 0;
   const clickEvents = clickEventsRes.data || [];
@@ -99,11 +112,12 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   };
 }
 
-export async function getPrimaryPublicSlug(): Promise<string | null> {
+export async function getPrimaryPublicSlug(workspaceId: string): Promise<string | null> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("pages")
     .select("page_slugs(slug, is_current)")
+    .eq("workspace_id", workspaceId)
     .eq("status", "published")
     .is("archived_at", null)
     .order("updated_at", { ascending: false })

@@ -327,17 +327,17 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 
 **5b — Ứng dụng theo workspace:**
 
-- [ ] Chọn workspace đang làm việc (cookie) + bộ chuyển workspace trên thanh quản trị.
-- [ ] Mọi truy vấn / server action dùng service role phải lọc và kiểm tra quyền theo workspace (≈ 34 chỗ `requireActiveAdmin` / `getCurrentAdmin`).
-- [ ] Ẩn nút sửa / xuất bản với viewer.
-- [ ] Bỏ DEFAULT workspace Gờ Cafe sau khi ứng dụng truyền workspace tường minh.
+- [x] Chọn workspace đang làm việc (cookie `gp_ws`, chỉ nhận workspace được phép) + bộ chuyển workspace trên thanh quản trị (`src/features/workspace/`).
+- [x] Mọi truy vấn lọc theo workspace; 15 server action ghi kiểm tra vai trò (`getWorkspaceForAction`) và kiểm tra bản ghi thuộc workspace trước khi ghi bằng service role. Giới hạn dung lượng ảnh khi tải lên.
+- [x] Viewer: editor ở chế độ chỉ xem (không lưu / xuất bản), ẩn nút tạo trang trên bảng điều khiển; trang `/admin/no-workspace` cho người chưa thuộc workspace nào.
+- [ ] Bỏ DEFAULT workspace Gờ Cafe (ứng dụng đã truyền workspace tường minh; giữ DEFAULT làm lưới an toàn tới khi 5c ổn định).
 
 **5c — Lời mời & quản lý:**
 
 - [ ] Mời qua email (Supabase `inviteUserByEmail`), tự nhận lời mời khi đăng nhập bằng đúng email.
 - [ ] Trang thành viên: danh sách, đổi vai trò, xoá, thu hồi lời mời.
 - [ ] Trang quản trị hệ thống: danh sách workspace, tạo workspace + mời owner, đặt giới hạn.
-- [ ] Giới hạn dung lượng ảnh khi tải lên.
+- [x] Giới hạn dung lượng ảnh khi tải lên (làm sớm trong 5b).
 
 ---
 

@@ -1,6 +1,6 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { requireActiveAdmin } from "@/features/auth/queries";
+import { requireWorkspace } from "@/features/workspace/context";
 import type { LinkItem, LinkKind } from "./types";
 
 function fromDbKind(kind: string, targetUrl: string): LinkKind {
@@ -13,7 +13,7 @@ export async function getLinks(
   searchQuery?: string,
   statusFilter: "all" | "active" | "inactive" = "all"
 ): Promise<LinkItem[]> {
-  await requireActiveAdmin();
+  const { workspace } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
   let query = supabase
@@ -41,6 +41,7 @@ export async function getLinks(
       )
     `
     )
+    .eq("workspace_id", workspace.id)
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 
@@ -95,7 +96,7 @@ export async function getLinks(
 }
 
 export async function getLinkById(id: string): Promise<LinkItem | null> {
-  await requireActiveAdmin();
+  const { workspace } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
   const { data: row, error } = await supabase
@@ -124,6 +125,7 @@ export async function getLinkById(id: string): Promise<LinkItem | null> {
     `
     )
     .eq("id", id)
+    .eq("workspace_id", workspace.id)
     .single();
 
   if (error || !row) {

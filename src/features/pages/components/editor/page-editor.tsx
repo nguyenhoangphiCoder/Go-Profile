@@ -120,11 +120,15 @@ function subscribeNoop() {
   return () => {};
 }
 
+const READ_ONLY_MESSAGE = "Bạn chỉ có quyền xem trong workspace này, không thể lưu hoặc xuất bản.";
+
 export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const router = useRouter();
   // Đồng bộ phát hiện chế độ tạo mới dựa trên cả prop isNew và ID trang khởi tạo để tránh hydration mismatch
   const isCreatingNew = Boolean(isNew || initialData.page.id === "new");
 
+  // Người xem (viewer) chỉ xem được, không lưu / xuất bản (server cũng chặn)
+  const canEdit = initialData.canEdit;
   const [page, setPage] = useState(initialData.page);
   const [draftRev, setDraftRev] = useState(initialData.draftRevision);
   const [internalName, setInternalName] = useState(initialData.page.internalName);
@@ -384,6 +388,10 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
   // Lưu bản nháp (Hỗ trợ cả tạo mới trang lẫn cập nhật trang cũ)
   const handleSaveDraft = useCallback(() => {
+    if (!canEdit) {
+      showToast(READ_ONLY_MESSAGE, "error");
+      return;
+    }
     startTransition(async () => {
       // 1. Trường hợp tạo trang mới
       if (isCreatingNew) {
@@ -472,6 +480,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     initialData.primarySlug,
     router,
     showToast,
+    canEdit,
   ]);
 
   // Hoàn tác / làm lại: theo dõi toàn bộ nội dung có thể chỉnh sửa của trang
@@ -529,6 +538,10 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
   // Xuất bản (Publish - hỗ trợ cả tạo mới và xuất bản ngay)
   const handlePublish = () => {
+    if (!canEdit) {
+      showToast(READ_ONLY_MESSAGE, "error");
+      return;
+    }
     setConfirmModal({
       title: isCreatingNew ? "Xác nhận tạo & xuất bản trang ngay?" : "Xác nhận xuất bản trang?",
       description: `Phiên bản này sẽ được áp dụng trực tiếp cho đường dẫn công khai /${slug || initialData.primarySlug}. Khách hàng sẽ thấy ngay nội dung mới.`,
@@ -620,6 +633,10 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
   // Hủy xuất bản (Unpublish)
   const handleUnpublish = () => {
+    if (!canEdit) {
+      showToast(READ_ONLY_MESSAGE, "error");
+      return;
+    }
     setConfirmModal({
       title: "Xác nhận ẩn trang này?",
       description: `Trang sẽ không còn truy cập được từ bên ngoài (trả về 404). Bạn có thể xuất bản lại bất cứ lúc nào.`,
@@ -781,6 +798,14 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                   /{slug || initialData.primarySlug}
                 </button>
 
+                {!canEdit && (
+                  <span
+                    className="text-slate-500 font-semibold shrink-0"
+                    title="Bạn là người xem trong workspace này"
+                  >
+                    • Chỉ xem
+                  </span>
+                )}
                 {isDirty && (
                   <span className="text-amber-500 font-medium shrink-0">
                     <span className="sm:hidden" title="Chưa lưu thay đổi">
@@ -884,7 +909,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             <button
               type="button"
               onClick={handleSaveDraft}
-              disabled={isPending}
+              disabled={isPending || !canEdit}
               className={`relative flex items-center justify-center gap-1.5 h-9 min-w-9 px-2.5 sm:px-3.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer disabled:opacity-50 ${
                 isDirty || isCreatingNew
                   ? "border-primary/50 bg-primary/5 text-primary hover:bg-primary/10"
@@ -912,7 +937,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
               <button
                 type="button"
                 onClick={handleUnpublish}
-                disabled={isPending}
+                disabled={isPending || !canEdit}
                 className="hidden sm:flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-red-500/30 text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <span>Ẩn trang</span>
@@ -923,7 +948,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             <button
               type="button"
               onClick={handlePublish}
-              disabled={isPending}
+              disabled={isPending || !canEdit}
               className="flex items-center gap-1.5 h-9 px-3 sm:px-4 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
             >
               {isPending ? (
