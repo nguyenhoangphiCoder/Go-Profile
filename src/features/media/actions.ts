@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import { requireActiveAdmin } from "@/features/auth/queries";
 import { mediaUploadSchema } from "./schemas";
+import { isMediaUsedByActiveRevision } from "./usage";
 import type { MediaUploadState } from "./types";
 
 export async function uploadMediaAction(
@@ -142,16 +143,13 @@ export async function deleteMediaAction(id: string): Promise<{ success: boolean;
       };
     }
 
-    const { data: revisionUsage } = await supabase
-      .from("revision_media_assets")
-      .select("revision_id")
-      .eq("media_asset_id", id)
-      .limit(1);
-
-    if (revisionUsage && revisionUsage.length > 0) {
+    // Ảnh nằm trong bản đang xuất bản hoặc bản nháp của trang (avatar, banner, khối ảnh,
+    // thư viện, thẻ món, nền theme, icon liên kết...) — xem migration 20261116000003.
+    if (await isMediaUsedByActiveRevision(supabase, id)) {
       return {
         success: false,
-        error: "Không thể xóa hình ảnh đang được sử dụng trong các phiên bản trang.",
+        error:
+          "Không thể xóa hình ảnh đang được sử dụng trên trang (bản đã xuất bản hoặc bản nháp).",
       };
     }
 

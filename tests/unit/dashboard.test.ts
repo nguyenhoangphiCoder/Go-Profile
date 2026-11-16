@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { getDashboardSummary, getPrimaryPublicSlug } from "@/features/dashboard/queries";
 
-let mockPages: any[] = [];
-let mockLinks: any[] = [];
+let mockPages: Record<string, unknown>[] = [];
+let mockLinks: Record<string, unknown>[] = [];
 let mockClicksCount = 0;
-let mockClickEvents: any[] = [];
+let mockClickEvents: Record<string, unknown>[] = [];
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: () =>

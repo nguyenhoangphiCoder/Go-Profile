@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireActiveAdmin } from "@/features/auth/queries";
 import { clientEnv } from "@/lib/env.client";
 import type { MediaAssetItem } from "./types";
+import { getMediaUsedByActiveRevisions } from "./usage";
 
 export function getPublicMediaUrl(objectPath: string): string {
   if (!objectPath) return "";
@@ -45,18 +46,11 @@ export async function getMediaAssets(): Promise<MediaAssetItem[]> {
     .not("default_media_id", "is", null)
     .is("archived_at", null);
 
-  const { data: referencedInRevisions } = await supabase
-    .from("revision_media_assets")
-    .select("media_asset_id");
-
-  const referencedSet = new Set<string>();
+  // Ảnh trong bản đang xuất bản / bản nháp của trang (cùng quy tắc với deleteMediaAction)
+  const referencedSet = await getMediaUsedByActiveRevisions(supabase);
 
   (referencedInLinks || []).forEach((l) => {
     if (l.default_media_id) referencedSet.add(l.default_media_id);
-  });
-
-  (referencedInRevisions || []).forEach((r) => {
-    if (r.media_asset_id) referencedSet.add(r.media_asset_id);
   });
 
   return rows.map((r) => {

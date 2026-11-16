@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useTransition,
+  useEffect,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -96,6 +103,21 @@ interface ConfirmModalState {
   onConfirm: () => void;
 }
 
+const PANEL_WIDTH_KEY = "gocafe_editor_panel_width";
+
+function readStoredPanelWidth(): number | null {
+  try {
+    const parsed = parseInt(localStorage.getItem(PANEL_WIDTH_KEY) ?? "", 10);
+    return !isNaN(parsed) && parsed >= 380 && parsed <= 950 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function subscribeNoop() {
+  return () => {};
+}
+
 export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const router = useRouter();
   // Đồng bộ phát hiện chế độ tạo mới dựa trên cả prop isNew và ID trang khởi tạo để tránh hydration mismatch
@@ -132,20 +154,12 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState | null>(null);
 
   // Kích thước co giãn linh hoạt của cột điều khiển bên trái (Split Pane Resizer)
-  const [leftPanelWidth, setLeftPanelWidth] = useState<number>(500);
+  // Độ rộng đã lưu được đọc qua useSyncExternalStore (server render dùng mặc định 500px);
+  // khi người dùng kéo thì giá trị kéo được ưu tiên.
+  const storedPanelWidth = useSyncExternalStore(subscribeNoop, readStoredPanelWidth, () => null);
+  const [draggedPanelWidth, setLeftPanelWidth] = useState<number | null>(null);
+  const leftPanelWidth = draggedPanelWidth ?? storedPanelWidth ?? 500;
   const [isResizingSplit, setIsResizingSplit] = useState(false);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("gocafe_editor_panel_width");
-      if (saved) {
-        const parsed = parseInt(saved, 10);
-        if (!isNaN(parsed) && parsed >= 380 && parsed <= 950) {
-          setLeftPanelWidth(parsed);
-        }
-      }
-    } catch {}
-  }, []);
 
   const handleSplitPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -168,7 +182,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
       } catch {}
       setIsResizingSplit(false);
       try {
-        localStorage.setItem("gocafe_editor_panel_width", String(leftPanelWidth));
+        localStorage.setItem(PANEL_WIDTH_KEY, String(leftPanelWidth));
       } catch {}
     }
   };
@@ -176,7 +190,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const handleResetPanelWidth = () => {
     setLeftPanelWidth(500);
     try {
-      localStorage.setItem("gocafe_editor_panel_width", "500");
+      localStorage.setItem(PANEL_WIDTH_KEY, "500");
     } catch {}
   };
 
