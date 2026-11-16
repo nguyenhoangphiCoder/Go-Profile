@@ -13,6 +13,7 @@ export const RESERVED_SLUGS = [
   "favicon.ico",
   "robots.txt",
   "sitemap.xml",
+  "e2e-fixtures",
 ] as const;
 
 export function isReservedSlug(slug: string): boolean {
