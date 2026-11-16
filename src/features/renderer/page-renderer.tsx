@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 import {
   resolveThemeTokens,
   themeToCssVars,
@@ -16,6 +16,10 @@ interface PageRendererProps {
   theme: ThemeConfigInput | null | undefined;
   blocks: RenderBlock[];
   mode: RenderMode;
+  /** Chỉ ở chế độ preview: khối đang được chọn trong editor (được tô viền). */
+  selectedBlockId?: string | null;
+  /** Chỉ ở chế độ preview: bấm vào khối để mở form chỉnh sửa tương ứng. */
+  onSelectBlock?: (blockId: string) => void;
 }
 
 const BEACONS_CARD_BG =
@@ -30,7 +34,15 @@ const BEACONS_CARD_BG =
  * - Lớp nền cố định nằm ngoài phần tử `@container` vì container query tạo containing block mới,
  *   sẽ làm `position: fixed` bám theo trang thay vì theo màn hình.
  */
-export function PageRenderer({ title, theme, blocks, mode }: PageRendererProps) {
+export function PageRenderer({
+  title,
+  theme,
+  blocks,
+  mode,
+  selectedBlockId,
+  onSelectBlock,
+}: PageRendererProps) {
+  const selectable = mode === "preview" && Boolean(onSelectBlock);
   const tokens = resolveThemeTokens(theme);
   const variant = tokens.layout;
   const isAnyBeacons = variant !== "standard";
@@ -72,7 +84,9 @@ export function PageRenderer({ title, theme, blocks, mode }: PageRendererProps) 
         </div>
       )}
 
-      {hasFrostedLayer && <FrostedLayer effect={tokens.background.effect} position={layerPosition} />}
+      {hasFrostedLayer && (
+        <FrostedLayer effect={tokens.background.effect} position={layerPosition} />
+      )}
 
       <div className="@container relative z-10 w-full">
         <div
@@ -106,10 +120,21 @@ export function PageRenderer({ title, theme, blocks, mode }: PageRendererProps) 
                 const def = getBlockDefinition(block.type);
                 if (!def) return null;
                 const { Render } = def;
-                return (
-                  <BlockFrame key={block.id} style={readBlockStyle(block.payload)} index={index}>
+                const content = (
+                  <BlockFrame style={readBlockStyle(block.payload)} index={index}>
                     <Render block={block} ctx={ctx} />
                   </BlockFrame>
+                );
+                if (!selectable) return <Fragment key={block.id}>{content}</Fragment>;
+                return (
+                  <SelectableBlock
+                    key={block.id}
+                    label={def.label}
+                    selected={selectedBlockId === block.id}
+                    onSelect={() => onSelectBlock!(block.id)}
+                  >
+                    {content}
+                  </SelectableBlock>
                 );
               })
             )}
@@ -133,6 +158,51 @@ export function PageRenderer({ title, theme, blocks, mode }: PageRendererProps) 
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Lớp bao trong bản xem trước: tô viền khi rê chuột / đang chọn, bấm để mở form chỉnh sửa. */
+function SelectableBlock({
+  label,
+  selected,
+  onSelect,
+  children,
+}: {
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Chỉnh sửa khối: ${label}`}
+      aria-pressed={selected}
+      data-block-selectable=""
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`group/sel relative cursor-pointer rounded-xl outline-offset-4 transition-[outline-color] focus-visible:outline-2 focus-visible:outline-sky-400 ${
+        selected
+          ? "outline-2 outline-sky-500"
+          : "outline-2 outline-transparent hover:outline-sky-400/60"
+      }`}
+      style={{ outlineStyle: "solid" }}
+    >
+      <span
+        className={`pointer-events-none absolute -top-2.5 left-2 z-30 px-1.5 py-0.5 rounded-md bg-sky-500 text-white text-[10px] font-semibold tracking-normal normal-case leading-none transition-opacity ${
+          selected ? "opacity-100" : "opacity-0 group-hover/sel:opacity-100"
+        }`}
+      >
+        {label}
+      </span>
+      {children}
     </div>
   );
 }

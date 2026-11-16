@@ -12,6 +12,8 @@ interface LivePreviewProps {
   blocks: EditorBlockItem[];
   previewMode: "mobile" | "desktop";
   zoomScale?: number;
+  selectedBlockId?: string | null;
+  onSelectBlock?: (blockId: string) => void;
 }
 
 export function LivePreview({
@@ -20,6 +22,8 @@ export function LivePreview({
   blocks,
   previewMode,
   zoomScale = 1,
+  selectedBlockId,
+  onSelectBlock,
 }: LivePreviewProps) {
   const [frameWidth, setFrameWidth] = useState<number>(previewMode === "mobile" ? 375 : 620);
   const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
@@ -208,6 +212,8 @@ export function LivePreview({
               title={title}
               theme={themeConfig}
               blocks={fromEditorBlocks(blocks)}
+              selectedBlockId={selectedBlockId}
+              onSelectBlock={onSelectBlock}
             />
           </div>
         </div>
