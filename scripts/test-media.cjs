@@ -1,5 +1,8 @@
 const { createClient } = require("@supabase/supabase-js");
-const supabase = createClient("https://iuoxkoburrtmjajfrsdb.supabase.co", (process.env.SUPABASE_SERVICE_ROLE_KEY || ""));
+const supabase = createClient(
+  "https://iuoxkoburrtmjajfrsdb.supabase.co",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+);
 
 async function test() {
   const res = await supabase.from("media_assets").upsert({
@@ -9,7 +12,7 @@ async function test() {
     visibility: "public",
     status: "ready",
     mime_type: "image/png",
-    original_filename: "gogang-bg-source.png"
+    original_filename: "gogang-bg-source.png",
   });
   console.log("Media asset result:", res);
 }

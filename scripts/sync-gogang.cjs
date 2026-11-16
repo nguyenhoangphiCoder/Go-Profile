@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 const url = "https://iuoxkoburrtmjajfrsdb.supabase.co";
-const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 const supabase = createClient(url, serviceRoleKey, {
   auth: { persistSession: false },
@@ -255,7 +255,9 @@ async function run() {
 
   const allPlacements = [...socialPlacements, ...mainPlacements];
   for (const plc of allPlacements) {
-    const { error } = await supabase.from("revision_link_placements").upsert(plc, { onConflict: "id" });
+    const { error } = await supabase
+      .from("revision_link_placements")
+      .upsert(plc, { onConflict: "id" });
     if (error) console.log("Placement err:", plc.id, error);
     else console.log("Placement OK:", plc.id);
   }

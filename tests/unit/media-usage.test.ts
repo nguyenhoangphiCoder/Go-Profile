@@ -18,8 +18,10 @@ function fakeDb(tables: Record<string, Row[]>) {
         eq: (col: string, v: unknown) => ((rows = rows.filter((r) => r[col] === v)), q),
         in: (col: string, vs: unknown[]) => ((rows = rows.filter((r) => vs.includes(r[col]))), q),
         is: (col: string, v: unknown) => ((rows = rows.filter((r) => (r[col] ?? null) === v)), q),
-        not: (col: string, _op: string, v: unknown) =>
-          ((rows = rows.filter((r) => (r[col] ?? null) !== v)), q),
+        not: (col: string, _op: string, v: unknown) => (
+          (rows = rows.filter((r) => (r[col] ?? null) !== v)),
+          q
+        ),
         limit: (n: number) => ((rows = rows.slice(0, n)), q),
         then: (resolve: (r: { data: Row[] }) => unknown) => resolve({ data: rows }),
       };
@@ -53,7 +55,10 @@ describe("ảnh đang được trang sử dụng", () => {
   });
 
   it("danh sách ảnh đang dùng bỏ qua bản cũ và trang đã lưu trữ", async () => {
-    expect([...(await getMediaUsedByActiveRevisions(db))].sort()).toEqual(["m-avatar", "m-gallery"]);
+    expect([...(await getMediaUsedByActiveRevisions(db))].sort()).toEqual([
+      "m-avatar",
+      "m-gallery",
+    ]);
   });
 
   it("chặn xoá ảnh trong bản xuất bản / bản nháp, cho xoá ảnh chỉ còn ở bản cũ", async () => {
@@ -78,6 +83,8 @@ describe("migration theo dõi ảnh", () => {
     expect(sql).toMatch(
       /REVOKE ALL ON FUNCTION public\.sync_revision_media_assets\(uuid\) FROM PUBLIC, anon, authenticated/
     );
-    expect(sql).toMatch(/SELECT public\.sync_revision_media_assets\(id\) FROM public\.page_revisions/);
+    expect(sql).toMatch(
+      /SELECT public\.sync_revision_media_assets\(id\) FROM public\.page_revisions/
+    );
   });
 });

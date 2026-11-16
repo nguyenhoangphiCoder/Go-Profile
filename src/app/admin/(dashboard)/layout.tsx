@@ -10,10 +10,7 @@ import { MobileSidebar } from "@/components/admin/mobile-sidebar";
 export const instant = false;
 
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
-  const [admin, primarySlug] = await Promise.all([
-    requireActiveAdmin(),
-    getPrimaryPublicSlug(),
-  ]);
+  const [admin, primarySlug] = await Promise.all([requireActiveAdmin(), getPrimaryPublicSlug()]);
 
   const publicUrl = primarySlug ? `/${primarySlug}` : null;
 
@@ -34,7 +31,9 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             />
           </div>
           <div>
-            <span className="font-bold text-sm leading-none block text-foreground">Gờ Cafe CMS</span>
+            <span className="font-bold text-sm leading-none block text-foreground">
+              Gờ Cafe CMS
+            </span>
             <span className="text-[11px] text-muted-foreground leading-none block mt-1">
               Quản trị liên kết
             </span>

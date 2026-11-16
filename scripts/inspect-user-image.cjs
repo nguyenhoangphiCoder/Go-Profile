@@ -1,5 +1,5 @@
-const fs = require('fs');
-const zlib = require('zlib');
+const fs = require("fs");
+const zlib = require("zlib");
 
 function decodePng(filePath) {
   const buf = fs.readFileSync(filePath);
@@ -11,8 +11,8 @@ function decodePng(filePath) {
   const idatChunks = [];
   while (pos < buf.length) {
     const len = buf.readUInt32BE(pos);
-    const type = buf.toString('ascii', pos + 4, pos + 8);
-    if (type === 'IDAT') {
+    const type = buf.toString("ascii", pos + 4, pos + 8);
+    if (type === "IDAT") {
       idatChunks.push(buf.subarray(pos + 8, pos + 8 + len));
     }
     pos += 12 + len;
@@ -58,19 +58,20 @@ function decodePng(filePath) {
   return { width, height, pixels, bpp };
 }
 
-const file = 'C:/Users/ACER/.gemini/antigravity/brain/e0784f15-eb4c-457c-b057-5cc05e0c61d7/.user_uploaded/media_1794214921089_5d178983.png';
+const file =
+  "C:/Users/ACER/.gemini/antigravity/brain/e0784f15-eb4c-457c-b057-5cc05e0c61d7/.user_uploaded/media_1794214921089_5d178983.png";
 const { width, height, pixels, bpp } = decodePng(file);
 
 function rgbAt(x, y) {
   const idx = (y * width + x) * bpp;
-  return `rgb(${pixels[idx]}, ${pixels[idx+1]}, ${pixels[idx+2]}) (#${pixels[idx].toString(16).padStart(2,'0')}${pixels[idx+1].toString(16).padStart(2,'0')}${pixels[idx+2].toString(16).padStart(2,'0')})`;
+  return `rgb(${pixels[idx]}, ${pixels[idx + 1]}, ${pixels[idx + 2]}) (#${pixels[idx].toString(16).padStart(2, "0")}${pixels[idx + 1].toString(16).padStart(2, "0")}${pixels[idx + 2].toString(16).padStart(2, "0")})`;
 }
 
-console.log('Top-Left background (x=20, y=20):', rgbAt(20, 20));
-console.log('Top-Left background (x=100, y=100):', rgbAt(100, 100));
-console.log('Near card shadow (x=220, y=100):', rgbAt(220, 100));
-console.log('Card edge (x=255, y=100):', rgbAt(255, 100));
-console.log('Inside Card (x=270, y=50):', rgbAt(270, 50));
-console.log('Top-Center above card (x=512, y=20):', rgbAt(512, 20));
-console.log('Top-Right background (x=900, y=100):', rgbAt(900, 100));
-console.log('Far-Right background (x=1000, y=20):', rgbAt(1000, 20));
+console.log("Top-Left background (x=20, y=20):", rgbAt(20, 20));
+console.log("Top-Left background (x=100, y=100):", rgbAt(100, 100));
+console.log("Near card shadow (x=220, y=100):", rgbAt(220, 100));
+console.log("Card edge (x=255, y=100):", rgbAt(255, 100));
+console.log("Inside Card (x=270, y=50):", rgbAt(270, 50));
+console.log("Top-Center above card (x=512, y=20):", rgbAt(512, 20));
+console.log("Top-Right background (x=900, y=100):", rgbAt(900, 100));
+console.log("Far-Right background (x=1000, y=20):", rgbAt(1000, 20));

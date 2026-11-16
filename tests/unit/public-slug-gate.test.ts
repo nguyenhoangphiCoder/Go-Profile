@@ -4,11 +4,7 @@ import { NextRequest } from "next/server";
 const rpc = vi.fn();
 vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc }) }));
 
-import {
-  clearSlugGateCache,
-  extractPublicSlug,
-  gatePublicSlug,
-} from "@/lib/public-slug-gate";
+import { clearSlugGateCache, extractPublicSlug, gatePublicSlug } from "@/lib/public-slug-gate";
 
 const req = (path: string, method = "GET") =>
   new NextRequest(new URL(path, "https://go.example"), { method });
@@ -54,7 +50,10 @@ describe("gatePublicSlug", () => {
   });
 
   it("alias trong database: chuyển hướng 308 về slug chính", async () => {
-    rpc.mockResolvedValue({ data: { found: true, is_alias: true, canonical_slug: "gocafe" }, error: null });
+    rpc.mockResolvedValue({
+      data: { found: true, is_alias: true, canonical_slug: "gocafe" },
+      error: null,
+    });
     const res = (await gatePublicSlug(req("/ten-cu?utm=qr")))!;
     expect(res.status).toBe(308);
     expect(res.headers.get("location")).toBe("https://go.example/gocafe?utm=qr");

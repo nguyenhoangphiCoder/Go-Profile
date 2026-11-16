@@ -41,7 +41,11 @@ describe("ThemeEditor v2", () => {
     const onChange = vi.fn();
     render(<ThemeEditor themeConfig={{ preset: "go-original" }} onChange={onChange} />);
     fireEvent.click(screen.getByRole("button", { name: /Minimalist Light/ }));
-    expect(onChange).toHaveBeenLastCalledWith({ preset: "minimal-light", version: 2, overrides: {} });
+    expect(onChange).toHaveBeenLastCalledWith({
+      preset: "minimal-light",
+      version: 2,
+      overrides: {},
+    });
   });
 
   it("hiển thị cảnh báo tương phản và sửa tự động được", () => {

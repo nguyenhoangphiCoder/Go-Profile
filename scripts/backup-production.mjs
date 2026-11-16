@@ -2,7 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 import path from "path";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://iuoxkoburrtmjajfrsdb.supabase.co";
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://iuoxkoburrtmjajfrsdb.supabase.co";
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!serviceRoleKey) {
@@ -41,12 +42,20 @@ async function backup() {
     } else {
       console.log(`✓ ${table}: ${data.length} records`);
       fullBackup[table] = data;
-      fs.writeFileSync(path.join(backupDir, `${table}.json`), JSON.stringify(data, null, 2), "utf8");
+      fs.writeFileSync(
+        path.join(backupDir, `${table}.json`),
+        JSON.stringify(data, null, 2),
+        "utf8"
+      );
     }
   }
 
   // Also write single combined json
-  fs.writeFileSync(path.join(backupDir, "full_backup.json"), JSON.stringify(fullBackup, null, 2), "utf8");
+  fs.writeFileSync(
+    path.join(backupDir, "full_backup.json"),
+    JSON.stringify(fullBackup, null, 2),
+    "utf8"
+  );
 
   // Create an SQL restore script
   const sqlStatements = [];
@@ -61,15 +70,20 @@ async function backup() {
       sqlStatements.push(`-- Table: ${table} (${rows.length} rows)`);
       for (const row of rows) {
         const cols = Object.keys(row);
-        const colList = cols.map(c => `"${c}"`).join(", ");
-        const valList = cols.map(c => {
-          const val = row[c];
-          if (val === null || val === undefined) return "NULL";
-          if (typeof val === "object") return `'${JSON.stringify(val).replace(/'/g, "''")}'::jsonb`;
-          if (typeof val === "boolean" || typeof val === "number") return val;
-          return `'${String(val).replace(/'/g, "''")}'`;
-        }).join(", ");
-        sqlStatements.push(`INSERT INTO public.${table} (${colList}) VALUES (${valList}) ON CONFLICT DO NOTHING;`);
+        const colList = cols.map((c) => `"${c}"`).join(", ");
+        const valList = cols
+          .map((c) => {
+            const val = row[c];
+            if (val === null || val === undefined) return "NULL";
+            if (typeof val === "object")
+              return `'${JSON.stringify(val).replace(/'/g, "''")}'::jsonb`;
+            if (typeof val === "boolean" || typeof val === "number") return val;
+            return `'${String(val).replace(/'/g, "''")}'`;
+          })
+          .join(", ");
+        sqlStatements.push(
+          `INSERT INTO public.${table} (${colList}) VALUES (${valList}) ON CONFLICT DO NOTHING;`
+        );
       }
       sqlStatements.push("");
     }

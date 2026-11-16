@@ -21,16 +21,17 @@ export const blockStyleSchema = z
     paddingY: z.enum(["none", "sm", "md", "lg"]).optional(),
     surface: z.enum(["none", "card"]).optional(),
     animation: z.enum(["none", "fade-up"]).optional(),
-    hideOn: z.array(z.enum(["mobile", "desktop"])).max(2).optional(),
+    hideOn: z
+      .array(z.enum(["mobile", "desktop"]))
+      .max(2)
+      .optional(),
   })
   .strict();
 
 const styled = <S extends z.core.$ZodLooseShape>(shape: S) =>
   z.looseObject({ ...shape, blockStyle: blockStyleSchema.nullish() });
 
-const galleryImage = z
-  .object({ mediaId: optId, url: optUrl, alt: optText(200) })
-  .strict();
+const galleryImage = z.object({ mediaId: optId, url: optUrl, alt: optText(200) }).strict();
 
 const menuItem = z
   .object({
@@ -125,7 +126,11 @@ export const BLOCK_PAYLOAD_SCHEMAS: Record<BlockType, z.ZodType<Record<string, u
 export const BLOCK_TYPES = Object.keys(BLOCK_PAYLOAD_SCHEMAS) as [BlockType, ...BlockType[]];
 
 /** Loại khối gắn danh sách liên kết (placements) — dùng để ghi nhận click qua /r/{id}. */
-export const LINK_BLOCK_TYPES: ReadonlySet<BlockType> = new Set(["link_list", "social_icons", "button"]);
+export const LINK_BLOCK_TYPES: ReadonlySet<BlockType> = new Set([
+  "link_list",
+  "social_icons",
+  "button",
+]);
 
 /** Giới hạn kích thước payload sau khi serialize (chặn payload phình to). */
 export const MAX_BLOCK_PAYLOAD_BYTES = 32 * 1024;

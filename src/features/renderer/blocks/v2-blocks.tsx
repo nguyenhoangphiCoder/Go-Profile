@@ -68,7 +68,9 @@ export function ButtonBlock({ block, ctx }: BlockRenderProps) {
         >
           {link.label}
         </span>
-        {p.subtitle && <span className="text-[12px] opacity-85 mt-1 font-medium">{p.subtitle}</span>}
+        {p.subtitle && (
+          <span className="text-[12px] opacity-85 mt-1 font-medium">{p.subtitle}</span>
+        )}
       </PageLink>
     </div>
   );
@@ -83,7 +85,8 @@ export function GalleryBlock({ block, ctx }: BlockRenderProps) {
   const images = (p.images || [])
     .map((img) => ({ ...img, src: resolveMediaUrl(img.url) }))
     .filter((img) => img.src);
-  if (images.length === 0) return <PreviewPlaceholder ctx={ctx}>Chưa có ảnh trong thư viện</PreviewPlaceholder>;
+  if (images.length === 0)
+    return <PreviewPlaceholder ctx={ctx}>Chưa có ảnh trong thư viện</PreviewPlaceholder>;
 
   if (p.layout === "carousel") {
     return (
@@ -94,7 +97,14 @@ export function GalleryBlock({ block, ctx }: BlockRenderProps) {
               key={`${img.src}-${i}`}
               className="relative shrink-0 w-[78%] aspect-4/5 rounded-2xl overflow-hidden snap-center shadow-md"
             >
-              <Image src={img.src} alt={img.alt || `Ảnh ${i + 1}`} fill className="object-cover" unoptimized loading="lazy" />
+              <Image
+                src={img.src}
+                alt={img.alt || `Ảnh ${i + 1}`}
+                fill
+                className="object-cover"
+                unoptimized
+                loading="lazy"
+              />
             </div>
           ))}
         </div>
@@ -106,8 +116,18 @@ export function GalleryBlock({ block, ctx }: BlockRenderProps) {
   return (
     <div className={`w-full my-2 grid ${cols} gap-2`}>
       {images.map((img, i) => (
-        <div key={`${img.src}-${i}`} className="relative aspect-square rounded-xl overflow-hidden shadow-sm">
-          <Image src={img.src} alt={img.alt || `Ảnh ${i + 1}`} fill className="object-cover" unoptimized loading="lazy" />
+        <div
+          key={`${img.src}-${i}`}
+          className="relative aspect-square rounded-xl overflow-hidden shadow-sm"
+        >
+          <Image
+            src={img.src}
+            alt={img.alt || `Ảnh ${i + 1}`}
+            fill
+            className="object-cover"
+            unoptimized
+            loading="lazy"
+          />
         </div>
       ))}
     </div>
@@ -129,7 +149,10 @@ export function MenuCardBlock({ block, ctx }: BlockRenderProps) {
   return (
     <div className="w-full my-2 space-y-3">
       {p.title && (
-        <h3 className="text-center text-[15px] tracking-[0.5px]" style={ctx.variant === "standard" ? HEADING_STYLE : undefined}>
+        <h3
+          className="text-center text-[15px] tracking-[0.5px]"
+          style={ctx.variant === "standard" ? HEADING_STYLE : undefined}
+        >
           {p.title}
         </h3>
       )}
@@ -148,13 +171,23 @@ export function MenuCardBlock({ block, ctx }: BlockRenderProps) {
                     isGrid ? "w-full aspect-square" : "w-[68px] h-[68px] rounded-xl"
                   }`}
                 >
-                  <Image src={img} alt={item.name} fill className="object-cover" unoptimized loading="lazy" />
+                  <Image
+                    src={img}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                    loading="lazy"
+                  />
                 </div>
               )}
               {item.badge && (
                 <span
                   className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
-                  style={{ backgroundColor: ctx.tokens.colors.accent, color: readableOn(ctx.tokens.colors.accent) }}
+                  style={{
+                    backgroundColor: ctx.tokens.colors.accent,
+                    color: readableOn(ctx.tokens.colors.accent),
+                  }}
                 >
                   {item.badge}
                 </span>
@@ -169,7 +202,9 @@ export function MenuCardBlock({ block, ctx }: BlockRenderProps) {
                   )}
                 </div>
                 {item.description && (
-                  <p className="text-[12px] opacity-75 leading-snug mt-0.5 line-clamp-2">{item.description}</p>
+                  <p className="text-[12px] opacity-75 leading-snug mt-0.5 line-clamp-2">
+                    {item.description}
+                  </p>
                 )}
               </div>
             </div>
@@ -185,8 +220,11 @@ export function MenuCardBlock({ block, ctx }: BlockRenderProps) {
 // ---------------------------------------------------------------------------
 
 export function AccordionBlock({ block, ctx }: BlockRenderProps) {
-  const items = ((block.payload as AccordionBlockPayload).items || []).filter((it) => it.title?.trim());
-  if (items.length === 0) return <PreviewPlaceholder ctx={ctx}>Chưa có mục hỏi đáp nào</PreviewPlaceholder>;
+  const items = ((block.payload as AccordionBlockPayload).items || []).filter((it) =>
+    it.title?.trim()
+  );
+  if (items.length === 0)
+    return <PreviewPlaceholder ctx={ctx}>Chưa có mục hỏi đáp nào</PreviewPlaceholder>;
 
   return (
     <div className="w-full my-2 flex flex-col gap-2">
@@ -200,7 +238,9 @@ export function AccordionBlock({ block, ctx }: BlockRenderProps) {
             <span className="font-semibold text-[14px] text-left">{item.title}</span>
             <ChevronDown className="w-4 h-4 shrink-0 opacity-70 transition-transform group-open:rotate-180" />
           </summary>
-          <div className="px-4 pb-3.5 text-[13px] leading-relaxed opacity-85 whitespace-pre-line">{item.content}</div>
+          <div className="px-4 pb-3.5 text-[13px] leading-relaxed opacity-85 whitespace-pre-line">
+            {item.content}
+          </div>
         </details>
       ))}
     </div>
@@ -214,7 +254,12 @@ export function AccordionBlock({ block, ctx }: BlockRenderProps) {
 export function VideoEmbedBlock({ block, ctx }: BlockRenderProps) {
   const p = block.payload as VideoEmbedBlockPayload;
   const video = parseVideoUrl(p.url);
-  if (!video) return <PreviewPlaceholder ctx={ctx}>Dán link YouTube hoặc TikTok để hiển thị video</PreviewPlaceholder>;
+  if (!video)
+    return (
+      <PreviewPlaceholder ctx={ctx}>
+        Dán link YouTube hoặc TikTok để hiển thị video
+      </PreviewPlaceholder>
+    );
 
   const vertical = video.aspect === "9/16";
   return (
@@ -247,7 +292,8 @@ export function VideoEmbedBlock({ block, ctx }: BlockRenderProps) {
 export function MapBlock({ block, ctx }: BlockRenderProps) {
   const p = block.payload as MapBlockPayload;
   const address = p.address?.trim();
-  if (!address) return <PreviewPlaceholder ctx={ctx}>Nhập địa chỉ để hiển thị bản đồ</PreviewPlaceholder>;
+  if (!address)
+    return <PreviewPlaceholder ctx={ctx}>Nhập địa chỉ để hiển thị bản đồ</PreviewPlaceholder>;
 
   const href = p.mapsUrl && isSafeMapsUrl(p.mapsUrl) ? p.mapsUrl : mapsSearchUrl(address);
   const linkClass =
@@ -257,7 +303,10 @@ export function MapBlock({ block, ctx }: BlockRenderProps) {
     <>
       <span
         className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-        style={{ backgroundColor: ctx.tokens.colors.accent, color: readableOn(ctx.tokens.colors.accent) }}
+        style={{
+          backgroundColor: ctx.tokens.colors.accent,
+          color: readableOn(ctx.tokens.colors.accent),
+        }}
       >
         <MapPin className="w-4 h-4" />
       </span>
@@ -282,12 +331,21 @@ export function MapBlock({ block, ctx }: BlockRenderProps) {
         </div>
       )}
       {p.showMap && ctx.mode === "preview" && (
-        <div className="w-full aspect-video flex items-center justify-center text-xs opacity-60" style={{ backgroundColor: tint(8) }}>
+        <div
+          className="w-full aspect-video flex items-center justify-center text-xs opacity-60"
+          style={{ backgroundColor: tint(8) }}
+        >
           Bản đồ Google Maps hiển thị trên trang thật
         </div>
       )}
       {ctx.mode === "public" ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className={linkClass} style={{ textDecoration: "none" }}>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClass}
+          style={{ textDecoration: "none" }}
+        >
           {body}
         </a>
       ) : (

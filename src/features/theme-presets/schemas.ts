@@ -16,11 +16,7 @@ export const themePresetConfigSchema = z
 export type ThemePresetConfig = z.infer<typeof themePresetConfigSchema>;
 
 export const saveThemePresetSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, "Vui lòng đặt tên cho mẫu")
-    .max(60, "Tên mẫu tối đa 60 ký tự"),
+  name: z.string().trim().min(1, "Vui lòng đặt tên cho mẫu").max(60, "Tên mẫu tối đa 60 ký tự"),
   config: themePresetConfigSchema,
 });
 

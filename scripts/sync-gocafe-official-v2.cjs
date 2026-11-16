@@ -1,7 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 
 const url = "https://iuoxkoburrtmjajfrsdb.supabase.co";
-const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 const supabase = createClient(url, serviceRoleKey, {
   auth: { persistSession: false },
@@ -223,7 +223,9 @@ async function run() {
 
   console.log("3. Upsert placements...");
   for (const pl of placements) {
-    const { error } = await supabase.from("revision_link_placements").upsert(pl, { onConflict: "id" });
+    const { error } = await supabase
+      .from("revision_link_placements")
+      .upsert(pl, { onConflict: "id" });
     if (error) console.log("Placement error:", pl.id, error);
     else console.log("Placement OK:", pl.id);
   }

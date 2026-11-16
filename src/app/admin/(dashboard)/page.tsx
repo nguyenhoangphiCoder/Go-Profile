@@ -6,10 +6,7 @@ import { getDashboardSummary } from "@/features/dashboard/queries";
 export const instant = false;
 
 export default async function AdminDashboardPage() {
-  const [admin, summary] = await Promise.all([
-    requireActiveAdmin(),
-    getDashboardSummary(),
-  ]);
+  const [admin, summary] = await Promise.all([requireActiveAdmin(), getDashboardSummary()]);
 
   return (
     <div className="max-w-6xl space-y-8">

@@ -32,9 +32,16 @@ export const FIXTURE_BLOCKS: RenderBlock[] = [
     id: "fx-button",
     type: "button",
     payload: { subtitle: "Giảm 20% cho đơn đầu tiên", size: "lg", emphasis: "accent" },
-    links: [{ id: "fx-pl-order", label: "Đặt món ngay", targetUrl: "https://shopeefood.vn/gocafe" }],
+    links: [
+      { id: "fx-pl-order", label: "Đặt món ngay", targetUrl: "https://shopeefood.vn/gocafe" },
+    ],
   },
-  { id: "fx-heading", type: "heading", payload: { text: "Đặt món & cửa hàng", level: 1 }, links: [] },
+  {
+    id: "fx-heading",
+    type: "heading",
+    payload: { text: "Đặt món & cửa hàng", level: 1 },
+    links: [],
+  },
   {
     id: "fx-links",
     type: "link_list",
@@ -69,7 +76,13 @@ export const FIXTURE_BLOCKS: RenderBlock[] = [
       title: "Món bán chạy",
       layout: "list",
       items: [
-        { name: "Bạc xỉu", price: "35.000đ", description: "Sữa tươi, cà phê phin", badge: "Hot", imageUrl: "/thumb-order.webp" },
+        {
+          name: "Bạc xỉu",
+          price: "35.000đ",
+          description: "Sữa tươi, cà phê phin",
+          badge: "Hot",
+          imageUrl: "/thumb-order.webp",
+        },
         { name: "Cà phê muối", price: "39.000đ", description: "Kem muối béo nhẹ" },
       ],
     },
@@ -116,13 +129,20 @@ export const FIXTURE_BLOCKS: RenderBlock[] = [
   {
     id: "fx-map",
     type: "map",
-    payload: { address: "123 Nguyễn Huệ, Quận 1, TP.HCM", label: "Chỉ đường đến quán", showMap: false },
+    payload: {
+      address: "123 Nguyễn Huệ, Quận 1, TP.HCM",
+      label: "Chỉ đường đến quán",
+      showMap: false,
+    },
     links: [],
   },
   {
     id: "fx-mobile-only",
     type: "text",
-    payload: { content: "Chỉ hiện trên điện thoại", blockStyle: { hideOn: ["desktop"], surface: "card" } },
+    payload: {
+      content: "Chỉ hiện trên điện thoại",
+      blockStyle: { hideOn: ["desktop"], surface: "card" },
+    },
     links: [],
   },
   {
@@ -140,7 +160,12 @@ export const FIXTURE_THEMES: Record<string, PageThemeConfig> = {
     preset: "minimal-light",
     version: 2,
     overrides: {
-      colors: { accent: "#b45309", surface: "#3b2a20", surfaceText: "#ffffff", surfaceBorder: "#3b2a20" },
+      colors: {
+        accent: "#b45309",
+        surface: "#3b2a20",
+        surfaceText: "#ffffff",
+        surfaceBorder: "#3b2a20",
+      },
       typography: { headingFont: "montserrat", textCase: "normal", baseSize: 15 },
       shape: { radius: "lg", shadow: "md" },
       button: { variant: "outline" },

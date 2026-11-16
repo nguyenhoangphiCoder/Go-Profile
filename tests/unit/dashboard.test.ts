@@ -105,10 +105,7 @@ describe("Dashboard Module: Real-time Metrics & Slug Resolution", () => {
     ];
 
     mockClicksCount = 17;
-    mockClickEvents = [
-      ...Array(12).fill({ page_id: "p1" }),
-      ...Array(5).fill({ page_id: "p2" }),
-    ];
+    mockClickEvents = [...Array(12).fill({ page_id: "p1" }), ...Array(5).fill({ page_id: "p2" })];
 
     const summary = await getDashboardSummary();
 

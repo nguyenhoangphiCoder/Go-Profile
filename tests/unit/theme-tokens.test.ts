@@ -14,10 +14,14 @@ import { THEME_PRESETS } from "@/config/themes";
 import { saveDraftSchema } from "@/features/pages/schemas";
 
 describe("kiểm tra giá trị an toàn", () => {
-  it.each(["#fff", "#3598db", "#3598db80", "rgba(255, 255, 255, 0.08)", "rgb(1,2,3)", "transparent"])(
-    "chấp nhận màu %s",
-    (c) => expect(isSafeColor(c)).toBe(true)
-  );
+  it.each([
+    "#fff",
+    "#3598db",
+    "#3598db80",
+    "rgba(255, 255, 255, 0.08)",
+    "rgb(1,2,3)",
+    "transparent",
+  ])("chấp nhận màu %s", (c) => expect(isSafeColor(c)).toBe(true));
 
   it.each([
     "red; background: url(https://evil)",
@@ -108,7 +112,10 @@ describe("resolveThemeTokens", () => {
   });
 
   it("overrides v2 không hợp lệ bị bỏ qua", () => {
-    const t = resolveThemeTokens({ preset: "go-original", overrides: { colors: { accent: "url(x)" } } });
+    const t = resolveThemeTokens({
+      preset: "go-original",
+      overrides: { colors: { accent: "url(x)" } },
+    });
     expect(t.colors.accent).toBe(PRESET_TOKENS["go-original"].colors.accent);
   });
 });
@@ -131,9 +138,7 @@ describe("saveDraftSchema — theme", () => {
   });
 
   it("chặn overrides v2 chứa giá trị không hợp lệ hoặc trường lạ", () => {
-    expect(
-      themeOverridesSchema.safeParse({ colors: { accent: "url(x)" } }).success
-    ).toBe(false);
+    expect(themeOverridesSchema.safeParse({ colors: { accent: "url(x)" } }).success).toBe(false);
     expect(themeOverridesSchema.safeParse({ customCss: "body{}" }).success).toBe(false);
     const res = saveDraftSchema.safeParse({
       ...base,

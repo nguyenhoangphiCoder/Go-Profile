@@ -9,7 +9,11 @@ interface SeoEditorProps {
   seo: PageSeoConfig;
   onChange: (seo: PageSeoConfig) => void;
   availableMedia: { id: string; originalFilename: string | null; publicUrl: string | null }[];
-  onMediaAdded?: (newMedia: { id: string; originalFilename: string | null; publicUrl: string | null }) => void;
+  onMediaAdded?: (newMedia: {
+    id: string;
+    originalFilename: string | null;
+    publicUrl: string | null;
+  }) => void;
 }
 
 export function SeoEditor({ seo, onChange, availableMedia, onMediaAdded }: SeoEditorProps) {
@@ -23,7 +27,8 @@ export function SeoEditor({ seo, onChange, availableMedia, onMediaAdded }: SeoEd
       <div>
         <h3 className="text-sm font-bold text-foreground">Cài đặt SEO & Chia sẻ Mạng xã hội</h3>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Tối ưu hóa hiển thị khi tìm kiếm trên Google và khi chia sẻ liên kết lên Facebook, Zalo, Telegram.
+          Tối ưu hóa hiển thị khi tìm kiếm trên Google và khi chia sẻ liên kết lên Facebook, Zalo,
+          Telegram.
         </p>
       </div>
 
@@ -107,7 +112,8 @@ export function SeoEditor({ seo, onChange, availableMedia, onMediaAdded }: SeoEd
             helpText="Khuyến nghị: 1200 × 630 px"
           />
           <p className="text-[11px] text-muted-foreground">
-            Kích thước chuẩn kiến nghị: 1200 × 630 px (tỷ lệ 1.91:1) để hiển thị sắc nét nhất trên Facebook và Zalo.
+            Kích thước chuẩn kiến nghị: 1200 × 630 px (tỷ lệ 1.91:1) để hiển thị sắc nét nhất trên
+            Facebook và Zalo.
           </p>
         </div>
       </div>

@@ -16,7 +16,11 @@ export function parseColor(input: string | null | undefined): Rgb | null {
   const hex = v.match(/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/);
   if (hex) {
     let h = hex[1];
-    if (h.length <= 4) h = h.split("").map((c) => c + c).join("");
+    if (h.length <= 4)
+      h = h
+        .split("")
+        .map((c) => c + c)
+        .join("");
     return {
       r: parseInt(h.slice(0, 2), 16),
       g: parseInt(h.slice(2, 4), 16),
@@ -33,7 +37,10 @@ export function parseColor(input: string | null | undefined): Rgb | null {
 }
 
 export function toHex({ r, g, b }: Rgb): string {
-  const h = (n: number) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, "0");
+  const h = (n: number) =>
+    Math.round(Math.max(0, Math.min(255, n)))
+      .toString(16)
+      .padStart(2, "0");
   return `#${h(r)}${h(g)}${h(b)}`;
 }
 
