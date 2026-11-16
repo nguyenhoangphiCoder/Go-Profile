@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { PUBLIC_SITEMAP_TAG } from "@/features/public/sitemap-data";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import type { Json } from "@/types/database.generated";
@@ -128,6 +129,7 @@ export async function renameSlugAction(
   const res = data as unknown as RenameSlugResult;
   revalidatePath("/admin/pages");
   revalidatePath(`/admin/pages/${pageId}`);
+  revalidateTag(PUBLIC_SITEMAP_TAG, "max");
   return {
     success: true,
     newSlug: res?.new_slug,
@@ -472,6 +474,7 @@ export async function publishPageAction(
   revalidatePath("/admin/pages");
   revalidatePath(`/admin/pages/${pageId}`);
   revalidatePath("/", "layout");
+  revalidateTag(PUBLIC_SITEMAP_TAG, "max");
 
   return {
     success: true,
@@ -510,6 +513,7 @@ export async function unpublishPageAction(pageId: string, expectedPageVersion: n
   revalidatePath("/admin/pages");
   revalidatePath(`/admin/pages/${pageId}`);
   revalidatePath("/", "layout");
+  revalidateTag(PUBLIC_SITEMAP_TAG, "max");
 
   return {
     success: true,
@@ -709,5 +713,6 @@ export async function archivePageAction(pageId: string) {
 
   revalidatePath("/admin/pages");
   revalidatePath("/", "layout");
+  revalidateTag(PUBLIC_SITEMAP_TAG, "max");
   return { success: true };
 }
