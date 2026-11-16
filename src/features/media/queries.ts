@@ -1,6 +1,7 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { requireActiveAdmin } from "@/features/auth/queries";
+import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
+import { requireWorkspace } from "@/features/workspace/context";
 import { clientEnv } from "@/lib/env.client";
 import type { MediaAssetItem } from "./types";
 import { getMediaUsedByActiveRevisions } from "./usage";
@@ -11,7 +12,7 @@ export function getPublicMediaUrl(objectPath: string): string {
 }
 
 export async function getMediaAssets(): Promise<MediaAssetItem[]> {
-  await requireActiveAdmin();
+  const { workspace } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
   const { data: rows, error } = await supabase
@@ -31,6 +32,7 @@ export async function getMediaAssets(): Promise<MediaAssetItem[]> {
       created_at
     `
     )
+    .eq("workspace_id", workspace.id)
     .is("archived_at", null)
     .order("created_at", { ascending: false });
 
@@ -47,7 +49,8 @@ export async function getMediaAssets(): Promise<MediaAssetItem[]> {
     .is("archived_at", null);
 
   // Ảnh trong bản đang xuất bản / bản nháp của trang (cùng quy tắc với deleteMediaAction)
-  const referencedSet = await getMediaUsedByActiveRevisions(supabase);
+  // Quét toàn hệ thống (service role) — cùng quy tắc với deleteMediaAction
+  const referencedSet = await getMediaUsedByActiveRevisions(createSupabaseAdminClient());
 
   (referencedInLinks || []).forEach((l) => {
     if (l.default_media_id) referencedSet.add(l.default_media_id);

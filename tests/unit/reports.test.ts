@@ -10,6 +10,47 @@ import {
 import { reportParamsSchema } from "@/features/reports/schemas";
 
 // Mock Supabase Server Client & Auth
+vi.mock("@/features/workspace/context", () => ({
+  requireWorkspace: vi.fn(() =>
+    Promise.resolve({
+      user: {
+        userId: "admin-user-id-01",
+        email: "admin@gocafe.vn",
+        displayName: "Quản trị viên Gờ",
+      },
+      isPlatformAdmin: true,
+      workspace: {
+        id: "ws-test",
+        name: "Gờ Cafe",
+        role: "owner",
+        maxPages: 1000,
+        maxMediaBytes: 1e10,
+      },
+      role: "owner",
+      workspaces: [],
+    })
+  ),
+  getWorkspaceForAction: vi.fn(() =>
+    Promise.resolve({
+      user: {
+        userId: "admin-user-id-01",
+        email: "admin@gocafe.vn",
+        displayName: "Quản trị viên Gờ",
+      },
+      isPlatformAdmin: true,
+      workspace: {
+        id: "ws-test",
+        name: "Gờ Cafe",
+        role: "owner",
+        maxPages: 1000,
+        maxMediaBytes: 1e10,
+      },
+      role: "owner",
+      workspaces: [],
+    })
+  ),
+}));
+
 vi.mock("@/features/auth/queries", () => ({
   requireActiveAdmin: vi.fn(() =>
     Promise.resolve({
@@ -27,39 +68,44 @@ vi.mock("@/lib/supabase/server", () => ({
     Promise.resolve({
       rpc: mockRpc,
       from: vi.fn((table: string) => ({
-        select: vi.fn(() => ({
-          order: vi.fn(() =>
-            Promise.resolve({
-              data:
-                table === "pages"
-                  ? [
-                      {
-                        id: "page-a-id",
-                        internal_name: "Trang Gờ Cafe A",
-                        archived_at: null,
-                        page_slugs: [{ slug: "gocafe-a", is_current: true }],
-                      },
-                      {
-                        id: "page-b-id",
-                        internal_name: "Trang Gờ Cafe B (Archived)",
-                        archived_at: "2026-11-06T10:00:00Z",
-                        page_slugs: [{ slug: "gocafe-b", is_current: true }],
-                      },
-                    ]
-                  : [
-                      {
-                        id: "link-x-id",
-                        default_label: "Đặt món ShopeeFood",
-                        target_url: "https://shopeefood.vn/gocafe",
-                        kind: "standard",
-                        is_active: true,
-                        archived_at: null,
-                      },
-                    ],
-              error: null,
-            })
-          ),
-        })),
+        select: vi.fn(() => {
+          const chain = {
+            // .eq("workspace_id", ...) — trả lại chính chain
+            eq: vi.fn(() => chain),
+            order: vi.fn(() =>
+              Promise.resolve({
+                data:
+                  table === "pages"
+                    ? [
+                        {
+                          id: "page-a-id",
+                          internal_name: "Trang Gờ Cafe A",
+                          archived_at: null,
+                          page_slugs: [{ slug: "gocafe-a", is_current: true }],
+                        },
+                        {
+                          id: "page-b-id",
+                          internal_name: "Trang Gờ Cafe B (Archived)",
+                          archived_at: "2026-11-06T10:00:00Z",
+                          page_slugs: [{ slug: "gocafe-b", is_current: true }],
+                        },
+                      ]
+                    : [
+                        {
+                          id: "link-x-id",
+                          default_label: "Đặt món ShopeeFood",
+                          target_url: "https://shopeefood.vn/gocafe",
+                          kind: "standard",
+                          is_active: true,
+                          archived_at: null,
+                        },
+                      ],
+                error: null,
+              })
+            ),
+          };
+          return chain;
+        }),
       })),
     }),
 }));

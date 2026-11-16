@@ -5,7 +5,8 @@ import { PUBLIC_SITEMAP_TAG } from "@/features/public/sitemap-data";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import type { Json } from "@/types/database.generated";
-import { getCurrentAdmin } from "@/features/auth/queries";
+import { getWorkspaceForAction } from "@/features/workspace/context";
+import { FORBIDDEN_ERROR } from "@/features/workspace/types";
 import {
   pageIdSchema,
   createPageSchema,
@@ -17,7 +18,6 @@ import {
   type CreatePageInput,
 } from "./schemas";
 
-const SESSION_ERROR = "Phiên đăng nhập đã hết hạn hoặc tài khoản không có quyền quản trị";
 const DRAFT_CONFLICT_ERROR =
   "Bản nháp đã được lưu từ một phiên khác. Vui lòng tải lại trang để tránh ghi đè nội dung.";
 
@@ -67,9 +67,13 @@ export async function createPageAction(input: CreatePageInput) {
     };
   }
 
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
+
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.rpc("create_page", {
+    p_workspace_id: ctx.workspace.id,
     p_internal_name: parsed.data.internalName,
     p_slug: parsed.data.slug,
     p_title: parsed.data.title,
@@ -109,6 +113,9 @@ export async function renameSlugAction(
       error: parsed.error.issues[0]?.message || "Đường dẫn không hợp lệ",
     };
   }
+
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
 
   const supabase = await createSupabaseServerClient();
 
@@ -159,10 +166,8 @@ export async function saveDraftAction(input: SaveDraftInput) {
     };
   }
 
-  const admin = await getCurrentAdmin();
-  if (!admin) {
-    return { success: false, error: SESSION_ERROR };
-  }
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
 
   const privileged = createSupabaseAdminClient();
   const { pageId, draftId, expectedDraftVersion, title, description, theme, seo, blocks } =
@@ -175,11 +180,12 @@ export async function saveDraftAction(input: SaveDraftInput) {
     seo,
   };
 
-  // 0. Trang phải tồn tại và chưa bị lưu trữ
+  // 0. Trang phải tồn tại, chưa bị lưu trữ và thuộc workspace hiện tại (service role bỏ qua RLS)
   const { data: pageRow } = await privileged
     .from("pages")
     .select("id")
     .eq("id", pageId)
+    .eq("workspace_id", ctx.workspace.id)
     .is("archived_at", null)
     .maybeSingle();
 
@@ -272,7 +278,7 @@ export async function saveDraftAction(input: SaveDraftInput) {
         state: "draft",
         lock_version: 1,
         ...revisionFields,
-        created_by: admin.userId,
+        created_by: ctx.user.userId,
       })
       .select("id, lock_version")
       .single();
@@ -454,6 +460,9 @@ export async function publishPageAction(
     };
   }
 
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
+
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.rpc("publish_page", {
@@ -495,6 +504,9 @@ export async function unpublishPageAction(pageId: string, expectedPageVersion: n
     };
   }
 
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
+
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase.rpc("unpublish_page", {
@@ -526,10 +538,8 @@ export async function duplicatePageAction(sourcePageId: string) {
     return { success: false, error: "ID trang không hợp lệ" };
   }
 
-  const admin = await getCurrentAdmin();
-  if (!admin) {
-    return { success: false, error: SESSION_ERROR };
-  }
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
 
   const supabase = await createSupabaseServerClient();
   const privileged = createSupabaseAdminClient();
@@ -545,6 +555,7 @@ export async function duplicatePageAction(sourcePageId: string) {
     `
     )
     .eq("id", sourcePageId)
+    .eq("workspace_id", ctx.workspace.id)
     .single();
 
   if (pErr || !sourcePage) {
@@ -577,6 +588,7 @@ export async function duplicatePageAction(sourcePageId: string) {
 
   // 2. Gọi RPC create_page
   const { data: createData, error: createErr } = await supabase.rpc("create_page", {
+    p_workspace_id: ctx.workspace.id,
     p_internal_name: newInternalName,
     p_slug: candidateSlug,
     p_title: newTitle,
@@ -685,10 +697,8 @@ export async function archivePageAction(pageId: string) {
 
   // Bắt buộc kiểm tra quyền: action này dùng service-role (bỏ qua RLS) và có thể được gọi
   // trực tiếp qua HTTP POST mà không cần đi qua giao diện admin.
-  const admin = await getCurrentAdmin();
-  if (!admin) {
-    return { success: false, error: SESSION_ERROR };
-  }
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
 
   const privileged = createSupabaseAdminClient();
 
@@ -699,6 +709,7 @@ export async function archivePageAction(pageId: string) {
       status: "unpublished",
     })
     .eq("id", pageId)
+    .eq("workspace_id", ctx.workspace.id)
     .is("archived_at", null)
     .select("id");
 

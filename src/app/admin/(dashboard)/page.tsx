@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { Plus, Link2, BarChart3, FileText, ArrowUpRight, CheckCircle2 } from "lucide-react";
-import { requireActiveAdmin } from "@/features/auth/queries";
+import { requireWorkspace } from "@/features/workspace/context";
+import { hasRole } from "@/features/workspace/types";
 import { getDashboardSummary } from "@/features/dashboard/queries";
 
 export const instant = false;
 
 export default async function AdminDashboardPage() {
-  const [admin, summary] = await Promise.all([requireActiveAdmin(), getDashboardSummary()]);
+  const ctx = await requireWorkspace();
+  const summary = await getDashboardSummary(ctx.workspace.id);
+  const admin = { displayName: ctx.user.displayName || ctx.user.email };
+  const canEdit = hasRole(ctx.role, "editor");
 
   return (
     <div className="max-w-6xl space-y-8">
@@ -24,13 +28,15 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href="/admin/pages/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tạo trang mới</span>
-          </Link>
+          {canEdit && (
+            <Link
+              href="/admin/pages/new"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Tạo trang mới</span>
+            </Link>
+          )}
           <Link
             href="/admin/links"
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-blue-200 bg-white text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"

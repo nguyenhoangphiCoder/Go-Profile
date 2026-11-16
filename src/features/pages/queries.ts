@@ -1,5 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getPublicMediaUrl } from "@/features/media/queries";
+import { requireWorkspace } from "@/features/workspace/context";
+import { hasRole } from "@/features/workspace/types";
 import type {
   PageListItem,
   PageEditorData,
@@ -104,6 +106,7 @@ interface MediaAssetQueryRow {
 }
 
 export async function getPagesList(): Promise<PageListItem[]> {
+  const { workspace } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
   const { data: pages, error } = await supabase
@@ -133,6 +136,7 @@ export async function getPagesList(): Promise<PageListItem[]> {
       )
     `
     )
+    .eq("workspace_id", workspace.id)
     .is("archived_at", null)
     .order("updated_at", { ascending: false });
 
@@ -171,6 +175,7 @@ export async function getPagesList(): Promise<PageListItem[]> {
 }
 
 export async function getPageEditorData(pageId: string): Promise<PageEditorData | null> {
+  const { workspace, role } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
   // 1. Tải thông tin trang
@@ -178,6 +183,7 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     .from("pages")
     .select("id, internal_name, status, lock_version, published_revision_id, updated_at")
     .eq("id", pageId)
+    .eq("workspace_id", workspace.id)
     .is("archived_at", null)
     .single();
 
@@ -305,6 +311,7 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     .select(
       "id, default_label, target_url, kind, default_media_id, is_active, media_assets(object_path)"
     )
+    .eq("workspace_id", workspace.id)
     .is("archived_at", null)
     .order("default_label", { ascending: true });
 
@@ -324,7 +331,9 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
   const { data: mediaData } = await supabase
     .from("media_assets")
     .select("id, original_filename, object_path")
+    .eq("workspace_id", workspace.id)
     .eq("status", "ready")
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   const availableMedia = ((mediaData || []) as unknown as MediaAssetQueryRow[]).map((m) => ({
@@ -357,10 +366,12 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     blocks: editorBlocks,
     availableLinks,
     availableMedia,
+    canEdit: hasRole(role, "editor"),
   };
 }
 
 export async function getNewPageEditorData(): Promise<PageEditorData> {
+  const { workspace } = await requireWorkspace("editor");
   const supabase = await createSupabaseServerClient();
 
   // 1. Tải danh mục link chung đang hoạt động
@@ -369,6 +380,7 @@ export async function getNewPageEditorData(): Promise<PageEditorData> {
     .select(
       "id, default_label, target_url, kind, default_media_id, is_active, media_assets(object_path)"
     )
+    .eq("workspace_id", workspace.id)
     .is("archived_at", null)
     .order("default_label", { ascending: true });
 
@@ -388,7 +400,9 @@ export async function getNewPageEditorData(): Promise<PageEditorData> {
   const { data: mediaData } = await supabase
     .from("media_assets")
     .select("id, original_filename, object_path")
+    .eq("workspace_id", workspace.id)
     .eq("status", "ready")
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   const availableMedia = ((mediaData || []) as unknown as MediaAssetQueryRow[]).map((m) => ({
@@ -473,5 +487,6 @@ export async function getNewPageEditorData(): Promise<PageEditorData> {
     blocks: initialBlocks,
     availableLinks,
     availableMedia,
+    canEdit: true,
   };
 }
