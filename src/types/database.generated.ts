@@ -60,6 +60,7 @@ export type Database = {
           created_by: string | null;
           created_at: string;
           archived_at: string | null;
+          workspace_id: string;
         };
         Insert: {
           id?: string;
@@ -75,6 +76,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           archived_at?: string | null;
+          workspace_id?: string;
         };
         Update: {
           id?: string;
@@ -90,6 +92,7 @@ export type Database = {
           created_by?: string | null;
           created_at?: string;
           archived_at?: string | null;
+          workspace_id?: string;
         };
         Relationships: [];
       };
@@ -107,6 +110,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           archived_at: string | null;
+          workspace_id: string;
         };
         Insert: {
           id?: string;
@@ -121,6 +125,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           archived_at?: string | null;
+          workspace_id?: string;
         };
         Update: {
           id?: string;
@@ -135,6 +140,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           archived_at?: string | null;
+          workspace_id?: string;
         };
         Relationships: [
           {
@@ -157,6 +163,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           archived_at: string | null;
+          workspace_id: string;
         };
         Insert: {
           id?: string;
@@ -168,6 +175,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           archived_at?: string | null;
+          workspace_id?: string;
         };
         Update: {
           id?: string;
@@ -179,6 +187,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           archived_at?: string | null;
+          workspace_id?: string;
         };
         Relationships: [
           {
@@ -545,6 +554,7 @@ export type Database = {
           created_at: string;
           updated_at: string;
           archived_at: string | null;
+          workspace_id: string;
         };
         Insert: {
           id?: string;
@@ -555,6 +565,7 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           archived_at?: string | null;
+          workspace_id?: string;
         };
         Update: {
           id?: string;
@@ -565,6 +576,103 @@ export type Database = {
           created_at?: string;
           updated_at?: string;
           archived_at?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
+      workspaces: {
+        Row: {
+          id: string;
+          name: string;
+          max_pages: number;
+          max_media_bytes: number;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          archived_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          max_pages?: number;
+          max_media_bytes?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          archived_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          max_pages?: number;
+          max_media_bytes?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          archived_at?: string | null;
+        };
+        Relationships: [];
+      };
+      workspace_members: {
+        Row: {
+          workspace_id: string;
+          user_id: string;
+          role: "owner" | "editor" | "viewer";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          workspace_id: string;
+          user_id: string;
+          role: "owner" | "editor" | "viewer";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          workspace_id?: string;
+          user_id?: string;
+          role?: "owner" | "editor" | "viewer";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      workspace_invitations: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          email: string;
+          role: "owner" | "editor" | "viewer";
+          invited_by: string | null;
+          created_at: string;
+          expires_at: string;
+          accepted_at: string | null;
+          accepted_by: string | null;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          email: string;
+          role: "owner" | "editor" | "viewer";
+          invited_by?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          revoked_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          email?: string;
+          role?: "owner" | "editor" | "viewer";
+          invited_by?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          revoked_at?: string | null;
         };
         Relationships: [];
       };
@@ -591,14 +699,24 @@ export type Database = {
         };
         Returns: Json;
       };
-      create_page: {
-        Args: {
-          p_internal_name: string;
-          p_slug: string;
-          p_title: string;
-        };
-        Returns: Json;
-      };
+      create_page:
+        | {
+            Args: {
+              p_internal_name: string;
+              p_slug: string;
+              p_title: string;
+            };
+            Returns: Json;
+          }
+        | {
+            Args: {
+              p_workspace_id: string;
+              p_internal_name: string;
+              p_slug: string;
+              p_title: string;
+            };
+            Returns: Json;
+          };
       publish_page: {
         Args: {
           p_page_id: string;
@@ -636,6 +754,7 @@ export type Database = {
           p_page_id?: string;
           p_link_id?: string;
           p_timezone?: string;
+          p_workspace_id?: string;
         };
         Returns: Json;
       };

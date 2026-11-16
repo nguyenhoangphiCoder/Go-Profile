@@ -296,16 +296,48 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 > - Nút "Chỉ đường" của khối bản đồ mở thẳng Google Maps, không đi qua `/r` nên không có trong báo cáo click.
 > - ~~Bảng `revision_media_assets` không được ghi đầy đủ~~ — đã sửa bằng [migration 20261116000003](../supabase/migrations/20261116000003_track_revision_media.sql): ghi mọi ảnh của khối, theme, placement khi lưu nháp và xuất bản; kho media chỉ chặn xoá ảnh thuộc bản đang xuất bản hoặc bản nháp.
 
-### Giai đoạn 5 (tùy chọn) — Mở cho nhiều người dùng tự quản trang (≈ 10–15 ngày)
+### Giai đoạn 5 — Nhiều người dùng tự quản trang (workspace)
 
-Chỉ cần nếu "người dùng" là **khách hàng bên ngoài** tự đăng ký và tự thiết kế trang của họ, không phải nhân viên quản trị nội bộ. Đây là thay đổi lớn về mô hình:
+**Quyết định (16/11/2026):**
 
-- [ ] Bảng `workspaces` + `workspace_members (role: owner | editor | viewer)`.
-- [ ] Thêm `workspace_id` cho `pages`, `links`, `media_assets`, `theme_presets`.
-- [ ] Viết lại toàn bộ **RLS policy** theo `workspace_id` thay cho `is_admin()`.
-- [ ] Bật đăng ký công khai + xác thực email + giới hạn (quota) số trang, dung lượng media.
-- [ ] Trang quản trị hệ thống (super admin) tách biệt.
-- [ ] Rà soát lại [quyết định phạm vi P01.04](./quyet-dinh-pham-vi-va-dau-vao.md) (hiện đang tắt đăng ký công khai).
+| Câu hỏi               | Lựa chọn                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| Ai được tạo tài khoản | **Chỉ qua lời mời** (tắt đăng ký công khai như P01.04)                                |
+| Workspace             | **Nhiều thành viên**, vai trò owner / editor / viewer                                 |
+| Dữ liệu cũ            | Gom vào workspace **Gờ Cafe**; quản trị viên hiện tại = owner + **quản trị hệ thống** |
+| Đường dẫn             | Giữ **/slug dùng chung**, slug duy nhất toàn hệ thống                                 |
+
+**Quyền theo vai trò:**
+
+|                                                    | viewer | editor | owner | quản trị hệ thống |
+| -------------------------------------------------- | ------ | ------ | ----- | ----------------- |
+| Xem trang, liên kết, ảnh, báo cáo của workspace    | ✓      | ✓      | ✓     | ✓ (mọi workspace) |
+| Tạo / sửa / xuất bản trang, liên kết, ảnh          |        | ✓      | ✓     | ✓                 |
+| Mời / đổi vai trò / xoá thành viên                 |        |        | ✓     | ✓                 |
+| Tạo workspace, đặt giới hạn, báo cáo toàn hệ thống |        |        |       | ✓                 |
+
+**5a — Nền tảng database** ([migration](../supabase/migrations/20261116000005_workspaces.sql)):
+
+- [x] Bảng `workspaces` (kèm giới hạn `max_pages`, `max_media_bytes`), `workspace_members`, `workspace_invitations`.
+- [x] `workspace_id` cho `pages`, `links`, `media_assets`, `theme_presets`; dữ liệu cũ gắn vào Gờ Cafe. DEFAULT tạm = Gờ Cafe để ứng dụng hiện tại chạy đúng trong giai đoạn chuyển tiếp.
+- [x] RLS theo workspace cho mọi bảng (thay policy "chỉ quản trị viên"); người dùng đăng nhập chỉ đọc, mọi ghi qua server action / RPC.
+- [x] RPC `create_page` (có workspace + giới hạn số trang; bản 3 tham số cũ giữ để tương thích), `publish_page`, `unpublish_page`, `rename_page_slug`, `get_click_report` (thêm `p_workspace_id`) kiểm tra quyền theo workspace.
+- [x] Ràng buộc: liên kết / ảnh phải cùng workspace với trang, không chuyển dữ liệu giữa workspace, workspace luôn còn ít nhất một owner.
+- [x] Bộ test database PGlite: 16 test phân quyền theo vai trò (`tests/db/workspaces.test.ts`).
+
+**5b — Ứng dụng theo workspace:**
+
+- [ ] Chọn workspace đang làm việc (cookie) + bộ chuyển workspace trên thanh quản trị.
+- [ ] Mọi truy vấn / server action dùng service role phải lọc và kiểm tra quyền theo workspace (≈ 34 chỗ `requireActiveAdmin` / `getCurrentAdmin`).
+- [ ] Ẩn nút sửa / xuất bản với viewer.
+- [ ] Bỏ DEFAULT workspace Gờ Cafe sau khi ứng dụng truyền workspace tường minh.
+
+**5c — Lời mời & quản lý:**
+
+- [ ] Mời qua email (Supabase `inviteUserByEmail`), tự nhận lời mời khi đăng nhập bằng đúng email.
+- [ ] Trang thành viên: danh sách, đổi vai trò, xoá, thu hồi lời mời.
+- [ ] Trang quản trị hệ thống: danh sách workspace, tạo workspace + mời owner, đặt giới hạn.
+- [ ] Giới hạn dung lượng ảnh khi tải lên.
 
 ---
 
