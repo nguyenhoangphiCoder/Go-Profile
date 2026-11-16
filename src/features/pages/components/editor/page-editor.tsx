@@ -38,6 +38,7 @@ import {
   Sparkles,
   Undo2,
   Redo2,
+  GripVertical,
   MousePointerClick,
   Images,
   UtensilsCrossed,
@@ -54,6 +55,7 @@ import type {
 } from "../../types";
 import { LivePreview } from "./live-preview";
 import { useUndoHistory } from "./use-undo-history";
+import { reorderByInsertion } from "./reorder";
 import { BLOCK_REGISTRY } from "@/features/renderer/blocks/registry";
 
 // Khối mới (giai đoạn 4): payload mặc định lấy từ registry
@@ -286,6 +288,40 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
       default:
         return BLOCK_REGISTRY[type]?.label ?? type;
     }
+  };
+
+  // ---- Chọn khối (bấm trên bản xem trước ↔ form chỉnh sửa) ----
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  // Chỉ thay đổi khi chọn từ bản xem trước → form khối đó tự mở rộng
+  const [previewPick, setPreviewPick] = useState<{ id: string; token: number } | null>(null);
+
+  const handleSelectBlockFromPreview = useCallback((blockId: string) => {
+    setSelectedBlockId(blockId);
+    setPreviewPick((prev) => ({ id: blockId, token: (prev?.token ?? 0) + 1 }));
+    setActiveTab("blocks");
+    setMobileViewMode("edit");
+    // Chờ form render (khi vừa chuyển tab / chế độ) rồi cuộn tới khối
+    window.setTimeout(() => {
+      document
+        .getElementById(`block-editor-${blockId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  }, []);
+
+  // ---- Kéo thả sắp xếp khối ----
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+
+  const handleReorderBlock = (from: number, to: number) => {
+    const next = reorderByInsertion(blocks, from, to);
+    if (next === blocks) return;
+    setBlocks(next);
+    setIsDirty(true);
+  };
+
+  const resetDrag = () => {
+    setDragIndex(null);
+    setDropIndex(null);
   };
 
   const handleUpdateBlock = (index: number, updated: EditorBlockItem) => {
@@ -1188,7 +1224,9 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                         onClick={() => handleAddBlock(type)}
                         className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
                       >
-                        <div className={`p-1.5 rounded-lg group-hover:scale-110 transition-transform ${TONE_CLASSES[tone]}`}>
+                        <div
+                          className={`p-1.5 rounded-lg group-hover:scale-110 transition-transform ${TONE_CLASSES[tone]}`}
+                        >
                           <Icon className="w-3.5 h-3.5" />
                         </div>
                         <span className="truncate">{label}</span>
@@ -1216,20 +1254,78 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                     </div>
                   ) : (
                     blocks.map((block, idx) => (
-                      <BlockItemEditor
+                      <div
                         key={block.id}
-                        block={block}
-                        index={idx}
-                        totalBlocks={blocks.length}
-                        availableLinks={initialData.availableLinks}
-                        availableMedia={mediaList}
-                        onMediaAdded={handleMediaAdded}
-                        onUpdateBlock={(updated) => handleUpdateBlock(idx, updated)}
-                        onMoveUp={() => handleMoveBlock(idx, "up")}
-                        onMoveDown={() => handleMoveBlock(idx, "down")}
-                        onDelete={() => handleDeleteBlock(idx)}
-                        onDuplicate={() => handleDuplicateBlock(idx)}
-                      />
+                        onDragOver={(e) => {
+                          if (dragIndex === null) return;
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const after = e.clientY > rect.top + rect.height / 2;
+                          setDropIndex(after ? idx + 1 : idx);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (dragIndex !== null && dropIndex !== null) {
+                            handleReorderBlock(dragIndex, dropIndex);
+                          }
+                          resetDrag();
+                        }}
+                        className={`relative transition-opacity ${dragIndex === idx ? "opacity-40" : ""}`}
+                      >
+                        {dropIndex === idx && dragIndex !== null && (
+                          <div
+                            className="absolute -top-2 inset-x-2 h-1 rounded-full bg-primary"
+                            aria-hidden="true"
+                          />
+                        )}
+                        {dropIndex === idx + 1 &&
+                          idx === blocks.length - 1 &&
+                          dragIndex !== null && (
+                            <div
+                              className="absolute -bottom-2 inset-x-2 h-1 rounded-full bg-primary"
+                              aria-hidden="true"
+                            />
+                          )}
+                        <BlockItemEditor
+                          isSelected={selectedBlockId === block.id}
+                          selectToken={previewPick?.id === block.id ? previewPick.token : 0}
+                          onSelect={() => setSelectedBlockId(block.id)}
+                          dragHandle={
+                            <span
+                              draggable
+                              onClick={(e) => e.stopPropagation()}
+                              onDragStart={(e) => {
+                                e.stopPropagation();
+                                e.dataTransfer.effectAllowed = "move";
+                                e.dataTransfer.setData("text/plain", String(idx));
+                                const card = (e.currentTarget as HTMLElement).closest(
+                                  "[data-block-card]"
+                                );
+                                if (card) e.dataTransfer.setDragImage(card, 24, 24);
+                                setDragIndex(idx);
+                              }}
+                              onDragEnd={resetDrag}
+                              className="hidden lg:flex items-center justify-center w-6 h-8 -ml-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing shrink-0"
+                              title="Kéo để sắp xếp lại khối"
+                              aria-label="Kéo để sắp xếp lại khối"
+                            >
+                              <GripVertical className="w-4 h-4" />
+                            </span>
+                          }
+                          block={block}
+                          index={idx}
+                          totalBlocks={blocks.length}
+                          availableLinks={initialData.availableLinks}
+                          availableMedia={mediaList}
+                          onMediaAdded={handleMediaAdded}
+                          onUpdateBlock={(updated) => handleUpdateBlock(idx, updated)}
+                          onMoveUp={() => handleMoveBlock(idx, "up")}
+                          onMoveDown={() => handleMoveBlock(idx, "down")}
+                          onDelete={() => handleDeleteBlock(idx)}
+                          onDuplicate={() => handleDuplicateBlock(idx)}
+                        />
+                      </div>
                     ))
                   )}
                 </div>
@@ -1318,6 +1414,8 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             blocks={blocks}
             previewMode={previewMode}
             zoomScale={zoomScale}
+            selectedBlockId={selectedBlockId}
+            onSelectBlock={handleSelectBlockFromPreview}
           />
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ChevronUp,
   ChevronDown,
@@ -76,6 +76,13 @@ interface BlockItemEditorProps {
   onMoveDown: () => void;
   onDelete: () => void;
   onDuplicate?: () => void;
+  /** Khối đang được chọn (từ bản xem trước hoặc bấm tiêu đề khối). */
+  isSelected?: boolean;
+  /** Tăng mỗi lần khối được chọn từ bản xem trước → tự mở rộng form. */
+  selectToken?: number;
+  onSelect?: () => void;
+  /** Tay kéo để sắp xếp khối (do PageEditor cung cấp). */
+  dragHandle?: ReactNode;
 }
 
 export function BlockItemEditor({
@@ -90,8 +97,18 @@ export function BlockItemEditor({
   onMoveDown,
   onDelete,
   onDuplicate,
+  isSelected = false,
+  selectToken = 0,
+  onSelect,
+  dragHandle,
 }: BlockItemEditorProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  // Được chọn từ bản xem trước → mở rộng form (cập nhật state khi prop đổi, không dùng effect)
+  const [seenSelectToken, setSeenSelectToken] = useState(selectToken);
+  if (selectToken !== seenSelectToken) {
+    setSeenSelectToken(selectToken);
+    if (isSelected) setIsExpanded(true);
+  }
   const [selectedLinkToAdd, setSelectedLinkToAdd] = useState("");
   const [expandedPlacements, setExpandedPlacements] = useState<Record<string, boolean>>({});
 
@@ -298,7 +315,11 @@ export function BlockItemEditor({
 
   return (
     <div
-      className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+      id={`block-editor-${block.id}`}
+      data-block-card=""
+      className={`rounded-2xl border transition-all duration-200 overflow-hidden scroll-mt-4 ${
+        isSelected ? "ring-2 ring-sky-500 ring-offset-2 ring-offset-background " : ""
+      }${
         block.isVisible
           ? "border-border/80 bg-card shadow-xs hover:border-slate-400/50 dark:hover:border-slate-600/60"
           : "border-dashed border-border/60 bg-muted/30 opacity-75"
@@ -307,9 +328,13 @@ export function BlockItemEditor({
       {/* Block Header: trên điện thoại tên khối ở hàng trên, nút thao tác xuống hàng dưới */}
       <div className="flex flex-wrap sm:flex-nowrap items-center justify-between p-2.5 sm:p-3.5 border-b border-border/60 bg-muted/20 gap-x-2 gap-y-1.5">
         <div
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => {
+            setIsExpanded(!isExpanded);
+            onSelect?.();
+          }}
           className="order-1 flex items-center gap-2.5 cursor-pointer select-none flex-1 min-w-0"
         >
+          {dragHandle}
           <div className="p-1.5 rounded-xl bg-background border border-border/80 shadow-2xs shrink-0">
             {getBlockIcon(block.type)}
           </div>
