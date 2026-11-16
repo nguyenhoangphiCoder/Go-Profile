@@ -16,6 +16,7 @@ CREATE INDEX IF NOT EXISTS idx_theme_presets_active
   ON public.theme_presets (created_at DESC)
   WHERE archived_at IS NULL;
 
+DROP TRIGGER IF EXISTS trg_theme_presets_updated_at ON public.theme_presets;
 CREATE TRIGGER trg_theme_presets_updated_at
   BEFORE UPDATE ON public.theme_presets
   FOR EACH ROW
@@ -29,6 +30,7 @@ REVOKE ALL ON public.theme_presets FROM anon;
 GRANT SELECT ON public.theme_presets TO authenticated;
 GRANT ALL ON public.theme_presets TO service_role;
 
+DROP POLICY IF EXISTS "Active admins can view theme presets" ON public.theme_presets;
 CREATE POLICY "Active admins can view theme presets"
   ON public.theme_presets
   FOR SELECT
