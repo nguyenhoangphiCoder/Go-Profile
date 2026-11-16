@@ -58,6 +58,11 @@ export function splitLabel(label: string): { title: string; subtitle: string } {
   return { title, subtitle: rest.join(" ").trim() };
 }
 
+/** Màu chữ theme pha trong suốt (dùng cho viền/nền nhạt hợp cả theme sáng lẫn tối). */
+export function tint(percent: number): string {
+  return `color-mix(in srgb, var(--gp-text) ${percent}%, transparent)`;
+}
+
 /** Kiểu chữ tiêu đề (bố cục standard) lấy từ token typography. */
 export const HEADING_STYLE: CSSProperties = {
   color: "var(--gp-text)",

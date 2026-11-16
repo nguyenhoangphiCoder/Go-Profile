@@ -380,6 +380,50 @@ export function resolveThemeTokens(config?: ThemeConfigInput | null): ThemeToken
   return tokens;
 }
 
+type TokenGroup = Exclude<keyof ThemeTokens, "layout">;
+const TOKEN_GROUPS: TokenGroup[] = [
+  "colors",
+  "background",
+  "typography",
+  "shape",
+  "button",
+  "spacing",
+];
+
+/** Phần khác nhau giữa hai bộ token, dạng overrides (chỉ các trường đã đổi). */
+export function diffTokens(base: ThemeTokens, next: ThemeTokens): ThemeOverrides {
+  const out: Record<string, unknown> = {};
+  if (next.layout !== base.layout) out.layout = next.layout;
+  for (const group of TOKEN_GROUPS) {
+    const a = base[group] as Record<string, unknown>;
+    const b = next[group] as Record<string, unknown>;
+    const changed: Record<string, unknown> = {};
+    for (const key of Object.keys(b)) {
+      if (JSON.stringify(a[key]) !== JSON.stringify(b[key])) changed[key] = b[key];
+    }
+    // Trường bị xoá (ví dụ gradient khi chuyển sang nền đơn sắc) cũng phải ghi lại
+    for (const key of Object.keys(a)) {
+      if (!(key in b) && a[key] !== undefined) changed[key] = undefined;
+    }
+    if (Object.keys(changed).length > 0) out[group] = changed;
+  }
+  return out as ThemeOverrides;
+}
+
+/**
+ * Đưa theme về dạng v2 thuần: gộp `custom` (v1) vào `overrides` và bỏ `custom`.
+ * Dùng khi theme editor mới bắt đầu chỉnh sửa một trang còn dữ liệu v1.
+ */
+export function toV2Config(config: ThemeConfigInput | null | undefined): {
+  preset: string;
+  version: 2;
+  overrides: ThemeOverrides;
+} {
+  const preset = config?.preset && PRESET_TOKENS[config.preset] ? config.preset : "go-original";
+  const resolved = resolveThemeTokens(config);
+  return { preset, version: 2, overrides: diffTokens(PRESET_TOKENS[preset], resolved) };
+}
+
 // ---------------------------------------------------------------------------
 // Token -> CSS
 // ---------------------------------------------------------------------------

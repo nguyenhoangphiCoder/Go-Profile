@@ -2,7 +2,13 @@ import Image from "next/image";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { resolveSmartIcon } from "@/features/public/components/brand-icons";
 import { resolveMediaUrl } from "../media";
-import { HEADING_STYLE, PageLink } from "../primitives";
+import { HEADING_STYLE, PageLink, tint } from "../primitives";
+
+const SOCIAL_STYLE = {
+  color: "var(--gp-text)",
+  borderColor: tint(22),
+  backgroundColor: tint(6),
+};
 import type { BlockRenderProps } from "../types";
 
 export function SocialIconsBlock({ block, ctx }: BlockRenderProps) {
@@ -36,7 +42,8 @@ export function SocialIconsBlock({ block, ctx }: BlockRenderProps) {
             key={link.id}
             ctx={ctx}
             link={link}
-            className="w-10 h-10 @min-[40rem]:w-11 @min-[40rem]:h-11 rounded-full flex items-center justify-center border border-white/20 bg-white/5 hover:bg-white/15 hover:border-white/40 transition-all text-white active:scale-95 shadow-sm"
+            className="w-10 h-10 @min-[40rem]:w-11 @min-[40rem]:h-11 rounded-full flex items-center justify-center border transition-all active:scale-95 shadow-sm hover:scale-105"
+            style={SOCIAL_STYLE}
             title={link.label}
           >
             {iconUrl ? (
@@ -166,9 +173,18 @@ export function SpacerBlock({ block }: BlockRenderProps) {
   return <div style={{ height: `${height}px` }} aria-hidden="true" />;
 }
 
-export function DividerBlock({ block }: BlockRenderProps) {
+export function DividerBlock({ block, ctx }: BlockRenderProps) {
   const style = (block.payload as { style?: string }).style;
   const styleClass =
     style === "dashed" ? "border-dashed" : style === "dotted" ? "border-dotted" : "border-solid";
-  return <div className={`w-full border-t border-white/10 my-2 ${styleClass}`} aria-hidden="true" />;
+  if (ctx.variant !== "standard") {
+    return <div className={`w-full border-t border-white/10 my-2 ${styleClass}`} aria-hidden="true" />;
+  }
+  return (
+    <div
+      className={`w-full border-t my-2 ${styleClass}`}
+      style={{ borderColor: tint(15) }}
+      aria-hidden="true"
+    />
+  );
 }

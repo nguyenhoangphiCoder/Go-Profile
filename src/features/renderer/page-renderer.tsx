@@ -6,6 +6,7 @@ import {
   type ThemeTokens,
 } from "@/config/theme-tokens";
 import { getBlockDefinition } from "./blocks/registry";
+import { tint } from "./primitives";
 import type { RenderBlock, RenderContext, RenderMode } from "./types";
 
 interface PageRendererProps {
@@ -116,7 +117,10 @@ export function PageRenderer({ title, theme, blocks, mode }: PageRendererProps) 
             </footer>
           ) : (
             <footer className="pt-12 pb-6 text-center text-xs opacity-60">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] tracking-wider font-medium">
+              <div
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] tracking-wider font-medium"
+                style={{ backgroundColor: tint(5), borderColor: tint(12) }}
+              >
                 <span>GỜ CAFÉ</span>
               </div>
             </footer>

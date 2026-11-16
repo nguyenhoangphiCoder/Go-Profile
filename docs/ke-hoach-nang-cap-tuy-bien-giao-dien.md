@@ -272,12 +272,16 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 
 ### Giai đoạn 3 — Editor tùy biến (≈ 6–8 ngày)
 
-- [ ] Bảng điều khiển theme chia nhóm (mục 3.5).
-- [ ] Kiểm tra tương phản WCAG và gợi ý màu.
-- [ ] Trích bảng màu từ ảnh avatar/banner.
-- [ ] Xem trước theo thiết bị và sáng/tối.
-- [ ] Undo/Redo.
-- [ ] Bảng `theme_presets` + "Lưu thành mẫu của tôi" + thư viện mẫu.
+- [x] Bảng điều khiển theme chia nhóm: Mẫu · Màu sắc · Nền · Nút liên kết · Bố cục · Chữ, mỗi nhóm có nút "Mặc định" (16/11/2026). Editor ghi `version: 2` + `overrides`; dữ liệu `custom` v1 được gộp vào `overrides` ở lần chỉnh đầu tiên mà giao diện không đổi.
+- [x] Kiểm tra tương phản WCAG (chữ/nền 4.5:1, màu nhấn 3:1, chữ trên nút 4.5:1) kèm nút "Sửa tự động".
+- [x] Trích bảng màu từ avatar/banner/ảnh trong trang + "Tạo bộ màu tự động từ ảnh".
+- [x] Thêm 3 mẫu: Minimalist Light, Modern Clean (kem cà phê), Vibrant Contrast. Biểu tượng mạng xã hội, đường kẻ, chân trang đổi theo màu chữ để hiển thị được trên nền sáng.
+- [x] Undo/Redo (nút trên thanh công cụ, Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y, gom thao tác trong 0,5 giây, tối đa 50 bước).
+- [x] Bảng `theme_presets` ([migration](../supabase/migrations/20261116000001_theme_presets.sql)) + "Lưu thành mẫu" / áp dụng / xoá (lưu trữ mềm), tối đa 50 mẫu.
+- [ ] Xem trước chế độ sáng/tối của thiết bị (cần thêm token `colorScheme` — để sau).
+- [ ] Chọn khối trực tiếp trên preview.
+
+> **Triển khai:** cần chạy migration `20261116000001_theme_presets.sql` trên Supabase trước khi dùng "Mẫu của tôi". Khi chưa chạy, editor vẫn hoạt động bình thường và hiển thị hướng dẫn.
 
 ### Giai đoạn 4 — Style từng khối và khối mới (≈ 6–10 ngày)
 
