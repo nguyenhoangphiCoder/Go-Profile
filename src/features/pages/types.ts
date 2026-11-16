@@ -1,10 +1,87 @@
 import type { ThemePreset } from "@/config/themes";
+import type { ThemeOverrides } from "@/config/theme-tokens";
 
 export type PageStatus = "published" | "unpublished";
 export type RevisionState = "draft" | "sealed";
 
 export type BlockType =
-  "header" | "image" | "heading" | "text" | "link_list" | "social_icons" | "spacer" | "divider";
+  | "header"
+  | "image"
+  | "heading"
+  | "text"
+  | "link_list"
+  | "social_icons"
+  | "spacer"
+  | "divider"
+  | "button"
+  | "gallery"
+  | "menu_card"
+  | "accordion"
+  | "video_embed"
+  | "map";
+
+/** Style riêng của từng khối, lưu trong `payload.blockStyle` (mọi giá trị đều thuộc whitelist). */
+export interface BlockStyle {
+  align?: "left" | "center" | "right";
+  paddingY?: "none" | "sm" | "md" | "lg";
+  surface?: "none" | "card";
+  animation?: "none" | "fade-up";
+  hideOn?: ("mobile" | "desktop")[];
+}
+
+export interface ButtonBlockPayload {
+  subtitle?: string;
+  size?: "md" | "lg";
+  emphasis?: "accent" | "surface";
+}
+
+export interface GalleryImageItem {
+  mediaId?: string;
+  url?: string;
+  alt?: string;
+}
+
+export interface GalleryBlockPayload {
+  images?: GalleryImageItem[];
+  layout?: "grid" | "carousel";
+  columns?: 2 | 3;
+}
+
+export interface MenuCardItem {
+  name: string;
+  price?: string;
+  description?: string;
+  badge?: string;
+  mediaId?: string;
+  imageUrl?: string;
+}
+
+export interface MenuCardBlockPayload {
+  title?: string;
+  items?: MenuCardItem[];
+  layout?: "list" | "grid";
+}
+
+export interface AccordionItem {
+  title: string;
+  content: string;
+}
+
+export interface AccordionBlockPayload {
+  items?: AccordionItem[];
+}
+
+export interface VideoEmbedBlockPayload {
+  url?: string;
+  caption?: string;
+}
+
+export interface MapBlockPayload {
+  address?: string;
+  label?: string;
+  mapsUrl?: string;
+  showMap?: boolean;
+}
 
 export interface HeaderBlockPayload {
   title: string;
@@ -86,7 +163,11 @@ export interface EditorBlockItem {
 
 export interface PageThemeConfig {
   preset: string;
+  /** v1: ghi đè dạng phẳng (vẫn được đọc và tự chuyển sang token). */
   custom?: Partial<ThemePreset>;
+  /** v2: ghi đè theo nhóm token, xem `src/config/theme-tokens.ts`. */
+  version?: 2;
+  overrides?: ThemeOverrides;
 }
 
 export interface PageSeoConfig {

@@ -291,7 +291,13 @@ export type Database = {
             | "link_list"
             | "social_icons"
             | "spacer"
-            | "divider";
+            | "divider"
+            | "button"
+            | "gallery"
+            | "menu_card"
+            | "accordion"
+            | "video_embed"
+            | "map";
           position: number;
           is_visible: boolean;
           payload: Json;
@@ -310,7 +316,13 @@ export type Database = {
             | "link_list"
             | "social_icons"
             | "spacer"
-            | "divider";
+            | "divider"
+            | "button"
+            | "gallery"
+            | "menu_card"
+            | "accordion"
+            | "video_embed"
+            | "map";
           position: number;
           is_visible?: boolean;
           payload?: Json;
@@ -329,7 +341,13 @@ export type Database = {
             | "link_list"
             | "social_icons"
             | "spacer"
-            | "divider";
+            | "divider"
+            | "button"
+            | "gallery"
+            | "menu_card"
+            | "accordion"
+            | "video_embed"
+            | "map";
           position?: number;
           is_visible?: boolean;
           payload?: Json;
@@ -516,6 +534,39 @@ export type Database = {
             referencedColumns: ["page_id", "id", "link_id"];
           },
         ];
+      };
+      theme_presets: {
+        Row: {
+          id: string;
+          name: string;
+          config: Json;
+          schema_version: number;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+          archived_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          config: Json;
+          schema_version?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          archived_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          config?: Json;
+          schema_version?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          archived_at?: string | null;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

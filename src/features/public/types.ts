@@ -1,4 +1,4 @@
-import type { PageThemeConfig, PageSeoConfig } from "@/features/pages/types";
+import type { BlockType, PageThemeConfig, PageSeoConfig } from "@/features/pages/types";
 
 export interface PublicLinkItem {
   page_link_id: string;
@@ -11,8 +11,7 @@ export interface PublicLinkItem {
 
 export interface PublicBlockItem {
   block_id: string;
-  type:
-    "header" | "image" | "heading" | "text" | "link_list" | "social_icons" | "spacer" | "divider";
+  type: BlockType;
   position: number;
   payload: Record<string, unknown>;
   links: PublicLinkItem[];
