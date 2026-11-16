@@ -14,7 +14,6 @@ import {
   Clock,
   Layers,
   FileText,
-  MoreHorizontal,
 } from "lucide-react";
 import type { PageListItem } from "../types";
 import { duplicatePageAction, archivePageAction } from "../actions";
@@ -44,10 +43,7 @@ export function PagesTable({ initialPages }: PagesTableProps) {
       p.aliases.some((a) => a.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const paginatedPages = filteredPages.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paginatedPages = filteredPages.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleDuplicate = (page: PageListItem) => {
     if (confirm(`Bạn có chắc muốn nhân bản trang "${page.internalName}"?`)) {
@@ -105,11 +101,13 @@ export function PagesTable({ initialPages }: PagesTableProps) {
             <thead>
               <tr className="border-b border-border/70 bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 <th className="py-2.5 px-3.5 sm:px-4 rounded-tl-2xl">Trang & Đường dẫn</th>
-                <th className="py-2.5 px-3">Trạng thái</th>
-                <th className="py-2.5 px-3">Phiên bản</th>
-                <th className="py-2.5 px-3 text-center">Số link</th>
-                <th className="py-2.5 px-3">Cập nhật</th>
-                <th className="py-2.5 px-3.5 sm:px-4 text-right rounded-tr-2xl">Thao tác</th>
+                <th className="py-2.5 px-3 hidden sm:table-cell">Trạng thái</th>
+                <th className="py-2.5 px-3 hidden md:table-cell">Phiên bản</th>
+                <th className="py-2.5 px-3 text-center hidden md:table-cell">Số link</th>
+                <th className="py-2.5 px-3 hidden lg:table-cell">Cập nhật</th>
+                <th className="py-2.5 px-3.5 sm:px-4 text-right rounded-tr-2xl w-12">
+                  <span className="sr-only sm:not-sr-only">Thao tác</span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
@@ -124,13 +122,10 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                 </tr>
               ) : (
                 paginatedPages.map((page) => (
-                  <tr
-                    key={page.id}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
+                  <tr key={page.id} className="hover:bg-muted/30 transition-colors">
                     {/* Trang & Slug */}
-                    <td className="py-2.5 px-3.5 sm:px-4">
-                      <div className="flex flex-col gap-0.5 max-w-[280px] sm:max-w-xs">
+                    <td className="py-3 sm:py-2.5 px-3.5 sm:px-4">
+                      <div className="flex flex-col gap-1 sm:gap-0.5 min-w-0 max-w-[calc(100vw-9.5rem)] sm:max-w-xs">
                         <Link
                           href={`/admin/pages/${page.id}`}
                           className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-1.5 text-xs"
@@ -138,8 +133,23 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                           {page.internalName}
                         </Link>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-mono text-[11px] text-primary bg-primary/10 px-1.5 py-0.2 rounded">
+                          <span className="font-mono text-[11px] text-primary bg-primary/10 px-1.5 rounded break-all">
                             /{page.primarySlug}
+                          </span>
+                          {/* Trạng thái rút gọn trên điện thoại (cột Trạng thái bị ẩn) */}
+                          <span
+                            className={`sm:hidden inline-flex items-center gap-1 px-1.5 rounded-full text-[10px] font-semibold ${
+                              page.status === "published"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                page.status === "published" ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                            />
+                            {page.status === "published" ? "Đã xuất bản" : "Bản nháp"}
                           </span>
                           {page.aliases.length > 0 && (
                             <span
@@ -154,7 +164,7 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                     </td>
 
                     {/* Trạng thái */}
-                    <td className="py-2.5 px-3 whitespace-nowrap">
+                    <td className="py-2.5 px-3 whitespace-nowrap hidden sm:table-cell">
                       {page.status === "published" ? (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -169,7 +179,7 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                     </td>
 
                     {/* Phiên bản */}
-                    <td className="py-2.5 px-3 whitespace-nowrap text-muted-foreground">
+                    <td className="py-2.5 px-3 whitespace-nowrap text-muted-foreground hidden md:table-cell">
                       <div className="flex flex-col gap-0.5">
                         {page.publishedRevisionNo ? (
                           <span className="font-semibold text-foreground text-[11px]">
@@ -188,14 +198,14 @@ export function PagesTable({ initialPages }: PagesTableProps) {
                     </td>
 
                     {/* Số link */}
-                    <td className="py-2.5 px-3 whitespace-nowrap text-center font-mono text-xs font-semibold text-foreground">
+                    <td className="py-2.5 px-3 whitespace-nowrap text-center font-mono text-xs font-semibold text-foreground hidden md:table-cell">
                       <span className="bg-muted px-2 py-0.5 rounded-md text-[11px]">
                         {page.linksCount}
                       </span>
                     </td>
 
                     {/* Cập nhật */}
-                    <td className="py-2.5 px-3 whitespace-nowrap text-[11px] font-mono text-muted-foreground">
+                    <td className="py-2.5 px-3 whitespace-nowrap text-[11px] font-mono text-muted-foreground hidden lg:table-cell">
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3 opacity-60" />
                         <span>{new Date(page.updatedAt).toLocaleDateString("vi-VN")}</span>

@@ -32,9 +32,9 @@ export function ReportByPageTable({ data, totalClicks }: ReportByPageTableProps)
           <thead>
             <tr className="border-b border-border/60 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-muted/40">
               <th className="py-2.5 px-3.5 sm:px-4">Tên trang</th>
-              <th className="py-2.5 px-3.5 sm:px-4">Đường dẫn (Slug)</th>
+              <th className="py-2.5 px-3.5 sm:px-4 hidden sm:table-cell">Đường dẫn (Slug)</th>
               <th className="py-2.5 px-3.5 sm:px-4 text-right">Lượt click</th>
-              <th className="py-2.5 px-3.5 sm:px-4 text-right w-40">Tỷ lệ</th>
+              <th className="py-2.5 px-3.5 sm:px-4 text-right w-40 hidden sm:table-cell">Tỷ lệ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50 text-xs">
@@ -50,7 +50,7 @@ export function ReportByPageTable({ data, totalClicks }: ReportByPageTableProps)
                       <span className="font-semibold">{item.internal_name}</span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-3.5 sm:px-4 font-mono text-[11px] text-muted-foreground">
+                  <td className="py-2.5 px-3.5 sm:px-4 font-mono text-[11px] text-muted-foreground hidden sm:table-cell">
                     {item.slug ? (
                       <Link
                         href={`/${item.slug}`}
@@ -67,7 +67,7 @@ export function ReportByPageTable({ data, totalClicks }: ReportByPageTableProps)
                   <td className="py-2.5 px-3.5 sm:px-4 text-right font-mono tabular-nums font-bold text-foreground">
                     {item.clicks.toLocaleString("vi-VN")}
                   </td>
-                  <td className="py-2.5 px-3.5 sm:px-4 text-right">
+                  <td className="py-2.5 px-3.5 sm:px-4 text-right hidden sm:table-cell">
                     <div className="flex items-center justify-end gap-2.5">
                       <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
                         <div

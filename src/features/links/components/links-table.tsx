@@ -12,7 +12,6 @@ import {
   Layers,
   Search,
   Plus,
-  MoreHorizontal,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { LinkItem } from "@/features/links/types";
@@ -20,10 +19,9 @@ import { toggleLinkStatusAction, archiveLinkAction } from "@/features/links/acti
 import { TablePagination } from "@/components/admin/table-pagination";
 import { TableActionMenu } from "@/components/admin/table-action-menu";
 
-const LinkFormModal = dynamic(
-  () => import("./link-form-modal").then((m) => m.LinkFormModal),
-  { ssr: false }
-);
+const LinkFormModal = dynamic(() => import("./link-form-modal").then((m) => m.LinkFormModal), {
+  ssr: false,
+});
 
 interface LinksTableProps {
   initialLinks: LinkItem[];
@@ -49,10 +47,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
     return matchesSearch && matchesStatus;
   });
 
-  const paginatedLinks = filteredLinks.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paginatedLinks = filteredLinks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const handleEdit = (link: LinkItem) => {
     setSelectedLink(link);
@@ -103,7 +98,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Search & Filter */}
-        <div className="flex items-center gap-3 flex-1 max-w-lg">
+        <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center gap-2 sm:gap-3 flex-1 max-w-lg">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -123,7 +118,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
               setStatusFilter(e.target.value as "all" | "active" | "inactive");
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+            className="w-full min-[420px]:w-auto px-3 py-2 rounded-xl border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="active">Đang bật (Active)</option>
@@ -134,11 +129,12 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
         {/* Create Button */}
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            Tổng số: <strong className="font-mono text-foreground">{filteredLinks.length}</strong> liên kết
+            Tổng số: <strong className="font-mono text-foreground">{filteredLinks.length}</strong>{" "}
+            liên kết
           </span>
           <button
             onClick={handleCreate}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Thêm liên kết mới</span>
@@ -164,38 +160,58 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
               <thead className="bg-muted/40 border-b border-border/60 text-muted-foreground font-semibold text-[11px] uppercase tracking-wider">
                 <tr>
                   <th className="py-2.5 px-3.5 sm:px-4 rounded-tl-2xl">Tên hiển thị & URL</th>
-                  <th className="py-2.5 px-3">Loại</th>
-                  <th className="py-2.5 px-3">Trang sử dụng</th>
-                  <th className="py-2.5 px-3">Trạng thái</th>
-                  <th className="py-2.5 px-3.5 sm:px-4 text-right rounded-tr-2xl">Thao tác</th>
+                  <th className="py-2.5 px-3 hidden md:table-cell">Loại</th>
+                  <th className="py-2.5 px-3 hidden lg:table-cell">Trang sử dụng</th>
+                  <th className="py-2.5 px-3 hidden sm:table-cell">Trạng thái</th>
+                  <th className="py-2.5 px-3.5 sm:px-4 text-right rounded-tr-2xl w-12">
+                    <span className="sr-only sm:not-sr-only">Thao tác</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {paginatedLinks.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-muted/30 transition-colors"
-                  >
+                  <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                     {/* Name & URL */}
-                    <td className="py-2.5 px-3.5 sm:px-4">
-                      <div className="space-y-0.5">
-                        <span className="font-semibold text-foreground block">
+                    <td className="py-3 sm:py-2.5 px-3.5 sm:px-4">
+                      <div className="space-y-0.5 min-w-0 max-w-[calc(100vw-9.5rem)] sm:max-w-sm">
+                        <span className="font-semibold text-foreground block break-words">
                           {item.defaultLabel}
                         </span>
                         <a
                           href={item.targetUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-muted-foreground hover:text-blue-600 inline-flex items-center gap-1 truncate max-w-xs sm:max-w-sm"
+                          className="text-[11px] text-muted-foreground hover:text-blue-600 flex items-center gap-1 min-w-0"
                         >
                           <span className="truncate">{item.targetUrl}</span>
                           <ExternalLink className="w-2.5 h-2.5 shrink-0" />
                         </a>
+                        {/* Trạng thái trên điện thoại (cột Trạng thái bị ẩn) — bấm để bật/tắt */}
+                        <div className="sm:hidden mt-1.5 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleToggle(item)}
+                            className={`inline-flex items-center gap-1.5 min-h-8 px-2.5 rounded-full text-[11px] font-medium cursor-pointer ${
+                              item.isActive
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                : "bg-muted text-muted-foreground border border-border"
+                            }`}
+                            title="Bấm để bật/tắt kích hoạt liên kết"
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${item.isActive ? "bg-emerald-500" : "bg-muted-foreground"}`}
+                            />
+                            <span>{item.isActive ? "Đang bật" : "Đã tắt"}</span>
+                          </button>
+                          <span className="text-[11px] text-muted-foreground">
+                            Dùng ở {item.usageCount} trang
+                          </span>
+                        </div>
                       </div>
                     </td>
 
                     {/* Kind */}
-                    <td className="py-2.5 px-3 whitespace-nowrap">
+                    <td className="py-2.5 px-3 whitespace-nowrap hidden md:table-cell">
                       <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-border bg-muted/40 text-[11px] font-medium capitalize">
                         {getKindIcon(item.kind)}
                         <span>{item.kind}</span>
@@ -203,7 +219,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                     </td>
 
                     {/* Usage */}
-                    <td className="py-2.5 px-3 whitespace-nowrap">
+                    <td className="py-2.5 px-3 whitespace-nowrap hidden lg:table-cell">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
                           item.usageCount > 0
@@ -222,7 +238,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                     </td>
 
                     {/* Status */}
-                    <td className="py-2.5 px-3 whitespace-nowrap">
+                    <td className="py-2.5 px-3 whitespace-nowrap hidden sm:table-cell">
                       <button
                         onClick={() => handleToggle(item)}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium cursor-pointer transition-colors ${
@@ -241,7 +257,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
 
                     {/* Thao tác */}
                     <td className="py-2 px-3.5 sm:px-4 text-right whitespace-nowrap">
-                      <TableActionMenu title="Thao tác liên kết" widthClass="w-48" buttonClassName="p-1.5">
+                      <TableActionMenu title="Thao tác liên kết" widthClass="w-48">
                         {(close) => (
                           <>
                             <button
@@ -264,7 +280,9 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                               }}
                               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
                             >
-                              <Power className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? "text-amber-500" : "text-emerald-500"}`} />
+                              <Power
+                                className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? "text-amber-500" : "text-emerald-500"}`}
+                              />
                               <span>{item.isActive ? "Tắt hoạt động" : "Bật hoạt động"}</span>
                             </button>
 

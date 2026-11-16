@@ -608,6 +608,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      sync_revision_media_assets: {
+        Args: {
+          p_revision_id: string;
+        };
+        Returns: number;
+      };
       unpublish_page: {
         Args: {
           p_page_id: string;

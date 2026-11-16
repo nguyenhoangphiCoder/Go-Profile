@@ -14,9 +14,9 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Tổng lượt click */}
-        <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs relative overflow-hidden">
+        <div className="bg-card border border-border/80 rounded-2xl p-3.5 sm:p-5 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Tổng lượt click
@@ -26,7 +26,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
               {report.total_clicks.toLocaleString("vi-VN")}
             </span>
           </div>
@@ -37,7 +37,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
         </div>
 
         {/* Card 2: Trang có tương tác */}
-        <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs">
+        <div className="bg-card border border-border/80 rounded-2xl p-3.5 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Trang có click
@@ -47,7 +47,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
               {pagesWithClicks}
               <span className="text-sm font-normal text-muted-foreground ml-1.5">
                 / {report.by_page.length} trang
@@ -62,7 +62,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
         </div>
 
         {/* Card 3: Liên kết có tương tác */}
-        <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs">
+        <div className="bg-card border border-border/80 rounded-2xl p-3.5 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Link có click
@@ -72,7 +72,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
             </div>
           </div>
           <div className="mt-3">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+            <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
               {linksWithClicks}
               <span className="text-sm font-normal text-muted-foreground ml-1.5">
                 / {report.by_link.length} liên kết
@@ -87,7 +87,7 @@ export function ReportSummaryCards({ report, startDateStr, endDateStr }: ReportS
         </div>
 
         {/* Card 4: Khoảng thời gian */}
-        <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs">
+        <div className="bg-card border border-border/80 rounded-2xl p-3.5 sm:p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Khoảng thời gian

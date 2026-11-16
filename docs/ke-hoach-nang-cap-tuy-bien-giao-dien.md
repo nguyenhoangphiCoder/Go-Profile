@@ -293,7 +293,7 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 
 > **Lưu ý:**
 > - Nút "Chỉ đường" của khối bản đồ mở thẳng Google Maps, không đi qua `/r` nên không có trong báo cáo click.
-> - Bảng `revision_media_assets` hiện không được ghi khi lưu nháp (kể cả với khối ảnh cũ), nên kho media chưa biết ảnh nào đang được trang sử dụng. Nên bổ sung ở một bước sau.
+> - ~~Bảng `revision_media_assets` không được ghi đầy đủ~~ — đã sửa bằng [migration 20261116000003](../supabase/migrations/20261116000003_track_revision_media.sql): ghi mọi ảnh của khối, theme, placement khi lưu nháp và xuất bản; kho media chỉ chặn xoá ảnh thuộc bản đang xuất bản hoặc bản nháp.
 
 ### Giai đoạn 5 (tùy chọn) — Mở cho nhiều người dùng tự quản trang (≈ 10–15 ngày)
 

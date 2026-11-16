@@ -3,14 +3,7 @@
 import { useState, useRef, useTransition } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import {
-  UploadCloud,
-  ImageIcon,
-  FolderOpen,
-  Trash2,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { UploadCloud, ImageIcon, FolderOpen, Trash2, Loader2, RefreshCw } from "lucide-react";
 import type { MediaOption } from "./media-picker-modal";
 import { uploadMediaDirectAction } from "@/features/media/actions";
 
@@ -48,9 +41,7 @@ export function MediaPickerField({
   const [, startTransition] = useTransition();
 
   // Find media info from availableMedia if mediaUrl is missing
-  const matchedMedia = mediaId
-    ? availableMedia.find((m) => m.id === mediaId)
-    : null;
+  const matchedMedia = mediaId ? availableMedia.find((m) => m.id === mediaId) : null;
   const effectiveUrl = mediaUrl || matchedMedia?.publicUrl || null;
   const filename = matchedMedia?.originalFilename || (mediaId ? "Hình ảnh đã chọn" : null);
 
@@ -101,12 +92,8 @@ export function MediaPickerField({
     <div className={`space-y-1.5 ${className}`}>
       {/* Label & Help text */}
       <div className="flex items-center justify-between">
-        <label className="block text-xs font-semibold text-foreground">
-          {label}
-        </label>
-        {helpText && (
-          <span className="text-[11px] text-muted-foreground">{helpText}</span>
-        )}
+        <label className="block text-xs font-semibold text-foreground">{label}</label>
+        {helpText && <span className="text-[11px] text-muted-foreground">{helpText}</span>}
       </div>
 
       {/* Main Container Card */}
@@ -120,8 +107,8 @@ export function MediaPickerField({
                 aspectHint === "circle"
                   ? "w-12 h-12 rounded-full"
                   : aspectHint === "banner"
-                  ? "w-20 h-12 rounded-xl"
-                  : "w-14 h-14 rounded-xl"
+                    ? "w-20 h-12 rounded-xl"
+                    : "w-14 h-14 rounded-xl"
               }`}
             >
               <Image
@@ -136,7 +123,10 @@ export function MediaPickerField({
 
             {/* Info & Action Buttons */}
             <div className="min-w-0 flex-1 space-y-1">
-              <span className="text-xs font-semibold text-foreground block truncate" title={filename || ""}>
+              <span
+                className="text-xs font-semibold text-foreground block truncate"
+                title={filename || ""}
+              >
                 {filename || "Ảnh đã được tải lên"}
               </span>
 
@@ -144,7 +134,7 @@ export function MediaPickerField({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-[11px] font-medium transition-colors cursor-pointer text-foreground"
+                  className="inline-flex items-center gap-1 min-h-9 sm:min-h-0 px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-xs sm:text-[11px] font-medium transition-colors cursor-pointer text-foreground"
                 >
                   <RefreshCw className="w-3 h-3 text-muted-foreground" />
                   <span>Đổi ảnh</span>
@@ -154,7 +144,7 @@ export function MediaPickerField({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-[11px] font-medium transition-colors cursor-pointer text-foreground disabled:opacity-50"
+                  className="inline-flex items-center gap-1 min-h-9 sm:min-h-0 px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-xs sm:text-[11px] font-medium transition-colors cursor-pointer text-foreground disabled:opacity-50"
                 >
                   {isUploading ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -167,7 +157,7 @@ export function MediaPickerField({
                 <button
                   type="button"
                   onClick={handleRemove}
-                  className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer ml-auto"
+                  className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors cursor-pointer ml-auto"
                   title="Gỡ ảnh này"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -189,7 +179,7 @@ export function MediaPickerField({
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl border border-border bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors cursor-pointer shadow-2xs"
               >
                 <FolderOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>Thư viện media</span>
@@ -199,7 +189,7 @@ export function MediaPickerField({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
               >
                 {isUploading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

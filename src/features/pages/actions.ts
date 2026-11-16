@@ -134,6 +134,20 @@ export async function renameSlugAction(
   };
 }
 
+/**
+ * Đồng bộ bảng revision_media_assets cho một revision (RPC sync_revision_media_assets).
+ * Lỗi không chặn việc lưu nháp (ví dụ khi chưa chạy migration 20261116000003), chỉ ghi log.
+ */
+async function syncRevisionMedia(
+  privileged: ReturnType<typeof createSupabaseAdminClient>,
+  revisionId: string
+) {
+  const { error } = await privileged.rpc("sync_revision_media_assets", {
+    p_revision_id: revisionId,
+  });
+  if (error) console.error("Không ghi được danh sách ảnh của bản nháp:", error.message);
+}
+
 export async function saveDraftAction(input: SaveDraftInput) {
   const parsed = saveDraftSchema.safeParse(input);
   if (!parsed.success) {
@@ -405,6 +419,9 @@ export async function saveDraftAction(input: SaveDraftInput) {
     }
   }
 
+  // 4. Ghi lại danh sách ảnh bản nháp đang dùng để kho media không cho xoá nhầm
+  await syncRevisionMedia(privileged, activeDraftId);
+
   revalidatePath(`/admin/pages/${pageId}`);
   revalidatePath("/admin/pages");
 
@@ -646,6 +663,9 @@ export async function duplicatePageAction(sourcePageId: string) {
       }
     }
   }
+
+  // Bản sao dùng lại ảnh của trang nguồn: ghi nhận để kho media không cho xoá nhầm
+  await syncRevisionMedia(privileged, newDraftId);
 
   revalidatePath("/admin/pages");
   return {
