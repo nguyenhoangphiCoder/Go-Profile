@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound, redirect, RedirectType } from "next/navigation";
 import { isReservedSlug } from "@/config/reserved-slugs";
+import { resolveLookupSlug } from "@/config/slug-aliases";
 import { fetchPublicPage } from "@/features/public/queries";
 import { SLUG_REGEX } from "@/features/pages/schemas";
 import { PublicPageView } from "@/features/public/components/public-page-view";
@@ -11,19 +12,6 @@ interface PageProps {
   params: Promise<{
     slug: string;
   }>;
-}
-
-const SLUG_ALIASES: Record<string, string> = {
-  "gocafe.official": "gocafe",
-  "gocafe-official": "gocafe",
-  "hophuonganh.gocafe": "hophuonganh-gocafe",
-  "gogang.official": "gogang",
-  gogang: "gogang",
-};
-
-function resolveLookupSlug(slug: string): string {
-  const normalized = slug.trim().toLowerCase();
-  return SLUG_ALIASES[normalized] || normalized;
 }
 
 /** Slug sai định dạng (null byte, emoji, ký tự đặc biệt, quá dài) -> 404 ngay, không truy vấn DB. */
@@ -76,6 +64,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+// Trường hợp không tồn tại / alias thường đã được proxy chặn trước (404 / 308 thật — xem
+// src/lib/public-slug-gate.ts). Các nhánh dưới đây là lớp dự phòng khi proxy bỏ qua
+// (ví dụ lỗi kết nối database lúc kiểm tra).
 export default async function PublicSlugPage({ params }: PageProps) {
   const { slug } = await params;
 
