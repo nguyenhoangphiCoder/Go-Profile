@@ -1,9 +1,12 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createDb, migrationFiles } from "./harness";
 import { createMedia, createPageWithAvatar, createPlatformAdmin } from "./seed";
+
+// Mỗi test dựng PostgreSQL (PGlite) và chạy toàn bộ migration: cần nhiều hơn 5 giây khi máy bận
+vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 const MEDIA_MIGRATION = "20261116000003_track_revision_media.sql";
 const FIX_MIGRATION = "20261116000004_fix_media_sync_sealed.sql";
