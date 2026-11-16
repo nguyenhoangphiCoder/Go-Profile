@@ -23,13 +23,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
       .select("id, default_label, is_active")
       .is("archived_at", null)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("click_events")
-      .select("*", { count: "exact", head: true }),
-    supabase
-      .from("click_events")
-      .select("page_id")
-      .limit(200),
+    supabase.from("click_events").select("*", { count: "exact", head: true }),
+    supabase.from("click_events").select("page_id").limit(200),
   ]);
 
   const pages = pagesRes.data || [];
@@ -87,7 +82,8 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
         .map(([pid, cnt]) => `${cnt} click (${pageSlugMap.get(pid) || "trang"})`)
         .join(" + ");
 
-      clicksSummaryText = breakdown || `${totalClicksCount.toLocaleString("vi-VN")} lượt click hợp lệ`;
+      clicksSummaryText =
+        breakdown || `${totalClicksCount.toLocaleString("vi-VN")} lượt click hợp lệ`;
     } else {
       clicksSummaryText = `${totalClicksCount.toLocaleString("vi-VN")} lượt click hợp lệ`;
     }

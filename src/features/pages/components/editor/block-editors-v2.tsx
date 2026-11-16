@@ -116,10 +116,22 @@ function ItemList<T>({
               #{i + 1}
             </span>
             <div className="flex items-center gap-0.5">
-              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted disabled:opacity-30 cursor-pointer" aria-label="Lên">
+              <button
+                type="button"
+                onClick={() => move(i, -1)}
+                disabled={i === 0}
+                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted disabled:opacity-30 cursor-pointer"
+                aria-label="Lên"
+              >
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
-              <button type="button" onClick={() => move(i, 1)} disabled={i === items.length - 1} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted disabled:opacity-30 cursor-pointer" aria-label="Xuống">
+              <button
+                type="button"
+                onClick={() => move(i, 1)}
+                disabled={i === items.length - 1}
+                className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-muted disabled:opacity-30 cursor-pointer"
+                aria-label="Xuống"
+              >
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
               <button
@@ -132,7 +144,11 @@ function ItemList<T>({
               </button>
             </div>
           </div>
-          {renderItem(item, (patch) => onChange(items.map((it, j) => (j === i ? { ...it, ...patch } : it))), i)}
+          {renderItem(
+            item,
+            (patch) => onChange(items.map((it, j) => (j === i ? { ...it, ...patch } : it))),
+            i
+          )}
         </div>
       ))}
       {items.length < max && (
@@ -151,7 +167,12 @@ function ItemList<T>({
 
 // ---------------------------------------------------------------------------
 
-export function ButtonBlockEditor({ block, updatePayload, onUpdateBlock, availableLinks }: V2EditorProps) {
+export function ButtonBlockEditor({
+  block,
+  updatePayload,
+  onUpdateBlock,
+  availableLinks,
+}: V2EditorProps) {
   const p = block.payload as ButtonBlockPayload;
   const current = block.placements?.[0];
 
@@ -176,8 +197,15 @@ export function ButtonBlockEditor({ block, updatePayload, onUpdateBlock, availab
 
   return (
     <div className="space-y-3.5">
-      <Field label="Liên kết của nút" hint="Lượt bấm được ghi nhận vào báo cáo như danh sách liên kết.">
-        <select value={current?.linkId || ""} onChange={(e) => selectLink(e.target.value)} className={inputClass}>
+      <Field
+        label="Liên kết của nút"
+        hint="Lượt bấm được ghi nhận vào báo cáo như danh sách liên kết."
+      >
+        <select
+          value={current?.linkId || ""}
+          onChange={(e) => selectLink(e.target.value)}
+          className={inputClass}
+        >
           <option value="">-- Chọn liên kết --</option>
           {availableLinks.map((l) => (
             <option key={l.id} value={l.id}>
@@ -194,7 +222,10 @@ export function ButtonBlockEditor({ block, updatePayload, onUpdateBlock, availab
             placeholder={current.defaultLabel}
             value={current.labelOverride || ""}
             onChange={(e) =>
-              onUpdateBlock({ ...block, placements: [{ ...current, labelOverride: e.target.value || null }] })
+              onUpdateBlock({
+                ...block,
+                placements: [{ ...current, labelOverride: e.target.value || null }],
+              })
             }
             className={inputClass}
           />
@@ -232,7 +263,12 @@ export function ButtonBlockEditor({ block, updatePayload, onUpdateBlock, availab
   );
 }
 
-export function GalleryBlockEditor({ block, updatePayload, availableMedia, onMediaAdded }: V2EditorProps) {
+export function GalleryBlockEditor({
+  block,
+  updatePayload,
+  availableMedia,
+  onMediaAdded,
+}: V2EditorProps) {
   const p = block.payload as GalleryBlockPayload;
   return (
     <div className="space-y-3.5">
@@ -268,7 +304,9 @@ export function GalleryBlockEditor({ block, updatePayload, availableMedia, onMed
               label="Ảnh"
               mediaId={img.mediaId}
               mediaUrl={img.url}
-              onChange={(mediaId, url) => update({ mediaId: mediaId || undefined, url: url || undefined })}
+              onChange={(mediaId, url) =>
+                update({ mediaId: mediaId || undefined, url: url || undefined })
+              }
               availableMedia={availableMedia}
               onMediaAdded={onMediaAdded}
             />
@@ -287,7 +325,12 @@ export function GalleryBlockEditor({ block, updatePayload, availableMedia, onMed
   );
 }
 
-export function MenuCardBlockEditor({ block, updatePayload, availableMedia, onMediaAdded }: V2EditorProps) {
+export function MenuCardBlockEditor({
+  block,
+  updatePayload,
+  availableMedia,
+  onMediaAdded,
+}: V2EditorProps) {
   const p = block.payload as MenuCardBlockPayload;
   return (
     <div className="space-y-3.5">
@@ -319,16 +362,46 @@ export function MenuCardBlockEditor({ block, updatePayload, availableMedia, onMe
         renderItem={(item, update) => (
           <div className="space-y-2">
             <div className="grid grid-cols-[1fr_7rem] gap-2">
-              <input type="text" maxLength={120} placeholder="Tên món" value={item.name} onChange={(e) => update({ name: e.target.value })} className={inputClass} />
-              <input type="text" maxLength={40} placeholder="Giá" value={item.price || ""} onChange={(e) => update({ price: e.target.value })} className={inputClass} />
+              <input
+                type="text"
+                maxLength={120}
+                placeholder="Tên món"
+                value={item.name}
+                onChange={(e) => update({ name: e.target.value })}
+                className={inputClass}
+              />
+              <input
+                type="text"
+                maxLength={40}
+                placeholder="Giá"
+                value={item.price || ""}
+                onChange={(e) => update({ price: e.target.value })}
+                className={inputClass}
+              />
             </div>
-            <input type="text" maxLength={300} placeholder="Mô tả ngắn" value={item.description || ""} onChange={(e) => update({ description: e.target.value })} className={inputClass} />
-            <input type="text" maxLength={30} placeholder="Nhãn nổi bật (VD: Bán chạy, Mới)" value={item.badge || ""} onChange={(e) => update({ badge: e.target.value })} className={inputClass} />
+            <input
+              type="text"
+              maxLength={300}
+              placeholder="Mô tả ngắn"
+              value={item.description || ""}
+              onChange={(e) => update({ description: e.target.value })}
+              className={inputClass}
+            />
+            <input
+              type="text"
+              maxLength={30}
+              placeholder="Nhãn nổi bật (VD: Bán chạy, Mới)"
+              value={item.badge || ""}
+              onChange={(e) => update({ badge: e.target.value })}
+              className={inputClass}
+            />
             <MediaPickerField
               label="Ảnh món (tuỳ chọn)"
               mediaId={item.mediaId}
               mediaUrl={item.imageUrl}
-              onChange={(mediaId, url) => update({ mediaId: mediaId || undefined, imageUrl: url || undefined })}
+              onChange={(mediaId, url) =>
+                update({ mediaId: mediaId || undefined, imageUrl: url || undefined })
+              }
               availableMedia={availableMedia}
               onMediaAdded={onMediaAdded}
             />
@@ -350,8 +423,22 @@ export function AccordionBlockEditor({ block, updatePayload }: V2EditorProps) {
       makeItem={() => ({ title: "", content: "" })}
       renderItem={(item, update) => (
         <div className="space-y-2">
-          <input type="text" maxLength={200} placeholder="Câu hỏi / tiêu đề" value={item.title} onChange={(e) => update({ title: e.target.value })} className={inputClass} />
-          <textarea rows={3} maxLength={3000} placeholder="Nội dung trả lời" value={item.content} onChange={(e) => update({ content: e.target.value })} className={inputClass} />
+          <input
+            type="text"
+            maxLength={200}
+            placeholder="Câu hỏi / tiêu đề"
+            value={item.title}
+            onChange={(e) => update({ title: e.target.value })}
+            className={inputClass}
+          />
+          <textarea
+            rows={3}
+            maxLength={3000}
+            placeholder="Nội dung trả lời"
+            value={item.content}
+            onChange={(e) => update({ content: e.target.value })}
+            className={inputClass}
+          />
         </div>
       )}
     />
@@ -374,10 +461,23 @@ export function VideoBlockEditor({ block, updatePayload }: V2EditorProps) {
               : "VD: https://youtu.be/xxxx hoặc https://www.tiktok.com/@gocafe/video/123..."
         }
       >
-        <input type="url" maxLength={500} placeholder="https://" value={url} onChange={(e) => updatePayload({ url: e.target.value })} className={inputClass} />
+        <input
+          type="url"
+          maxLength={500}
+          placeholder="https://"
+          value={url}
+          onChange={(e) => updatePayload({ url: e.target.value })}
+          className={inputClass}
+        />
       </Field>
       <Field label="Chú thích (tuỳ chọn)">
-        <input type="text" maxLength={300} value={p.caption || ""} onChange={(e) => updatePayload({ caption: e.target.value })} className={inputClass} />
+        <input
+          type="text"
+          maxLength={300}
+          value={p.caption || ""}
+          onChange={(e) => updatePayload({ caption: e.target.value })}
+          className={inputClass}
+        />
       </Field>
     </div>
   );
@@ -389,19 +489,48 @@ export function MapBlockEditor({ block, updatePayload }: V2EditorProps) {
   return (
     <div className="space-y-3.5">
       <Field label="Địa chỉ">
-        <input type="text" maxLength={300} placeholder="VD: 123 Nguyễn Huệ, Quận 1, TP.HCM" value={p.address || ""} onChange={(e) => updatePayload({ address: e.target.value })} className={inputClass} />
+        <input
+          type="text"
+          maxLength={300}
+          placeholder="VD: 123 Nguyễn Huệ, Quận 1, TP.HCM"
+          value={p.address || ""}
+          onChange={(e) => updatePayload({ address: e.target.value })}
+          className={inputClass}
+        />
       </Field>
       <Field label="Tiêu đề">
-        <input type="text" maxLength={80} value={p.label || ""} onChange={(e) => updatePayload({ label: e.target.value })} className={inputClass} />
+        <input
+          type="text"
+          maxLength={80}
+          value={p.label || ""}
+          onChange={(e) => updatePayload({ label: e.target.value })}
+          className={inputClass}
+        />
       </Field>
       <Field
         label="Link Google Maps của quán (tuỳ chọn)"
-        hint={badUrl ? "⚠ Chỉ nhận link Google Maps (https://maps.app.goo.gl/... hoặc https://www.google.com/maps/...)" : "Để trống sẽ tự tìm theo địa chỉ."}
+        hint={
+          badUrl
+            ? "⚠ Chỉ nhận link Google Maps (https://maps.app.goo.gl/... hoặc https://www.google.com/maps/...)"
+            : "Để trống sẽ tự tìm theo địa chỉ."
+        }
       >
-        <input type="url" maxLength={500} placeholder="https://maps.app.goo.gl/..." value={p.mapsUrl || ""} onChange={(e) => updatePayload({ mapsUrl: e.target.value })} className={inputClass} />
+        <input
+          type="url"
+          maxLength={500}
+          placeholder="https://maps.app.goo.gl/..."
+          value={p.mapsUrl || ""}
+          onChange={(e) => updatePayload({ mapsUrl: e.target.value })}
+          className={inputClass}
+        />
       </Field>
       <label className="flex items-center gap-2 cursor-pointer select-none">
-        <input type="checkbox" checked={Boolean(p.showMap)} onChange={(e) => updatePayload({ showMap: e.target.checked })} className="w-4 h-4 rounded" />
+        <input
+          type="checkbox"
+          checked={Boolean(p.showMap)}
+          onChange={(e) => updatePayload({ showMap: e.target.checked })}
+          className="w-4 h-4 rounded"
+        />
         <span className="font-medium">Hiển thị bản đồ nhúng phía trên</span>
       </label>
     </div>
@@ -412,7 +541,10 @@ export function MapBlockEditor({ block, updatePayload }: V2EditorProps) {
 // Kiểu khối (áp dụng cho mọi loại khối)
 // ---------------------------------------------------------------------------
 
-export function BlockStyleEditor({ block, updatePayload }: Pick<V2EditorProps, "block" | "updatePayload">) {
+export function BlockStyleEditor({
+  block,
+  updatePayload,
+}: Pick<V2EditorProps, "block" | "updatePayload">) {
   const style = ((block.payload as { blockStyle?: BlockStyle }).blockStyle ?? {}) as BlockStyle;
   const set = (patch: Partial<BlockStyle>) => {
     const next: BlockStyle = { ...style, ...patch };
@@ -485,7 +617,12 @@ export function BlockStyleEditor({ block, updatePayload }: Pick<V2EditorProps, "
               ] as const
             ).map(([d, label]) => (
               <label key={d} className="flex items-center gap-1.5 cursor-pointer select-none">
-                <input type="checkbox" checked={hide.includes(d)} onChange={() => toggleHide(d)} className="w-4 h-4 rounded" />
+                <input
+                  type="checkbox"
+                  checked={hide.includes(d)}
+                  onChange={() => toggleHide(d)}
+                  className="w-4 h-4 rounded"
+                />
                 {label}
               </label>
             ))}

@@ -26,7 +26,7 @@ describe("nhận diện video", () => {
     "https://evil.com/watch?v=dQw4w9WgXcQ",
     "https://youtube.com.evil.com/watch?v=dQw4w9WgXcQ",
     "javascript:alert(1)",
-    "https://www.youtube.com/watch?v=bad\"onload=x",
+    'https://www.youtube.com/watch?v=bad"onload=x',
     "https://www.tiktok.com/@a/video/abc",
     "",
   ])("từ chối %s", (url) => expect(parseVideoUrl(url)).toBeNull());
@@ -78,12 +78,20 @@ describe("schema khối mới", () => {
   });
 
   it("giới hạn số phần tử", () => {
-    expect(draft("gallery", { images: Array.from({ length: 13 }, () => ({})) }).success).toBe(false);
-    expect(draft("accordion", { items: Array.from({ length: 21 }, () => ({ title: "a", content: "b" })) }).success).toBe(false);
+    expect(draft("gallery", { images: Array.from({ length: 13 }, () => ({})) }).success).toBe(
+      false
+    );
+    expect(
+      draft("accordion", {
+        items: Array.from({ length: 21 }, () => ({ title: "a", content: "b" })),
+      }).success
+    ).toBe(false);
   });
 
   it("blockStyle chỉ nhận giá trị whitelist, áp dụng cho cả khối cũ", () => {
-    expect(draft("text", { content: "x", blockStyle: { surface: "card", hideOn: ["mobile"] } }).success).toBe(true);
+    expect(
+      draft("text", { content: "x", blockStyle: { surface: "card", hideOn: ["mobile"] } }).success
+    ).toBe(true);
     expect(draft("text", { content: "x", blockStyle: { css: "color:red" } }).success).toBe(false);
     expect(draft("heading", { text: "x", blockStyle: { align: "middle" } }).success).toBe(false);
   });
@@ -133,7 +141,9 @@ describe("hiển thị khối mới", () => {
     expect(screen.getByText("Bạc xỉu")).toBeInTheDocument();
     expect(screen.getByText("Có chỗ đậu xe không?")).toBeInTheDocument();
 
-    const iframes = Array.from(container.querySelectorAll("iframe")).map((f) => f.getAttribute("src"));
+    const iframes = Array.from(container.querySelectorAll("iframe")).map((f) =>
+      f.getAttribute("src")
+    );
     expect(iframes).toEqual([
       "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0",
       expect.stringMatching(/^https:\/\/www\.google\.com\/maps\?q=/),

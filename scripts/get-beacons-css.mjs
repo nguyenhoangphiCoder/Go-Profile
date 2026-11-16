@@ -6,7 +6,7 @@ async function fetchCss() {
     "https://beacons.ai/_next/static/chunks/3hqv4wc8mopaf.css",
     "https://beacons.ai/_next/static/chunks/43u4xu3m6d_66.css",
     "https://beacons.ai/_next/static/chunks/30quqom0a555s.css",
-    "https://beacons.ai/_next/static/chunks/10u-u0fgzncyb.css"
+    "https://beacons.ai/_next/static/chunks/10u-u0fgzncyb.css",
   ];
   for (const u of cssUrls) {
     try {

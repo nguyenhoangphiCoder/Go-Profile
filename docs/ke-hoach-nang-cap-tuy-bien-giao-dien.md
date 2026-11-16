@@ -14,16 +14,16 @@ Mục tiêu: người dùng có thể **tự thiết kế trang theo ý thích**
 
 ## 1. Hiện trạng và giới hạn
 
-| Hạng mục | Hiện trạng v1 | Giới hạn khi muốn cho người dùng tự thiết kế |
-| --- | --- | --- |
-| Theme | 3 preset cố định trong [themes.ts](../src/config/themes.ts); phần `custom` gồm khoảng 13 thuộc tính | Mỗi thuộc tính mới phải sửa tay `resolveTheme()` từng dòng; không có khái niệm "kiểu nút", "khoảng cách", "bóng đổ", "cỡ chữ" |
-| Font | Enum cố định `inter`, `be-vietnam-pro`, `montserrat` | Không chọn được font tiêu đề riêng, cỡ chữ, độ đậm |
-| Nền | Màu, `backgroundGradient` (**chuỗi CSS tự do**), ảnh, blur | Gradient nhận chuỗi tự do nên khó dựng giao diện chọn và khó kiểm soát giá trị |
-| Khối (block) | 8 loại, CHECK cứng trong bảng `page_blocks` | Payload gần như không có tuỳ chọn style riêng cho từng khối |
-| Renderer | **2 bộ render tách biệt**: [live-preview.tsx](../src/features/pages/components/editor/live-preview.tsx) (~830 dòng) và [public-page-view.tsx](../src/features/public/components/public-page-view.tsx) (~640 dòng) | Mỗi tùy chọn mới phải code 2 lần; bản xem trước và trang thật dễ hiển thị lệch nhau |
-| Validate | `theme.custom` và `payload` là `z.record(z.string(), z.any())` trong [schemas.ts](../src/features/pages/schemas.ts) | Càng mở nhiều tùy chọn, càng dễ lọt giá trị rác hoặc nguy hiểm vào DB |
-| Phân quyền | Một cấp: mọi tài khoản trong `admin_users` là quản trị viên | Chưa có khái niệm "người dùng sở hữu trang của riêng mình" |
-| Điểm thuận lợi | `page_revisions.schema_version`, cơ chế nháp/xuất bản, theme lưu dạng `jsonb` | Có thể nâng cấp dần mà không phá dữ liệu cũ |
+| Hạng mục       | Hiện trạng v1                                                                                                                                                                                                     | Giới hạn khi muốn cho người dùng tự thiết kế                                                                                  |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Theme          | 3 preset cố định trong [themes.ts](../src/config/themes.ts); phần `custom` gồm khoảng 13 thuộc tính                                                                                                               | Mỗi thuộc tính mới phải sửa tay `resolveTheme()` từng dòng; không có khái niệm "kiểu nút", "khoảng cách", "bóng đổ", "cỡ chữ" |
+| Font           | Enum cố định `inter`, `be-vietnam-pro`, `montserrat`                                                                                                                                                              | Không chọn được font tiêu đề riêng, cỡ chữ, độ đậm                                                                            |
+| Nền            | Màu, `backgroundGradient` (**chuỗi CSS tự do**), ảnh, blur                                                                                                                                                        | Gradient nhận chuỗi tự do nên khó dựng giao diện chọn và khó kiểm soát giá trị                                                |
+| Khối (block)   | 8 loại, CHECK cứng trong bảng `page_blocks`                                                                                                                                                                       | Payload gần như không có tuỳ chọn style riêng cho từng khối                                                                   |
+| Renderer       | **2 bộ render tách biệt**: [live-preview.tsx](../src/features/pages/components/editor/live-preview.tsx) (~830 dòng) và [public-page-view.tsx](../src/features/public/components/public-page-view.tsx) (~640 dòng) | Mỗi tùy chọn mới phải code 2 lần; bản xem trước và trang thật dễ hiển thị lệch nhau                                           |
+| Validate       | `theme.custom` và `payload` là `z.record(z.string(), z.any())` trong [schemas.ts](../src/features/pages/schemas.ts)                                                                                               | Càng mở nhiều tùy chọn, càng dễ lọt giá trị rác hoặc nguy hiểm vào DB                                                         |
+| Phân quyền     | Một cấp: mọi tài khoản trong `admin_users` là quản trị viên                                                                                                                                                       | Chưa có khái niệm "người dùng sở hữu trang của riêng mình"                                                                    |
+| Điểm thuận lợi | `page_revisions.schema_version`, cơ chế nháp/xuất bản, theme lưu dạng `jsonb`                                                                                                                                     | Có thể nâng cấp dần mà không phá dữ liệu cũ                                                                                   |
 
 **Kết luận:** muốn mở rộng tùy biến một cách bền vững thì phải xử lý **renderer trùng lặp** và **cấu trúc theme** trước. Làm hai việc này xong, việc thêm tùy chọn mới chỉ còn là việc thêm cấu hình.
 
@@ -70,9 +70,9 @@ import type { ComponentType } from "react";
 
 export interface BlockDefinition<P> {
   type: string;
-  label: string;                 // "Ảnh", "Danh sách liên kết"...
+  label: string; // "Ảnh", "Danh sách liên kết"...
   icon: ComponentType;
-  payloadSchema: z.ZodType<P>;   // validate chặt từng trường
+  payloadSchema: z.ZodType<P>; // validate chặt từng trường
   defaults: P;
   Render: ComponentType<{ payload: P; style: BlockStyle; ctx: RenderContext }>;
   Editor: ComponentType<{ value: P; onChange: (p: P) => void }>;
@@ -94,8 +94,8 @@ Thay cấu trúc phẳng hiện tại bằng một cây token:
 export interface ThemeTokensV2 {
   version: 2;
   colors: {
-    background: string;   // #RRGGBB
-    surface: string;      // nền thẻ/nút
+    background: string; // #RRGGBB
+    surface: string; // nền thẻ/nút
     text: string;
     textMuted: string;
     accent: string;
@@ -104,12 +104,12 @@ export interface ThemeTokensV2 {
   background: {
     type: "solid" | "gradient" | "image";
     gradient?: { kind: "linear" | "radial"; angle: number; stops: { color: string; at: number }[] };
-    imageMediaId?: string;        // chỉ nhận ảnh từ media_assets
+    imageMediaId?: string; // chỉ nhận ảnh từ media_assets
     overlay?: { color: string; opacity: number };
     blur?: 0 | 4 | 8 | 16;
   };
   typography: {
-    bodyFont: FontId;             // danh sách font cho phép (whitelist)
+    bodyFont: FontId; // danh sách font cho phép (whitelist)
     headingFont: FontId;
     baseSize: 14 | 15 | 16 | 17 | 18;
     headingWeight: 500 | 600 | 700 | 800;
@@ -130,7 +130,7 @@ export interface ThemeTokensV2 {
     density: "compact" | "comfortable" | "spacious";
     align: "center" | "left";
   };
-  colorScheme: "fixed" | "auto";  // auto: tôn trọng light/dark của thiết bị
+  colorScheme: "fixed" | "auto"; // auto: tôn trọng light/dark của thiết bị
   darkOverrides?: Partial<ThemeTokensV2["colors"]>;
 }
 ```
@@ -167,8 +167,8 @@ export interface BlockStyle {
   align?: "left" | "center" | "right";
   paddingY?: "none" | "sm" | "md" | "lg";
   surface?: "inherit" | "transparent" | "accent" | "custom";
-  customSurface?: string;          // #RRGGBB, chỉ dùng khi surface = "custom"
-  buttonVariant?: ThemeTokensV2["button"]["variant"];  // ghi đè theme
+  customSurface?: string; // #RRGGBB, chỉ dùng khi surface = "custom"
+  buttonVariant?: ThemeTokensV2["button"]["variant"]; // ghi đè theme
   animation?: "none" | "fade-up" | "pulse";
   hideOn?: ("mobile" | "desktop")[];
 }
@@ -180,16 +180,16 @@ Lưu ở cột mới `page_blocks.style jsonb` (xem mục 5).
 
 Danh sách xếp theo mức ưu tiên cho thương hiệu F&B:
 
-| Khối | Mô tả | Lưu ý |
-| --- | --- | --- |
-| `button` | Một nút CTA lớn, nổi bật (đặt món, gọi điện) | Dùng chung cơ chế đo click `/r/{id}` |
-| `gallery` | Lưới hoặc carousel ảnh | Ảnh chỉ lấy từ `media_assets` |
-| `video_embed` | YouTube / TikTok | **Whitelist domain**, render `iframe` có `sandbox` và `loading="lazy"` |
-| `menu_card` | Thẻ món: ảnh, tên, giá, nhãn "Bán chạy" | Rất phù hợp quán cafe |
-| `accordion` | FAQ, giờ mở cửa, chính sách | Text thuần, không nhận HTML |
-| `map` | Địa chỉ + nút mở Google Maps | Mở link ngoài, không nhúng API key |
-| `countdown` | Đếm ngược khuyến mãi | Render phía client |
-| `columns` | Chia 2 cột chứa các khối con | Làm sau cùng vì cần lưu dạng cây (nested) |
+| Khối          | Mô tả                                        | Lưu ý                                                                  |
+| ------------- | -------------------------------------------- | ---------------------------------------------------------------------- |
+| `button`      | Một nút CTA lớn, nổi bật (đặt món, gọi điện) | Dùng chung cơ chế đo click `/r/{id}`                                   |
+| `gallery`     | Lưới hoặc carousel ảnh                       | Ảnh chỉ lấy từ `media_assets`                                          |
+| `video_embed` | YouTube / TikTok                             | **Whitelist domain**, render `iframe` có `sandbox` và `loading="lazy"` |
+| `menu_card`   | Thẻ món: ảnh, tên, giá, nhãn "Bán chạy"      | Rất phù hợp quán cafe                                                  |
+| `accordion`   | FAQ, giờ mở cửa, chính sách                  | Text thuần, không nhận HTML                                            |
+| `map`         | Địa chỉ + nút mở Google Maps                 | Mở link ngoài, không nhúng API key                                     |
+| `countdown`   | Đếm ngược khuyến mãi                         | Render phía client                                                     |
+| `columns`     | Chia 2 cột chứa các khối con                 | Làm sau cùng vì cần lưu dạng cây (nested)                              |
 
 Mỗi khối mới chỉ cần: thêm thư mục trong `blocks/`, đăng ký vào `registry.ts`, cập nhật CHECK constraint trong DB.
 
@@ -217,14 +217,14 @@ Mỗi khối mới chỉ cần: thêm thư mục trong `blocks/`, đăng ký và
 
 ### 3.7. Bảo mật khi mở rộng tùy biến
 
-| Rủi ro | Biện pháp |
-| --- | --- |
-| Chèn CSS qua giá trị màu/gradient | Màu validate bằng regex `^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$`; gradient dựng từ `stops` có cấu trúc, **bỏ hẳn chuỗi `backgroundGradient` tự do** |
-| Ảnh từ domain lạ / tracking pixel | Ảnh chỉ tham chiếu `media_assets.id`, không nhận URL ngoài |
-| Nhúng iframe độc hại | Whitelist domain (`youtube.com`, `youtube-nocookie.com`, `tiktok.com`) + parse ID video + thuộc tính `sandbox` |
-| Văn bản chứa HTML | Tiếp tục render text thuần (đã có `renderLnkBioFormattedText`) |
-| Payload phình to | Giới hạn số khối mỗi trang (ví dụ 100), độ dài text, số stop gradient (tối đa 5) |
-| Giá trị lạ gửi trực tiếp vào server action | Toàn bộ schema dùng `.strict()`, validate ở server action trước khi ghi DB |
+| Rủi ro                                     | Biện pháp                                                                                                                                       |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Chèn CSS qua giá trị màu/gradient          | Màu validate bằng regex `^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$`; gradient dựng từ `stops` có cấu trúc, **bỏ hẳn chuỗi `backgroundGradient` tự do** |
+| Ảnh từ domain lạ / tracking pixel          | Ảnh chỉ tham chiếu `media_assets.id`, không nhận URL ngoài                                                                                      |
+| Nhúng iframe độc hại                       | Whitelist domain (`youtube.com`, `youtube-nocookie.com`, `tiktok.com`) + parse ID video + thuộc tính `sandbox`                                  |
+| Văn bản chứa HTML                          | Tiếp tục render text thuần (đã có `renderLnkBioFormattedText`)                                                                                  |
+| Payload phình to                           | Giới hạn số khối mỗi trang (ví dụ 100), độ dài text, số stop gradient (tối đa 5)                                                                |
+| Giá trị lạ gửi trực tiếp vào server action | Toàn bộ schema dùng `.strict()`, validate ở server action trước khi ghi DB                                                                      |
 
 ---
 
@@ -245,13 +245,13 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 
 **Thay đổi hiển thị có chủ đích khi hợp nhất** (trước đây preview và trang thật lệch nhau):
 
-| Hạng mục | Trước | Sau |
-| --- | --- | --- |
-| Bo góc nút, kính mờ, bố cục lưới, nền mờ (`backgroundVariant`) | Chỉ hiện trong preview, trang thật bỏ qua | Trang thật áp dụng đúng như đã chọn |
-| Khối khoảng trống (`height: "sm".."xl"`) | Trang thật cao 0px (lỗi) | 10 / 20 / 32 / 48 px như preview |
-| Kiểu đường kẻ (nét đứt, chấm) | Trang thật luôn nét liền | Áp dụng đúng kiểu |
-| Huy hiệu "@gocafe.official" + dấu tích xanh | Chỉ có trong preview | Bỏ (trang thật chưa từng có) |
-| Bố cục đáp ứng | Theo độ rộng màn hình (`sm:`) | Theo độ rộng khung (container query), preview 375px giống điện thoại thật |
+| Hạng mục                                                       | Trước                                     | Sau                                                                       |
+| -------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------- |
+| Bo góc nút, kính mờ, bố cục lưới, nền mờ (`backgroundVariant`) | Chỉ hiện trong preview, trang thật bỏ qua | Trang thật áp dụng đúng như đã chọn                                       |
+| Khối khoảng trống (`height: "sm".."xl"`)                       | Trang thật cao 0px (lỗi)                  | 10 / 20 / 32 / 48 px như preview                                          |
+| Kiểu đường kẻ (nét đứt, chấm)                                  | Trang thật luôn nét liền                  | Áp dụng đúng kiểu                                                         |
+| Huy hiệu "@gocafe.official" + dấu tích xanh                    | Chỉ có trong preview                      | Bỏ (trang thật chưa từng có)                                              |
+| Bố cục đáp ứng                                                 | Theo độ rộng màn hình (`sm:`)             | Theo độ rộng khung (container query), preview 375px giống điện thoại thật |
 
 **Kết quả:** từ giai đoạn này, mỗi tính năng mới chỉ cần code 1 lần.
 
@@ -292,6 +292,7 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 - [ ] Khối `countdown`, `columns` lồng nhau.
 
 > **Lưu ý:**
+>
 > - Nút "Chỉ đường" của khối bản đồ mở thẳng Google Maps, không đi qua `/r` nên không có trong báo cáo click.
 > - ~~Bảng `revision_media_assets` không được ghi đầy đủ~~ — đã sửa bằng [migration 20261116000003](../supabase/migrations/20261116000003_track_revision_media.sql): ghi mọi ảnh của khối, theme, placement khi lưu nháp và xuất bản; kho media chỉ chặn xoá ảnh thuộc bản đang xuất bản hoặc bản nháp.
 
@@ -350,19 +351,19 @@ CREATE POLICY theme_presets_admin_all ON public.theme_presets
 
 ## 6. Danh sách file bị ảnh hưởng
 
-| File | Thay đổi |
-| --- | --- |
-| [src/config/themes.ts](../src/config/themes.ts) | Thêm token v2, preset v2, hàm migrate; `resolveTheme` gọn lại thành deep-merge có validate |
-| [src/features/pages/types.ts](../src/features/pages/types.ts) | `BlockType`, `BlockStyle`, `PageThemeConfig` v2 |
-| [src/features/pages/schemas.ts](../src/features/pages/schemas.ts) | Schema chặt theo registry và theme v2 |
-| [src/features/pages/actions.ts](../src/features/pages/actions.ts) | Lưu/đọc `style`, `schema_version` |
-| [live-preview.tsx](../src/features/pages/components/editor/live-preview.tsx) | Rút gọn, dùng `PageRenderer` |
-| [public-page-view.tsx](../src/features/public/components/public-page-view.tsx) | Rút gọn, dùng `PageRenderer` |
-| [theme-editor.tsx](../src/features/pages/components/editor/theme-editor.tsx) | Viết lại theo nhóm token |
-| [block-item-editor.tsx](../src/features/pages/components/editor/block-item-editor.tsx) | Lấy editor từ registry + form style chung |
-| [page-editor.tsx](../src/features/pages/components/editor/page-editor.tsx) | Undo/Redo, chế độ thiết bị, chọn khối trên preview |
-| `supabase/migrations/*` | Migration mục 5 |
-| `tests/unit/*` | Test cho registry, migrate theme, validate, tương phản |
+| File                                                                                   | Thay đổi                                                                                   |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [src/config/themes.ts](../src/config/themes.ts)                                        | Thêm token v2, preset v2, hàm migrate; `resolveTheme` gọn lại thành deep-merge có validate |
+| [src/features/pages/types.ts](../src/features/pages/types.ts)                          | `BlockType`, `BlockStyle`, `PageThemeConfig` v2                                            |
+| [src/features/pages/schemas.ts](../src/features/pages/schemas.ts)                      | Schema chặt theo registry và theme v2                                                      |
+| [src/features/pages/actions.ts](../src/features/pages/actions.ts)                      | Lưu/đọc `style`, `schema_version`                                                          |
+| [live-preview.tsx](../src/features/pages/components/editor/live-preview.tsx)           | Rút gọn, dùng `PageRenderer`                                                               |
+| [public-page-view.tsx](../src/features/public/components/public-page-view.tsx)         | Rút gọn, dùng `PageRenderer`                                                               |
+| [theme-editor.tsx](../src/features/pages/components/editor/theme-editor.tsx)           | Viết lại theo nhóm token                                                                   |
+| [block-item-editor.tsx](../src/features/pages/components/editor/block-item-editor.tsx) | Lấy editor từ registry + form style chung                                                  |
+| [page-editor.tsx](../src/features/pages/components/editor/page-editor.tsx)             | Undo/Redo, chế độ thiết bị, chọn khối trên preview                                         |
+| `supabase/migrations/*`                                                                | Migration mục 5                                                                            |
+| `tests/unit/*`                                                                         | Test cho registry, migrate theme, validate, tương phản                                     |
 
 ---
 
@@ -380,13 +381,13 @@ CREATE POLICY theme_presets_admin_all ON public.theme_presets
 
 ## 8. Rủi ro và cách giảm thiểu
 
-| Rủi ro | Mức | Giảm thiểu |
-| --- | --- | --- |
-| Tái cấu trúc renderer làm lệch giao diện trang đang chạy | Cao | Làm giai đoạn 1 tách riêng, có snapshot test, deploy preview trên Vercel trước |
-| Migrate theme sai làm vỡ trang | Trung bình | Lazy migration + giữ nguyên dữ liệu v1; chạy thử trên bản backup (`scripts/backup-production.mjs`) |
-| Quá nhiều tùy chọn khiến người dùng rối | Trung bình | Mặc định dùng template; ẩn các tùy chọn nâng cao trong mục "Nâng cao" |
-| Font/ảnh làm chậm trang | Trung bình | Whitelist font, subset tiếng Việt, `next/image`, giới hạn dung lượng upload |
-| Giai đoạn 5 (đa người dùng) thay đổi bảo mật | Cao | Làm sau cùng, review RLS riêng, viết test phân quyền cho từng bảng |
+| Rủi ro                                                   | Mức        | Giảm thiểu                                                                                         |
+| -------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| Tái cấu trúc renderer làm lệch giao diện trang đang chạy | Cao        | Làm giai đoạn 1 tách riêng, có snapshot test, deploy preview trên Vercel trước                     |
+| Migrate theme sai làm vỡ trang                           | Trung bình | Lazy migration + giữ nguyên dữ liệu v1; chạy thử trên bản backup (`scripts/backup-production.mjs`) |
+| Quá nhiều tùy chọn khiến người dùng rối                  | Trung bình | Mặc định dùng template; ẩn các tùy chọn nâng cao trong mục "Nâng cao"                              |
+| Font/ảnh làm chậm trang                                  | Trung bình | Whitelist font, subset tiếng Việt, `next/image`, giới hạn dung lượng upload                        |
+| Giai đoạn 5 (đa người dùng) thay đổi bảo mật             | Cao        | Làm sau cùng, review RLS riêng, viết test phân quyền cho từng bảng                                 |
 
 ---
 

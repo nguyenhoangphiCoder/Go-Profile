@@ -20,7 +20,9 @@ type ActionResult<T> = { success: true; data: T } | { success: false; error: str
 
 function isMissingTable(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
-  return error.code === "42P01" || error.code === "PGRST205" || /theme_presets/.test(error.message ?? "");
+  return (
+    error.code === "42P01" || error.code === "PGRST205" || /theme_presets/.test(error.message ?? "")
+  );
 }
 
 export async function listThemePresetsAction(): Promise<ActionResult<SavedThemePreset[]>> {
@@ -36,7 +38,10 @@ export async function listThemePresetsAction(): Promise<ActionResult<SavedThemeP
     .limit(MAX_PRESETS);
 
   if (error) {
-    return { success: false, error: isMissingTable(error) ? MIGRATION_HINT : "Không tải được danh sách mẫu" };
+    return {
+      success: false,
+      error: isMissingTable(error) ? MIGRATION_HINT : "Không tải được danh sách mẫu",
+    };
   }
 
   // Bỏ qua bản ghi không còn hợp lệ với schema hiện tại thay vì làm hỏng cả danh sách
@@ -68,7 +73,10 @@ export async function saveThemePresetAction(
     .select("id", { count: "exact", head: true })
     .is("archived_at", null);
   if (countError) {
-    return { success: false, error: isMissingTable(countError) ? MIGRATION_HINT : "Không lưu được mẫu" };
+    return {
+      success: false,
+      error: isMissingTable(countError) ? MIGRATION_HINT : "Không lưu được mẫu",
+    };
   }
   if ((count ?? 0) >= MAX_PRESETS) {
     return { success: false, error: `Tối đa ${MAX_PRESETS} mẫu. Hãy xoá bớt mẫu cũ.` };

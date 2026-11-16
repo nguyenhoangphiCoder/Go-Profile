@@ -115,9 +115,7 @@ const legacyThemeCustomSchema = z
     cardBackground: legacyColor,
     cardTextColor: legacyColor,
     cardBorderColor: legacyColor,
-    backgroundGradient: dropInvalid(
-      z.string().refine((v) => parseLegacyGradient(v) !== null)
-    ),
+    backgroundGradient: dropInvalid(z.string().refine((v) => parseLegacyGradient(v) !== null)),
     backgroundImage: dropInvalid(z.string().refine(isSafeImageUrl)),
     backgroundBlur: dropInvalid(z.union([z.boolean(), z.string().max(16)])),
     backgroundVariant: dropInvalid(
@@ -128,9 +126,7 @@ const legacyThemeCustomSchema = z
     fontFamily: dropInvalid(z.enum(["inter", "be-vietnam-pro", "montserrat"])),
   })
   .strip()
-  .transform((obj) =>
-    Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined))
-  );
+  .transform((obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)));
 
 export const saveDraftSchema = z.object({
   pageId: pgUuid("ID trang không hợp lệ"),

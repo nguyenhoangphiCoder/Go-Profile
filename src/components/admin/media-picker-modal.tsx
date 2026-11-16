@@ -260,7 +260,10 @@ export function MediaPickerModal({
 
                     {/* Filename */}
                     <div className="p-2.5 border-t border-border/50 text-[11px] truncate">
-                      <span className="font-medium text-foreground block truncate" title={m.originalFilename || m.id}>
+                      <span
+                        className="font-medium text-foreground block truncate"
+                        title={m.originalFilename || m.id}
+                      >
                         {m.originalFilename || m.id}
                       </span>
                     </div>

@@ -8,7 +8,11 @@ console.log("Style tags count:", styleTags.length);
 
 for (let i = 0; i < styleTags.length; i++) {
   const content = styleTags[i];
-  if (content.includes("desktop-background") || content.includes(".Profile") || content.includes("background-image")) {
+  if (
+    content.includes("desktop-background") ||
+    content.includes(".Profile") ||
+    content.includes("background-image")
+  ) {
     console.log(`Style tag ${i}:`, content.slice(0, 500));
   }
 }

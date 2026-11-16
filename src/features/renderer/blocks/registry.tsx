@@ -46,7 +46,13 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultPayload: { title: "", bio: "" },
     Render: HeaderBlock,
   },
-  image: { type: "image", label: "Ảnh", hasLinks: false, defaultPayload: { caption: "", alt: "" }, Render: ImageBlock },
+  image: {
+    type: "image",
+    label: "Ảnh",
+    hasLinks: false,
+    defaultPayload: { caption: "", alt: "" },
+    Render: ImageBlock,
+  },
   heading: {
     type: "heading",
     label: "Tiêu đề mục",
@@ -54,7 +60,13 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultPayload: { text: "Tiêu đề mục mới", level: 2 },
     Render: HeadingBlock,
   },
-  text: { type: "text", label: "Đoạn văn", hasLinks: false, defaultPayload: { content: "", align: "center" }, Render: TextBlock },
+  text: {
+    type: "text",
+    label: "Đoạn văn",
+    hasLinks: false,
+    defaultPayload: { content: "", align: "center" },
+    Render: TextBlock,
+  },
   link_list: {
     type: "link_list",
     label: "Danh sách liên kết",
@@ -69,8 +81,20 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     defaultPayload: { style: "colored" },
     Render: SocialIconsBlock,
   },
-  spacer: { type: "spacer", label: "Khoảng trống", hasLinks: false, defaultPayload: { height: "md" }, Render: SpacerBlock },
-  divider: { type: "divider", label: "Đường kẻ", hasLinks: false, defaultPayload: { style: "solid" }, Render: DividerBlock },
+  spacer: {
+    type: "spacer",
+    label: "Khoảng trống",
+    hasLinks: false,
+    defaultPayload: { height: "md" },
+    Render: SpacerBlock,
+  },
+  divider: {
+    type: "divider",
+    label: "Đường kẻ",
+    hasLinks: false,
+    defaultPayload: { style: "solid" },
+    Render: DividerBlock,
+  },
 
   button: {
     type: "button",
@@ -90,7 +114,11 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockDefinition> = {
     type: "menu_card",
     label: "Thẻ món",
     hasLinks: false,
-    defaultPayload: { title: "", layout: "list", items: [{ name: "Cà phê sữa đá", price: "29.000đ" }] },
+    defaultPayload: {
+      title: "",
+      layout: "list",
+      items: [{ name: "Cà phê sữa đá", price: "29.000đ" }],
+    },
     Render: MenuCardBlock,
   },
   accordion: {

@@ -34,7 +34,9 @@ async function queryClickReportDirectly(
     clicksQuery,
     supabase.from("pages").select("id, internal_name, page_slugs(slug, is_current)"),
     supabase.from("links").select("id, default_label, target_url, kind"),
-    supabase.from("revision_link_placements").select("revision_id, page_link_id, position, resolved_label"),
+    supabase
+      .from("revision_link_placements")
+      .select("revision_id, page_link_id, position, resolved_label"),
   ]);
 
   if (clicksRes.error) {
@@ -149,7 +151,10 @@ export async function getClickReport(params: ClickReportParams): Promise<ClickRe
   const { data, error } = await supabase.rpc("get_click_report", rpcArgs);
 
   if (error) {
-    console.warn("RPC get_click_report gặp lỗi (chuyển sang query trực tiếp an toàn):", error.message);
+    console.warn(
+      "RPC get_click_report gặp lỗi (chuyển sang query trực tiếp an toàn):",
+      error.message
+    );
     try {
       return await queryClickReportDirectly(supabase, params);
     } catch {

@@ -275,7 +275,8 @@ function worstAgainst(fg: string, backgrounds: string[]): { ratio: number; bg: s
 // ---------------------------------------------------------------------------
 
 export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEditorProps) {
-  const presetKey = themeConfig.preset && THEME_PRESETS[themeConfig.preset] ? themeConfig.preset : "go-original";
+  const presetKey =
+    themeConfig.preset && THEME_PRESETS[themeConfig.preset] ? themeConfig.preset : "go-original";
   const tokens = useMemo(() => resolveThemeTokens(themeConfig), [themeConfig]);
   const v2 = useMemo(() => toV2Config(themeConfig), [themeConfig]);
   const isStandard = tokens.layout === "standard";
@@ -445,7 +446,8 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
   };
 
   const handleArchivePreset = (preset: SavedThemePreset) => {
-    if (!window.confirm(`Xoá mẫu "${preset.name}"? Các trang đang dùng không bị ảnh hưởng.`)) return;
+    if (!window.confirm(`Xoá mẫu "${preset.name}"? Các trang đang dùng không bị ảnh hưởng.`))
+      return;
     startSavingPreset(async () => {
       const res = await archiveThemePresetAction(preset.id);
       if (res.success) setSavedPresets((list) => list.filter((p) => p.id !== preset.id));
@@ -509,7 +511,10 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                   />
                   <div
                     className="w-full h-4 rounded-full border"
-                    style={{ backgroundColor: t.colors.surface, borderColor: t.colors.surfaceBorder }}
+                    style={{
+                      backgroundColor: t.colors.surface,
+                      borderColor: t.colors.surfaceBorder,
+                    }}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-1">
@@ -636,7 +641,10 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                   key={swatch.hex}
                   type="button"
                   onClick={() =>
-                    setAccent(swatch.hex, { textOnCard: swatch.textOnCard, borderHex: swatch.borderHex })
+                    setAccent(swatch.hex, {
+                      textOnCard: swatch.textOnCard,
+                      borderHex: swatch.borderHex,
+                    })
                   }
                   title={`${swatch.name} (${swatch.hex})`}
                   aria-label={`${swatch.name} (${swatch.hex})`}
@@ -645,7 +653,9 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                   }`}
                   style={{ backgroundColor: swatch.hex }}
                 >
-                  {selected && <Check className="w-3.5 h-3.5" style={{ color: readableOn(swatch.hex) }} />}
+                  {selected && (
+                    <Check className="w-3.5 h-3.5" style={{ color: readableOn(swatch.hex) }} />
+                  )}
                 </button>
               );
             })}
@@ -835,9 +845,10 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                     <button
                       type="button"
                       onClick={() => {
-                        const stops = gradient.stops
-                          .slice(0, -1)
-                          .map((s, i, arr) => ({ ...s, at: Math.round((i / (arr.length - 1)) * 100) }));
+                        const stops = gradient.stops.slice(0, -1).map((s, i, arr) => ({
+                          ...s,
+                          at: Math.round((i / (arr.length - 1)) * 100),
+                        }));
                         setGradient({ stops });
                       }}
                       className="px-2.5 py-1 rounded-lg text-[11px] border border-border hover:bg-muted cursor-pointer"
@@ -900,7 +911,11 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                       className="block w-full py-1.5 rounded-full border text-[10px] mb-1"
                       style={
                         variant === "outline"
-                          ? { borderColor: tokens.colors.surfaceBorder, color: tokens.colors.text, background: tokens.colors.background }
+                          ? {
+                              borderColor: tokens.colors.surfaceBorder,
+                              color: tokens.colors.text,
+                              background: tokens.colors.background,
+                            }
                           : variant === "soft"
                             ? {
                                 borderColor: "transparent",
@@ -936,7 +951,10 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
             <Segmented
               label="Độ dày viền"
               value={tokens.shape.borderWidth}
-              options={[0, 1, 1.5, 2, 3].map((w) => ({ value: w, label: w === 0 ? "Không" : `${w}px` }))}
+              options={[0, 1, 1.5, 2, 3].map((w) => ({
+                value: w,
+                label: w === 0 ? "Không" : `${w}px`,
+              }))}
               onChange={(borderWidth) => update("shape", { borderWidth })}
             />
             <Segmented
@@ -1005,7 +1023,9 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
         {isStandard && (
           <>
             <label className="block space-y-1">
-              <span className="text-xs font-semibold">Cỡ chữ nội dung: {tokens.typography.baseSize}px</span>
+              <span className="text-xs font-semibold">
+                Cỡ chữ nội dung: {tokens.typography.baseSize}px
+              </span>
               <input
                 type="range"
                 min={12}

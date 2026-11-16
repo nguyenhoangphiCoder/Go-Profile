@@ -56,19 +56,28 @@ describe("form chỉnh sửa khối mới", () => {
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "l1" } });
     const updated = onUpdate.mock.calls.at(-1)![0] as EditorBlockItem;
     expect(updated.placements).toHaveLength(1);
-    expect(updated.placements![0]).toMatchObject({ linkId: "l1", defaultLabel: "ShopeeFood", position: 0 });
+    expect(updated.placements![0]).toMatchObject({
+      linkId: "l1",
+      defaultLabel: "ShopeeFood",
+      position: 0,
+    });
   });
 
   it("hỏi đáp: thêm mục mới", () => {
     const onUpdate = renderEditor("accordion");
     fireEvent.click(screen.getByRole("button", { name: /Thêm mục/ }));
-    const items = ((onUpdate.mock.calls.at(-1)![0] as EditorBlockItem).payload as Record<string, unknown>).items as unknown[];
+    const items = (
+      (onUpdate.mock.calls.at(-1)![0] as EditorBlockItem).payload as Record<string, unknown>
+    ).items as unknown[];
     expect(items).toHaveLength(2);
   });
 
   it("kiểu khối: bật 'Thẻ nổi' ghi blockStyle, tắt lại thì xoá", () => {
     const onUpdate = renderEditor("map");
     fireEvent.click(screen.getByRole("button", { name: "Thẻ nổi" }));
-    expect(((onUpdate.mock.calls.at(-1)![0] as EditorBlockItem).payload as Record<string, unknown>).blockStyle).toEqual({ surface: "card" });
+    expect(
+      ((onUpdate.mock.calls.at(-1)![0] as EditorBlockItem).payload as Record<string, unknown>)
+        .blockStyle
+    ).toEqual({ surface: "card" });
   });
 });

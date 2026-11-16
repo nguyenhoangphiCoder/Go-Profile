@@ -1,5 +1,5 @@
-const fs = require('fs');
-const zlib = require('zlib');
+const fs = require("fs");
+const zlib = require("zlib");
 
 function decodePng(filePath) {
   const buf = fs.readFileSync(filePath);
@@ -11,8 +11,8 @@ function decodePng(filePath) {
   const idatChunks = [];
   while (pos < buf.length) {
     const len = buf.readUInt32BE(pos);
-    const type = buf.toString('ascii', pos + 4, pos + 8);
-    if (type === 'IDAT') idatChunks.push(buf.subarray(pos + 8, pos + 8 + len));
+    const type = buf.toString("ascii", pos + 4, pos + 8);
+    if (type === "IDAT") idatChunks.push(buf.subarray(pos + 8, pos + 8 + len));
     pos += 12 + len;
   }
   const idat = Buffer.concat(idatChunks);
@@ -55,11 +55,14 @@ function decodePng(filePath) {
   return { width, height, pixels, bpp };
 }
 
-const file = 'C:/Users/ACER/.gemini/antigravity/brain/e0784f15-eb4c-457c-b057-5cc05e0c61d7/.user_uploaded/media_1794214921089_5d178983.png';
+const file =
+  "C:/Users/ACER/.gemini/antigravity/brain/e0784f15-eb4c-457c-b057-5cc05e0c61d7/.user_uploaded/media_1794214921089_5d178983.png";
 const { width, height, pixels, bpp } = decodePng(file);
 
-console.log('Background gradient along left column (x=30):');
+console.log("Background gradient along left column (x=30):");
 for (let y = 0; y < height; y += 50) {
   const idx = (y * width + 30) * bpp;
-  console.log(`y=${y}: rgb(${pixels[idx]}, ${pixels[idx+1]}, ${pixels[idx+2]}) (#${pixels[idx].toString(16).padStart(2,'0')}${pixels[idx+1].toString(16).padStart(2,'0')}${pixels[idx+2].toString(16).padStart(2,'0')})`);
+  console.log(
+    `y=${y}: rgb(${pixels[idx]}, ${pixels[idx + 1]}, ${pixels[idx + 2]}) (#${pixels[idx].toString(16).padStart(2, "0")}${pixels[idx + 1].toString(16).padStart(2, "0")}${pixels[idx + 2].toString(16).padStart(2, "0")})`
+  );
 }

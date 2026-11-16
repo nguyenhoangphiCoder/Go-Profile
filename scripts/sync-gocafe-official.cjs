@@ -1,7 +1,7 @@
 const { createClient } = require("@supabase/supabase-js");
 
 const url = "https://iuoxkoburrtmjajfrsdb.supabase.co";
-const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 const supabase = createClient(url, serviceRoleKey, {
   auth: { persistSession: false },
@@ -164,14 +164,46 @@ async function run() {
 
   // 3. Page links
   const pageLinks = [
-    { id: "81111111-0000-0000-0000-000000000001", page_id: v_page_gocafe, link_id: "80000000-0000-0000-0000-000000000001" },
-    { id: "81111111-0000-0000-0000-000000000002", page_id: v_page_gocafe, link_id: "80000000-0000-0000-0000-000000000002" },
-    { id: "81111111-0000-0000-0000-000000000003", page_id: v_page_gocafe, link_id: "80000000-0000-0000-0000-000000000003" },
-    { id: "81111111-0000-0000-0000-000000000004", page_id: v_page_gocafe, link_id: "80000000-0000-0000-0000-000000000004" },
-    { id: "81111111-0000-0000-0000-000000000005", page_id: v_page_gocafe, link_id: "80000000-0000-0000-0000-000000000005" },
-    { id: "81111111-0000-0000-0000-000000000006", page_id: v_page_gocafe, link_id: "80000000-0000-0000-0000-000000000006" },
-    { id: "81111111-0000-0000-0000-000000000007", page_id: v_page_gocafe, link_id: "80000000-0000-0000-0000-000000000007" },
-    { id: "81111111-0000-0000-0000-000000000008", page_id: v_page_gocafe, link_id: "80000000-0000-0000-0000-000000000008" },
+    {
+      id: "81111111-0000-0000-0000-000000000001",
+      page_id: v_page_gocafe,
+      link_id: "80000000-0000-0000-0000-000000000001",
+    },
+    {
+      id: "81111111-0000-0000-0000-000000000002",
+      page_id: v_page_gocafe,
+      link_id: "80000000-0000-0000-0000-000000000002",
+    },
+    {
+      id: "81111111-0000-0000-0000-000000000003",
+      page_id: v_page_gocafe,
+      link_id: "80000000-0000-0000-0000-000000000003",
+    },
+    {
+      id: "81111111-0000-0000-0000-000000000004",
+      page_id: v_page_gocafe,
+      link_id: "80000000-0000-0000-0000-000000000004",
+    },
+    {
+      id: "81111111-0000-0000-0000-000000000005",
+      page_id: v_page_gocafe,
+      link_id: "80000000-0000-0000-0000-000000000005",
+    },
+    {
+      id: "81111111-0000-0000-0000-000000000006",
+      page_id: v_page_gocafe,
+      link_id: "80000000-0000-0000-0000-000000000006",
+    },
+    {
+      id: "81111111-0000-0000-0000-000000000007",
+      page_id: v_page_gocafe,
+      link_id: "80000000-0000-0000-0000-000000000007",
+    },
+    {
+      id: "81111111-0000-0000-0000-000000000008",
+      page_id: v_page_gocafe,
+      link_id: "80000000-0000-0000-0000-000000000008",
+    },
   ];
 
   console.log("3. Upsert page_links...");
@@ -391,7 +423,9 @@ async function run() {
 
   console.log("6. Upsert link placements...");
   for (const pl of placements) {
-    const { error } = await supabase.from("revision_link_placements").upsert(pl, { onConflict: "id" });
+    const { error } = await supabase
+      .from("revision_link_placements")
+      .upsert(pl, { onConflict: "id" });
     if (error) console.log("Placement error:", pl.id, error);
     else console.log("Placement OK:", pl.id);
   }
@@ -416,11 +450,16 @@ async function run() {
 
   // 9. Verify get_public_page
   console.log("9. Verify get_public_page('gocafe')...");
-  const { data: pubData, error: pubDataErr } = await supabase.rpc("get_public_page", { p_slug: "gocafe" });
+  const { data: pubData, error: pubDataErr } = await supabase.rpc("get_public_page", {
+    p_slug: "gocafe",
+  });
   if (pubDataErr) console.log("Verify error:", pubDataErr);
   else {
     console.log("Verify SUCCESS! Blocks count:", pubData?.blocks?.length);
-    console.log("Blocks summary:", (pubData?.blocks || []).map(b => `${b.type} (links: ${b.links?.length || 0})`));
+    console.log(
+      "Blocks summary:",
+      (pubData?.blocks || []).map((b) => `${b.type} (links: ${b.links?.length || 0})`)
+    );
   }
 
   console.log("=== Hoàn tất đồng bộ! ===");

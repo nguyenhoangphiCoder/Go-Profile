@@ -91,7 +91,9 @@ export function HeadingBlock({ block, ctx }: BlockRenderProps) {
   const Tag = level === 1 ? "h2" : level === 2 ? "h3" : "h4";
 
   return (
-    <div className={isCard ? "mt-2 mb-1 text-center w-full" : "mt-[28px] mb-[6px] text-center w-full"}>
+    <div
+      className={isCard ? "mt-2 mb-1 text-center w-full" : "mt-[28px] mb-[6px] text-center w-full"}
+    >
       <Tag className={className} style={isCard ? { color: "#FFFFFF" } : HEADING_STYLE}>
         {payload.text}
       </Tag>
@@ -150,7 +152,9 @@ export function ImageBlock({ block, ctx }: BlockRenderProps) {
           loading="lazy"
         />
       </div>
-      {payload.caption && <p className="text-xs opacity-75 text-center mt-1.5">{payload.caption}</p>}
+      {payload.caption && (
+        <p className="text-xs opacity-75 text-center mt-1.5">{payload.caption}</p>
+      )}
     </div>
   );
 }
@@ -178,7 +182,9 @@ export function DividerBlock({ block, ctx }: BlockRenderProps) {
   const styleClass =
     style === "dashed" ? "border-dashed" : style === "dotted" ? "border-dotted" : "border-solid";
   if (ctx.variant !== "standard") {
-    return <div className={`w-full border-t border-white/10 my-2 ${styleClass}`} aria-hidden="true" />;
+    return (
+      <div className={`w-full border-t border-white/10 my-2 ${styleClass}`} aria-hidden="true" />
+    );
   }
   return (
     <div

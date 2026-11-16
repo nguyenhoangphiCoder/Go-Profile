@@ -251,7 +251,9 @@ export function parseLegacyGradient(css: unknown): GradientTokens | null {
     const s = part.match(/^(.+?)\s+(\d+(?:\.\d+)?)%$/);
     const color = (s ? s[1] : part).trim();
     if (!isSafeColor(color)) return;
-    const at = s ? Math.min(100, Number(s[2])) : Math.round((i / Math.max(1, parts.length - 1)) * 100);
+    const at = s
+      ? Math.min(100, Number(s[2]))
+      : Math.round((i / Math.max(1, parts.length - 1)) * 100);
     stops.push({ color, at });
   });
 
@@ -266,7 +268,9 @@ function layoutOf(theme: ThemePreset): ThemeTokens["layout"] {
 }
 
 function legacyFont(font: unknown): FontId {
-  return (FONT_IDS as readonly string[]).includes(font as string) ? (font as FontId) : "be-vietnam-pro";
+  return (FONT_IDS as readonly string[]).includes(font as string)
+    ? (font as FontId)
+    : "be-vietnam-pro";
 }
 
 function legacyEffect(theme: ThemePreset): ThemeTokens["background"]["effect"] {
@@ -368,7 +372,10 @@ export function resolveThemeTokens(config?: ThemeConfigInput | null): ThemeToken
       isSafeColor(custom.backgroundColor) &&
       !custom.backgroundGradient
     ) {
-      tokens = { ...tokens, background: { ...tokens.background, type: "solid", gradient: undefined } };
+      tokens = {
+        ...tokens,
+        background: { ...tokens.background, type: "solid", gradient: undefined },
+      };
     }
   }
 

@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://iuoxkoburrtmjajfrsdb.supabase.co";
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://iuoxkoburrtmjajfrsdb.supabase.co";
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!serviceRoleKey) {
@@ -20,7 +21,10 @@ async function wipeProductionContent() {
 
   // 1. Delete click_events
   console.log("1. Clearing click_events...");
-  const { error: errClicks } = await supabase.from("click_events").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+  const { error: errClicks } = await supabase
+    .from("click_events")
+    .delete()
+    .neq("id", "00000000-0000-0000-0000-000000000000");
   if (errClicks) console.error("Error clearing click_events:", errClicks.message);
   else console.log("✓ click_events deleted.");
 
@@ -32,37 +36,49 @@ async function wipeProductionContent() {
 
   // 3. Unlink published_revision_id on pages
   console.log("3. Unpublishing and unlinking pages...");
-  const { error: errUnlinkRev } = await supabase.from("pages").update({ 
-    published_revision_id: null,
-    status: "archived",
-    archived_at: now
-  }).neq("id", "00000000-0000-0000-0000-000000000000");
+  const { error: errUnlinkRev } = await supabase
+    .from("pages")
+    .update({
+      published_revision_id: null,
+      status: "archived",
+      archived_at: now,
+    })
+    .neq("id", "00000000-0000-0000-0000-000000000000");
   if (errUnlinkRev) console.error("Error archiving pages:", errUnlinkRev.message);
   else console.log("✓ All pages archived and unpublished.");
 
   // 4. Archive page_links
   console.log("4. Archiving page_links...");
-  const { error: errPlk } = await supabase.from("page_links").update({
-    archived_at: now
-  }).neq("id", "00000000-0000-0000-0000-000000000000");
+  const { error: errPlk } = await supabase
+    .from("page_links")
+    .update({
+      archived_at: now,
+    })
+    .neq("id", "00000000-0000-0000-0000-000000000000");
   if (errPlk) console.error("Error archiving page_links:", errPlk.message);
   else console.log("✓ All page_links archived.");
 
   // 5. Archive links
   console.log("5. Archiving links...");
-  const { error: errLinks } = await supabase.from("links").update({
-    is_active: false,
-    archived_at: now,
-    default_media_id: null
-  }).neq("id", "00000000-0000-0000-0000-000000000000");
+  const { error: errLinks } = await supabase
+    .from("links")
+    .update({
+      is_active: false,
+      archived_at: now,
+      default_media_id: null,
+    })
+    .neq("id", "00000000-0000-0000-0000-000000000000");
   if (errLinks) console.error("Error archiving links:", errLinks.message);
   else console.log("✓ All links archived.");
 
   // 6. Archive media_assets
   console.log("6. Archiving media_assets...");
-  const { error: errMedia } = await supabase.from("media_assets").update({
-    archived_at: now
-  }).neq("id", "00000000-0000-0000-0000-000000000000");
+  const { error: errMedia } = await supabase
+    .from("media_assets")
+    .update({
+      archived_at: now,
+    })
+    .neq("id", "00000000-0000-0000-0000-000000000000");
   if (errMedia) console.error("Error archiving media_assets:", errMedia.message);
   else console.log("✓ All media_assets archived.");
 
@@ -70,7 +86,7 @@ async function wipeProductionContent() {
   console.log("7. Cleaning storage files in 'public_media' bucket...");
   const { data: storageFiles } = await supabase.storage.from("public_media").list();
   if (storageFiles && storageFiles.length > 0) {
-    const filePaths = storageFiles.map(f => f.name);
+    const filePaths = storageFiles.map((f) => f.name);
     await supabase.storage.from("public_media").remove(filePaths);
     console.log(`✓ Removed ${filePaths.length} files from storage bucket.`);
   } else {
@@ -91,10 +107,15 @@ async function wipeProductionContent() {
   const { data: activeLinks } = await supabase.from("links").select("id").is("archived_at", null);
   console.log(`Active links in Studio: ${activeLinks?.length || 0}`);
 
-  const { data: activeMedia } = await supabase.from("media_assets").select("id").is("archived_at", null);
+  const { data: activeMedia } = await supabase
+    .from("media_assets")
+    .select("id")
+    .is("archived_at", null);
   console.log(`Active media assets: ${activeMedia?.length || 0}`);
 
-  const { count: clicksCount } = await supabase.from("click_events").select("*", { count: "exact", head: true });
+  const { count: clicksCount } = await supabase
+    .from("click_events")
+    .select("*", { count: "exact", head: true });
   console.log(`Click events remaining: ${clicksCount || 0}`);
 
   const { data: admins } = await supabase.from("admin_users").select("id, email, is_active");

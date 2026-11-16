@@ -12,7 +12,17 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Kết quả chạy Playwright
+    "test-results/**",
+    "playwright-report/**",
   ]),
+  {
+    // Script tiện ích chạy trực tiếp bằng Node dạng CommonJS: require() là cách import hợp lệ
+    files: ["scripts/**/*.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

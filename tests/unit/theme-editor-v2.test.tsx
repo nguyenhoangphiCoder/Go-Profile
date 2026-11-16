@@ -82,7 +82,11 @@ describe("chuyển cấu hình sang v2", () => {
   });
 
   it("toV2Config giữ nguyên overrides v2 hiện có", () => {
-    const cfg = { preset: "minimal-light", version: 2, overrides: { spacing: { density: "spacious" as const } } };
+    const cfg = {
+      preset: "minimal-light",
+      version: 2,
+      overrides: { spacing: { density: "spacious" as const } },
+    };
     expect(resolveThemeTokens(toV2Config(cfg))).toEqual(resolveThemeTokens(cfg));
   });
 });
@@ -98,9 +102,16 @@ describe("schema mẫu giao diện đã lưu", () => {
   });
 
   it("chặn preset lạ, tên rỗng và trường thừa", () => {
-    expect(themePresetConfigSchema.safeParse({ preset: "hack", version: 2, overrides: {} }).success).toBe(false);
     expect(
-      themePresetConfigSchema.safeParse({ preset: "go-original", version: 2, overrides: {}, custom: {} }).success
+      themePresetConfigSchema.safeParse({ preset: "hack", version: 2, overrides: {} }).success
+    ).toBe(false);
+    expect(
+      themePresetConfigSchema.safeParse({
+        preset: "go-original",
+        version: 2,
+        overrides: {},
+        custom: {},
+      }).success
     ).toBe(false);
     expect(
       saveThemePresetSchema.safeParse({
@@ -115,9 +126,12 @@ describe("useUndoHistory", () => {
   it("gom thay đổi liên tiếp, hoàn tác và làm lại", () => {
     vi.useFakeTimers();
     const apply = vi.fn();
-    const { result, rerender } = renderHook(({ s }) => useUndoHistory(s, apply, { debounceMs: 300 }), {
-      initialProps: { s: { v: 0 } },
-    });
+    const { result, rerender } = renderHook(
+      ({ s }) => useUndoHistory(s, apply, { debounceMs: 300 }),
+      {
+        initialProps: { s: { v: 0 } },
+      }
+    );
 
     const s1 = { v: 1 };
     rerender({ s: s1 });
@@ -142,9 +156,12 @@ describe("useUndoHistory", () => {
   it("thay đổi mới sau khi hoàn tác xoá nhánh làm lại", () => {
     vi.useFakeTimers();
     const apply = vi.fn();
-    const { result, rerender } = renderHook(({ s }) => useUndoHistory(s, apply, { debounceMs: 100 }), {
-      initialProps: { s: { v: 0 } },
-    });
+    const { result, rerender } = renderHook(
+      ({ s }) => useUndoHistory(s, apply, { debounceMs: 100 }),
+      {
+        initialProps: { s: { v: 0 } },
+      }
+    );
     rerender({ s: { v: 1 } });
     act(() => {
       vi.advanceTimersByTime(100);

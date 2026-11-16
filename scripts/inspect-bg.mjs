@@ -19,7 +19,7 @@ async function main() {
           class: el.className,
           bgImage: cs.backgroundImage,
           filter: cs.filter,
-          styleAttr: el.getAttribute("style")
+          styleAttr: el.getAttribute("style"),
         });
       }
       for (const child of el.children) {
