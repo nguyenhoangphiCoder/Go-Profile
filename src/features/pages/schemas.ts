@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { isReservedSlug } from "@/config/reserved-slugs";
+import {
+  BLOCK_PAYLOAD_SCHEMAS,
+  BLOCK_TYPES,
+  MAX_BLOCK_PAYLOAD_BYTES,
+} from "@/features/renderer/blocks/payload-schemas";
 
 // Regex kiểm tra slug: chỉ gồm chữ thường a-z, 0-9, dấu chấm (.) và dấu gạch nối (-), không có ký tự phân cách liên tiếp hoặc ở đầu/cuối
 export const SLUG_REGEX = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
@@ -57,23 +62,37 @@ export const linkPlacementSchema = z.object({
   mediaOverrideId: pgUuid().optional().nullable(),
 });
 
-export const blockSchema = z.object({
-  id: z.string(),
-  type: z.enum([
-    "header",
-    "image",
-    "heading",
-    "text",
-    "link_list",
-    "social_icons",
-    "spacer",
-    "divider",
-  ]),
-  position: z.number().int().min(0),
-  isVisible: z.boolean().default(true),
-  payload: z.record(z.string(), z.any()),
-  placements: z.array(linkPlacementSchema).optional(),
-});
+export const blockSchema = z
+  .object({
+    id: z.string(),
+    type: z.enum(BLOCK_TYPES),
+    position: z.number().int().min(0),
+    isVisible: z.boolean().default(true),
+    payload: z.record(z.string(), z.any()),
+    placements: z.array(linkPlacementSchema).optional(),
+  })
+  .superRefine((block, ctx) => {
+    // Kiểm tra payload theo đúng loại khối (khai báo trong renderer/blocks/payload-schemas.ts)
+    const payloadSchema = BLOCK_PAYLOAD_SCHEMAS[block.type];
+    if (!payloadSchema || !block.payload) return;
+    const result = payloadSchema.safeParse(block.payload);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["payload", ...issue.path.map((p) => (typeof p === "symbol" ? String(p) : p))],
+          message: `Dữ liệu khối "${block.type}" không hợp lệ: ${issue.message}`,
+        });
+      }
+    }
+    if (JSON.stringify(block.payload).length > MAX_BLOCK_PAYLOAD_BYTES) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["payload"],
+        message: "Nội dung khối quá lớn",
+      });
+    }
+  });
 
 export const saveDraftSchema = z.object({
   pageId: pgUuid("ID trang không hợp lệ"),
@@ -96,7 +115,7 @@ export const saveDraftSchema = z.object({
       ogImageMediaId: pgUuid().optional().nullable(),
     })
     .default({}),
-  blocks: z.array(blockSchema),
+  blocks: z.array(blockSchema).max(200, "Một trang tối đa 200 khối nội dung"),
 });
 
 export type SaveDraftInput = z.infer<typeof saveDraftSchema>;
