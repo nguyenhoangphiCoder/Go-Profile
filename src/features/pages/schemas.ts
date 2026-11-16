@@ -5,6 +5,12 @@ import {
   BLOCK_TYPES,
   MAX_BLOCK_PAYLOAD_BYTES,
 } from "@/features/renderer/blocks/payload-schemas";
+import {
+  isSafeColor,
+  isSafeImageUrl,
+  parseLegacyGradient,
+  themeOverridesSchema,
+} from "@/config/theme-tokens";
 
 // Regex kiểm tra slug: chỉ gồm chữ thường a-z, 0-9, dấu chấm (.) và dấu gạch nối (-), không có ký tự phân cách liên tiếp hoặc ở đầu/cuối
 export const SLUG_REGEX = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
@@ -94,6 +100,38 @@ export const blockSchema = z
     }
   });
 
+/**
+ * Theme v1 (`custom`): giá trị màu/ảnh/gradient không hợp lệ (ví dụ mã màu đang gõ dở) được
+ * bỏ đi thay vì làm hỏng cả lần lưu; giá trị hợp lệ được giữ nguyên.
+ */
+const dropInvalid = <T extends z.ZodType>(schema: T) => schema.optional().catch(undefined);
+const legacyColor = dropInvalid(z.string().refine(isSafeColor));
+
+const legacyThemeCustomSchema = z
+  .object({
+    accentColor: legacyColor,
+    backgroundColor: legacyColor,
+    textColor: legacyColor,
+    cardBackground: legacyColor,
+    cardTextColor: legacyColor,
+    cardBorderColor: legacyColor,
+    backgroundGradient: dropInvalid(
+      z.string().refine((v) => parseLegacyGradient(v) !== null)
+    ),
+    backgroundImage: dropInvalid(z.string().refine(isSafeImageUrl)),
+    backgroundBlur: dropInvalid(z.union([z.boolean(), z.string().max(16)])),
+    backgroundVariant: dropInvalid(
+      z.enum(["glass", "frosted-dark", "frosted-warm", "frosted-light", "default"])
+    ),
+    cardBackdropBlur: dropInvalid(z.boolean()),
+    borderRadius: dropInvalid(z.enum(["none", "sm", "md", "full"])),
+    fontFamily: dropInvalid(z.enum(["inter", "be-vietnam-pro", "montserrat"])),
+  })
+  .strip()
+  .transform((obj) =>
+    Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined))
+  );
+
 export const saveDraftSchema = z.object({
   pageId: pgUuid("ID trang không hợp lệ"),
   draftId: pgUuid("ID bản nháp không hợp lệ").optional(),
@@ -105,8 +143,10 @@ export const saveDraftSchema = z.object({
     .max(100, "Tiêu đề trang tối đa 100 ký tự"),
   description: z.string().trim().max(300).optional().nullable(),
   theme: z.object({
-    preset: z.string().min(1, "Vui lòng chọn giao diện (theme)"),
-    custom: z.record(z.string(), z.any()).optional(),
+    preset: z.string().min(1, "Vui lòng chọn giao diện (theme)").max(64),
+    custom: legacyThemeCustomSchema.optional(),
+    version: z.literal(2).optional(),
+    overrides: themeOverridesSchema.optional(),
   }),
   seo: z
     .object({

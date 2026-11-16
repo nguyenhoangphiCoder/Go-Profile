@@ -2,6 +2,7 @@ import Image from "next/image";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { resolveMediaUrl } from "../media";
 import type { BlockRenderProps } from "../types";
+import { HEADING_STYLE } from "../primitives";
 
 export function HeaderBlock({ block, ctx }: BlockRenderProps) {
   const payload = block.payload as {
@@ -10,7 +11,8 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
     avatarUrl?: string;
     bannerUrl?: string;
   };
-  const { theme, variant } = ctx;
+  const { variant } = ctx;
+  const accent = "var(--gp-accent)";
   const displayTitle = payload.title || ctx.pageTitle || "";
   const avatarUrl = resolveMediaUrl(payload.avatarUrl);
   const bannerUrl = resolveMediaUrl(payload.bannerUrl);
@@ -97,7 +99,7 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
 
         {payload.bio && (
           <div className="mt-3 space-y-2 text-[14px] @min-[40rem]:text-[15px] leading-[1.7] text-neutral-300 text-center max-w-[580px] mx-auto">
-            {renderLnkBioFormattedText(payload.bio, "center", theme.accentColor)}
+            {renderLnkBioFormattedText(payload.bio, "center", accent)}
           </div>
         )}
       </div>
@@ -141,16 +143,16 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
 
       {displayTitle && (
         <h1
-          className="text-[16px] @min-[40rem]:text-[18px] font-bold uppercase tracking-[1px] text-center mt-2.5"
-          style={{ color: theme.textColor }}
+          className="text-[16px] @min-[40rem]:text-[18px] tracking-[1px] text-center mt-2.5"
+          style={HEADING_STYLE}
         >
           {displayTitle}
         </h1>
       )}
 
       {payload.bio && (
-        <div className="mt-4 space-y-3 text-[14px] leading-[1.6] tracking-[0.5px] text-center max-w-[620px] mx-auto">
-          {renderLnkBioFormattedText(payload.bio, "center", theme.accentColor)}
+        <div className="mt-4 space-y-3 text-(length:--gp-base-size) leading-[1.6] tracking-[0.5px] text-center max-w-[620px] mx-auto">
+          {renderLnkBioFormattedText(payload.bio, "center", accent)}
         </div>
       )}
     </div>

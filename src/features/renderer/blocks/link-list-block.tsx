@@ -1,11 +1,13 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
+import { buttonStyle } from "@/config/theme-tokens";
 import { resolveMediaUrl } from "../media";
-import { MoreDotsIcon, PageLink, pillRadiusClass, splitLabel } from "../primitives";
+import { MoreDotsIcon, PageLink, splitLabel } from "../primitives";
 import type { BlockRenderProps } from "../types";
 
 export function LinkListBlock({ block, ctx }: BlockRenderProps) {
   const links = block.links;
-  const { theme, variant } = ctx;
+  const { tokens, variant } = ctx;
 
   // Beacons Portrait: từng nút viên thuốc viền trắng
   if (variant === "beacons-portrait") {
@@ -107,16 +109,17 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
     );
   }
 
-  // Chuẩn Lnk.Bio: nút viên thuốc theo màu thẻ của theme
+  // Chuẩn Lnk.Bio: nút theo token (màu thẻ, bo góc, viền, bóng, kiểu nút)
   const isGrid = (block.payload as { layout?: string }).layout === "grid";
-  const isGlass = Boolean(theme.cardBackdropBlur);
+  const isGlass = tokens.button.variant === "glass";
+  const style = buttonStyle(tokens);
 
   return (
     <div
       className={
         isGrid
-          ? "w-full max-w-[620px] mx-auto grid grid-cols-2 gap-3 mt-[21px]"
-          : "w-full max-w-[620px] mx-auto space-y-[21px] mt-[21px]"
+          ? "w-full max-w-(--gp-max-w) mx-auto grid grid-cols-2 gap-3 mt-(--gp-gap)"
+          : "w-full max-w-(--gp-max-w) mx-auto flex flex-col gap-(--gp-gap) mt-(--gp-gap)"
       }
     >
       {links.map((link) => {
@@ -127,18 +130,10 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
             key={link.id}
             ctx={ctx}
             link={link}
-            className={`group relative flex items-center justify-center w-full h-[64px] min-h-[64px] px-4 transition-all duration-200 hover:brightness-110 active:scale-[0.99] shadow-sm select-none ${pillRadiusClass(
-              theme.borderRadius
-            )} ${isGlass ? "backdrop-blur-xl" : ""}`}
-            style={{
-              backgroundColor: theme.cardBackground,
-              color: theme.cardTextColor,
-              border: `1.5px solid ${theme.cardBorderColor || theme.cardBackground}`,
-              textDecoration: "none",
-              boxShadow: isGlass
-                ? "0 6px 20px -2px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.15)"
-                : undefined,
-            }}
+            className={`group relative flex items-center justify-center w-full h-[64px] min-h-[64px] px-4 transition-all duration-200 hover:brightness-110 active:scale-[0.99] select-none ${
+              isGlass ? "backdrop-blur-xl" : ""
+            }`}
+            style={style}
           >
             {iconUrl && (
               <div className="absolute left-[8px] @min-[40rem]:left-[10px] w-[48px] h-[48px] rounded-full overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
@@ -154,7 +149,8 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
               </div>
             )}
             <span
-              className={`text-[14px] font-bold uppercase tracking-[0.8px] text-center leading-snug group-hover:text-[#1FBBFF] transition-colors duration-150 ${
+              style={{ textTransform: "var(--gp-text-case)" as CSSProperties["textTransform"] }}
+              className={`text-(length:--gp-base-size) font-bold tracking-[0.8px] text-center leading-snug group-hover:text-[#1FBBFF] transition-colors duration-150 ${
                 iconUrl ? "px-14 @min-[40rem]:px-16" : "px-4"
               }`}
             >

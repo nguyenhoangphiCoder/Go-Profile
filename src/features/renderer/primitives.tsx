@@ -58,16 +58,10 @@ export function splitLabel(label: string): { title: string; subtitle: string } {
   return { title, subtitle: rest.join(" ").trim() };
 }
 
-/** Lớp bo góc cho nút liên kết theo theme (mặc định "full" = viên thuốc). */
-export function pillRadiusClass(radius: RenderContext["theme"]["borderRadius"]): string {
-  switch (radius) {
-    case "none":
-      return "rounded-none";
-    case "sm":
-      return "rounded-xl";
-    case "md":
-      return "rounded-2xl";
-    default:
-      return "rounded-full";
-  }
-}
+/** Kiểu chữ tiêu đề (bố cục standard) lấy từ token typography. */
+export const HEADING_STYLE: CSSProperties = {
+  color: "var(--gp-text)",
+  fontFamily: "var(--gp-font-heading)",
+  fontWeight: "var(--gp-heading-weight)" as CSSProperties["fontWeight"],
+  textTransform: "var(--gp-text-case)" as CSSProperties["textTransform"],
+};

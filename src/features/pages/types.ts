@@ -1,4 +1,5 @@
 import type { ThemePreset } from "@/config/themes";
+import type { ThemeOverrides } from "@/config/theme-tokens";
 
 export type PageStatus = "published" | "unpublished";
 export type RevisionState = "draft" | "sealed";
@@ -86,7 +87,11 @@ export interface EditorBlockItem {
 
 export interface PageThemeConfig {
   preset: string;
+  /** v1: ghi đè dạng phẳng (vẫn được đọc và tự chuyển sang token). */
   custom?: Partial<ThemePreset>;
+  /** v2: ghi đè theo nhóm token, xem `src/config/theme-tokens.ts`. */
+  version?: 2;
+  overrides?: ThemeOverrides;
 }
 
 export interface PageSeoConfig {

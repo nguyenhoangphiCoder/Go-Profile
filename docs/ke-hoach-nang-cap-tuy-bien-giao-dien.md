@@ -257,11 +257,18 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 
 ### Giai đoạn 2 — Theme v2 và CSS variables (≈ 4–5 ngày)
 
-- [ ] Định nghĩa `ThemeTokensV2` + zod schema `.strict()`.
-- [ ] Viết `themeToCssVars()` và chuyển component sang dùng `var(--gp-*)`.
-- [ ] Viết `migrateThemeV1toV2()` và script chuyển đổi dữ liệu (chạy thử trên bản backup production).
-- [ ] Chuyển 3 preset hiện có sang v2; bổ sung các preset đã nêu trong phạm vi v1 nhưng chưa làm (Minimalist Light, Modern Clean, Vibrant Contrast).
-- [ ] Tăng `schema_version` lên 2 cho revision mới.
+- [x] Định nghĩa token v2 + zod schema `.strict()` trong [theme-tokens.ts](../src/config/theme-tokens.ts) (16/11/2026).
+- [x] Viết `themeToCssVars()`; bố cục standard dùng `var(--gp-*)` cho màu, nền, font, cỡ chữ, bo góc, viền, bóng, kiểu nút, khoảng cách, độ rộng.
+- [x] Chuyển đổi v1 -> v2 **khi đọc** (`resolveThemeTokens`), không cần script migration database: dữ liệu cũ giữ nguyên, revision đã xuất bản vẫn hiển thị đúng.
+- [x] 3 preset hiện có sinh token tự động từ `THEME_PRESETS` (một nguồn định nghĩa).
+- [x] Server kiểm tra theme khi lưu: v1 `custom` bỏ giá trị sai (không chặn lưu), v2 `overrides` chặn mọi giá trị/trường lạ.
+- [x] Nạp thêm font Montserrat (không preload).
+- [ ] Bổ sung preset mới (Minimalist Light, Modern Clean, Vibrant Contrast) — làm cùng thư viện mẫu ở giai đoạn 3.
+- [ ] Theme editor ghi `version: 2` + `overrides` — làm ở giai đoạn 3 khi viết lại editor.
+
+**Giới hạn hiện tại:** hai bố cục Beacons (`beacons-card`, `beacons-portrait`) vẫn giữ màu cố định theo mẫu gốc; token chỉ tác động font chữ và màu nhấn ở hai bố cục này.
+
+**Thay đổi hiển thị có chủ đích:** ở preset có gradient (go-original), khi người dùng đã chọn "Màu nền trang" riêng thì trang dùng màu đó (trước đây gradient che mất nên tuỳ chọn này không có tác dụng).
 
 ### Giai đoạn 3 — Editor tùy biến (≈ 6–8 ngày)
 

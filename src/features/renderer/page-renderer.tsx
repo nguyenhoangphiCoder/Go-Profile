@@ -1,61 +1,57 @@
 import type { CSSProperties } from "react";
-import { resolveTheme, type ThemePreset } from "@/config/themes";
-import type { PageThemeConfig } from "@/features/pages/types";
+import {
+  resolveThemeTokens,
+  themeToCssVars,
+  type ThemeConfigInput,
+  type ThemeTokens,
+} from "@/config/theme-tokens";
 import { getBlockDefinition } from "./blocks/registry";
-import type { LayoutVariant, RenderBlock, RenderContext, RenderMode } from "./types";
+import type { RenderBlock, RenderContext, RenderMode } from "./types";
 
 interface PageRendererProps {
   title: string;
-  theme: PageThemeConfig | null | undefined;
+  theme: ThemeConfigInput | null | undefined;
   blocks: RenderBlock[];
   mode: RenderMode;
 }
 
-export function getLayoutVariant(theme: ThemePreset): LayoutVariant {
-  if (theme.id === "beacons-dark-card") return "beacons-card";
-  if (theme.id === "beacons-portrait-card") return "beacons-portrait";
-  return "standard";
-}
-
-function rootBackground(theme: ThemePreset, variant: LayoutVariant): string {
-  if (variant === "beacons-card") {
-    return "radial-gradient(ellipse at 50% 28%, #7e8388 0%, #61656a 45%, #464a4e 80%, #323538 100%)";
-  }
-  if (variant === "beacons-portrait") return "#101010";
-  return theme.backgroundGradient || theme.backgroundColor || "#171919";
-}
+const BEACONS_CARD_BG =
+  "radial-gradient(ellipse at 50% 28%, #7e8388 0%, #61656a 45%, #464a4e 80%, #323538 100%)";
 
 /**
  * Bộ render trang dùng chung cho trang công khai và bản xem trước trong editor.
  *
- * Bố cục đáp ứng dùng container query (`@min-[40rem]:` thay cho `sm:`), nên khung xem trước
- * 375px trong editor hiển thị đúng như trên điện thoại thật dù màn hình admin rộng.
- * Lớp nền cố định nằm ngoài phần tử `@container` vì container query tạo containing block mới,
- * sẽ làm `position: fixed` bám theo trang thay vì theo màn hình.
+ * - Giao diện lấy từ token v2 (`resolveThemeTokens`), đưa xuống component qua biến CSS `--gp-*`.
+ * - Bố cục đáp ứng dùng container query (`@min-[40rem]:` thay cho `sm:`), nên khung xem trước
+ *   375px trong editor hiển thị đúng như trên điện thoại thật dù màn hình admin rộng.
+ * - Lớp nền cố định nằm ngoài phần tử `@container` vì container query tạo containing block mới,
+ *   sẽ làm `position: fixed` bám theo trang thay vì theo màn hình.
  */
-export function PageRenderer({ title, theme: themeConfig, blocks, mode }: PageRendererProps) {
-  const theme = resolveTheme(themeConfig);
-  const variant = getLayoutVariant(theme);
+export function PageRenderer({ title, theme, blocks, mode }: PageRendererProps) {
+  const tokens = resolveThemeTokens(theme);
+  const variant = tokens.layout;
   const isAnyBeacons = variant !== "standard";
-  const ctx: RenderContext = { mode, theme, variant, pageTitle: title };
+  const ctx: RenderContext = { mode, tokens, variant, pageTitle: title };
   const layerPosition = mode === "public" ? "fixed" : "absolute";
 
   const rootStyle: CSSProperties = {
-    background: rootBackground(theme, variant),
-    color: theme.textColor || "#CBD0D5",
+    ...themeToCssVars(tokens),
+    background:
+      variant === "beacons-card"
+        ? BEACONS_CARD_BG
+        : variant === "beacons-portrait"
+          ? "#101010"
+          : "var(--gp-bg)",
+    color: "var(--gp-text)",
     letterSpacing: "0.5px",
-    fontFamily:
-      theme.fontFamily === "inter"
-        ? "var(--font-inter), sans-serif"
-        : "var(--font-be-vietnam-pro), sans-serif",
+    fontFamily: "var(--gp-font-body)",
   };
 
-  const hasFrostedLayer =
-    variant === "standard" && Boolean(theme.backgroundBlur || theme.backgroundVariant);
+  const hasFrostedLayer = variant === "standard" && tokens.background.effect !== "none";
 
   return (
     <div
-      className={`${mode === "public" ? "min-h-screen" : "min-h-full"} w-full relative select-none font-sans`}
+      className={`${mode === "public" ? "min-h-screen" : "min-h-full"} w-full relative select-none`}
       style={rootStyle}
     >
       {variant === "beacons-portrait" && (
@@ -66,14 +62,14 @@ export function PageRenderer({ title, theme: themeConfig, blocks, mode }: PageRe
           <div
             className="absolute -inset-10 bg-cover bg-center filter blur-[60px] sm:blur-[85px] brightness-[0.7] transform scale-115"
             style={{
-              backgroundImage: `url(${theme.backgroundImage || "/gogang-bg-source.png"})`,
+              backgroundImage: `url(${tokens.background.imageUrl || "/gogang-bg-source.png"})`,
             }}
           />
           <div className="absolute inset-0 bg-black/40" />
         </div>
       )}
 
-      {hasFrostedLayer && <FrostedLayer theme={theme} position={layerPosition} />}
+      {hasFrostedLayer && <FrostedLayer effect={tokens.background.effect} position={layerPosition} />}
 
       <div className="@container relative z-10 w-full">
         <div
@@ -87,7 +83,7 @@ export function PageRenderer({ title, theme: themeConfig, blocks, mode }: PageRe
             className={
               isAnyBeacons
                 ? "w-full max-w-[680px] @min-[40rem]:max-w-[720px] mx-auto bg-[#101010] text-white rounded-[28px] @min-[40rem]:rounded-[36px] p-4 @min-[40rem]:p-7 pb-10 @min-[40rem]:pb-12 border border-white/10 my-4 @min-[40rem]:my-8 relative z-10 flex flex-col gap-6"
-                : "w-full max-w-[620px] mx-auto flex flex-col"
+                : "w-full max-w-(--gp-max-w) mx-auto flex flex-col"
             }
             style={
               isAnyBeacons
@@ -131,14 +127,20 @@ export function PageRenderer({ title, theme: themeConfig, blocks, mode }: PageRe
   );
 }
 
-/** Nền "kính mờ" (các đốm màu nhòe) khi theme bật backgroundBlur / backgroundVariant. */
-function FrostedLayer({ theme, position }: { theme: ThemePreset; position: "fixed" | "absolute" }) {
+/** Nền "kính mờ" (các đốm màu nhòe) khi token background.effect khác "none". */
+function FrostedLayer({
+  effect,
+  position,
+}: {
+  effect: ThemeTokens["background"]["effect"];
+  position: "fixed" | "absolute";
+}) {
   return (
     <div
       className={`${position} inset-0 z-0 pointer-events-none overflow-hidden`}
       aria-hidden="true"
     >
-      {theme.backgroundVariant === "frosted-warm" ? (
+      {effect === "frosted-warm" ? (
         <>
           <div className="absolute -top-[10%] left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-amber-600/30 blur-[70px]" />
           <div className="absolute top-[35%] -left-[10%] w-60 h-60 rounded-full bg-yellow-700/25 blur-[70px]" />
@@ -146,7 +148,7 @@ function FrostedLayer({ theme, position }: { theme: ThemePreset; position: "fixe
           <div className="absolute -bottom-[10%] left-[20%] w-72 h-72 rounded-full bg-stone-900/70 blur-[80px]" />
           <div className="absolute inset-0 bg-radial from-transparent via-black/25 to-black/60" />
         </>
-      ) : theme.backgroundVariant === "frosted-light" ? (
+      ) : effect === "frosted-light" ? (
         <>
           <div className="absolute -top-[10%] left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-sky-200/60 blur-[60px]" />
           <div className="absolute top-[30%] -left-[10%] w-64 h-64 rounded-full bg-amber-100/70 blur-[60px]" />

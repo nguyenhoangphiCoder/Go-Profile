@@ -2,7 +2,7 @@ import Image from "next/image";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { resolveSmartIcon } from "@/features/public/components/brand-icons";
 import { resolveMediaUrl } from "../media";
-import { PageLink } from "../primitives";
+import { HEADING_STYLE, PageLink } from "../primitives";
 import type { BlockRenderProps } from "../types";
 
 export function SocialIconsBlock({ block, ctx }: BlockRenderProps) {
@@ -64,7 +64,6 @@ export function HeadingBlock({ block, ctx }: BlockRenderProps) {
   const payload = block.payload as { text?: string; level?: number };
   const level = payload.level || 1;
   const isCard = ctx.variant === "beacons-card";
-  const color = isCard ? "#FFFFFF" : ctx.theme.textColor;
 
   const sizeClass =
     level === 1
@@ -79,12 +78,14 @@ export function HeadingBlock({ block, ctx }: BlockRenderProps) {
           ? "text-[13px] @min-[40rem]:text-[14px] text-white leading-snug whitespace-pre-line"
           : "text-[13px] @min-[40rem]:text-[15px]";
 
-  const className = `font-bold uppercase tracking-[0.5px] ${sizeClass}`;
+  const className = isCard
+    ? `font-bold uppercase tracking-[0.5px] ${sizeClass}`
+    : `tracking-[0.5px] ${sizeClass}`;
   const Tag = level === 1 ? "h2" : level === 2 ? "h3" : "h4";
 
   return (
     <div className={isCard ? "mt-2 mb-1 text-center w-full" : "mt-[28px] mb-[6px] text-center w-full"}>
-      <Tag className={className} style={{ color }}>
+      <Tag className={className} style={isCard ? { color: "#FFFFFF" } : HEADING_STYLE}>
         {payload.text}
       </Tag>
     </div>
@@ -100,13 +101,13 @@ export function TextBlock({ block, ctx }: BlockRenderProps) {
       className={
         isCard
           ? "space-y-3 text-[13px] @min-[40rem]:text-[14px] leading-[1.65] w-full text-neutral-300"
-          : "mt-[14px] space-y-2 text-[14px] leading-[1.6] tracking-[0.5px] w-full max-w-[620px] mx-auto"
+          : "mt-[14px] space-y-2 text-(length:--gp-base-size) leading-[1.6] tracking-[0.5px] w-full max-w-(--gp-max-w) mx-auto"
       }
     >
       {renderLnkBioFormattedText(
         payload.content || "",
         payload.align || (isCard ? "left" : "center"),
-        ctx.theme.accentColor
+        "var(--gp-accent)"
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import type { ThemePreset } from "@/config/themes";
+import type { ThemeTokens } from "@/config/theme-tokens";
 import type { BlockType } from "@/features/pages/types";
 
 /**
@@ -24,12 +24,12 @@ export interface RenderBlock {
 /** "public": trang thật (link có href, ảnh ưu tiên tải). "preview": khung xem trước trong editor. */
 export type RenderMode = "public" | "preview";
 
-/** Biến thể bố cục do preset quyết định. */
-export type LayoutVariant = "standard" | "beacons-card" | "beacons-portrait";
+/** Biến thể bố cục (token `layout`). */
+export type LayoutVariant = ThemeTokens["layout"];
 
 export interface RenderContext {
   mode: RenderMode;
-  theme: ThemePreset;
+  tokens: ThemeTokens;
   variant: LayoutVariant;
   pageTitle: string;
 }

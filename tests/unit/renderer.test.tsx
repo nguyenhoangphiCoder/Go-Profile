@@ -151,8 +151,10 @@ describe("PageRenderer", () => {
       />
     );
     const link = container.querySelector("a")!;
-    expect(link.className).toContain("rounded-xl");
+    expect(link.style.borderRadius).toBe("var(--gp-radius)");
     expect(link.parentElement!.className).toContain("grid-cols-2");
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.getPropertyValue("--gp-radius")).toBe("0.75rem");
   });
 
   it.each(["go-original", "beacons-dark-card", "beacons-portrait-card"])(
