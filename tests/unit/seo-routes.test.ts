@@ -28,10 +28,15 @@ import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 
 beforeEach(() => {
+  tables.workspaces = [
+    { id: "ws-ok", archived_at: null },
+    { id: "ws-luu-tru", archived_at: "2026-11-17" },
+  ];
   tables.pages = [
     {
       id: "p1",
       status: "published",
+      workspace_id: "ws-ok",
       archived_at: null,
       published_revision_id: "r1",
       updated_at: "2026-11-10T00:00:00Z",
@@ -39,6 +44,7 @@ beforeEach(() => {
     {
       id: "p2",
       status: "unpublished",
+      workspace_id: "ws-ok",
       archived_at: null,
       published_revision_id: null,
       updated_at: "2026-11-10T00:00:00Z",
@@ -46,6 +52,7 @@ beforeEach(() => {
     {
       id: "p3",
       status: "published",
+      workspace_id: "ws-ok",
       archived_at: "2026-11-01",
       published_revision_id: "r3",
       updated_at: "2026-11-10T00:00:00Z",
@@ -53,16 +60,26 @@ beforeEach(() => {
     {
       id: "p4",
       status: "published",
+      workspace_id: "ws-ok",
       archived_at: null,
       published_revision_id: "r4",
       updated_at: "2026-11-12T00:00:00Z",
     },
   ];
+  tables.pages.push({
+    id: "p5",
+    status: "published",
+    workspace_id: "ws-luu-tru",
+    archived_at: null,
+    published_revision_id: "r5",
+    updated_at: "2026-11-12T00:00:00Z",
+  });
   tables.page_slugs = [
     { page_id: "p1", slug: "gocafe", is_current: true },
     { page_id: "p1", slug: "gocafe-cu", is_current: false },
     { page_id: "p3", slug: "da-luu-tru", is_current: true },
     { page_id: "p4", slug: "tuyen-dung", is_current: true },
+    { page_id: "p5", slug: "workspace-da-luu-tru", is_current: true },
   ];
 });
 

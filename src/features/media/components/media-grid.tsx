@@ -13,10 +13,13 @@ const MediaUploadModal = dynamic(
 );
 
 interface MediaGridProps {
+  /** false với người xem (viewer): ẩn các thao tác sửa — server cũng chặn. */
+  canEdit?: boolean;
+
   initialAssets: MediaAssetItem[];
 }
 
-export function MediaGrid({ initialAssets }: MediaGridProps) {
+export function MediaGrid({ initialAssets, canEdit = true }: MediaGridProps) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -88,13 +91,15 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
           />
         </div>
 
-        <button
-          onClick={() => setIsUploadOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Tải ảnh mới</span>
-        </button>
+        {canEdit && (
+          <button
+            onClick={() => setIsUploadOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tải ảnh mới</span>
+          </button>
+        )}
       </div>
 
       {/* Grid */}
@@ -178,18 +183,20 @@ export function MediaGrid({ initialAssets }: MediaGridProps) {
                       )}
                     </button>
 
-                    <button
-                      onClick={() => handleDelete(asset)}
-                      disabled={asset.isReferenced}
-                      className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center -mr-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                      title={
-                        asset.isReferenced
-                          ? "Không thể xóa ảnh đang được sử dụng"
-                          : "Xóa ảnh khỏi kho lưu trữ"
-                      }
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => handleDelete(asset)}
+                        disabled={asset.isReferenced}
+                        className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center -mr-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        title={
+                          asset.isReferenced
+                            ? "Không thể xóa ảnh đang được sử dụng"
+                            : "Xóa ảnh khỏi kho lưu trữ"
+                        }
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

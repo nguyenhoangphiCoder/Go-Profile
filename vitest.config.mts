@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
+    // Test database (PGlite) chạy song song làm máy bận: test giao diện có thể vượt 5 giây mặc định
+    testTimeout: 20_000,
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}", "tests/**/*.{test,spec}.{ts,tsx}"],
