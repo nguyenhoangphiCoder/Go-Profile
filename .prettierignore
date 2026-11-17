@@ -1,0 +1,5 @@
+# File do pnpm tự sinh — không định dạng bằng Prettier
+pnpm-lock.yaml
+
+# File tạm của Supabase CLI trên máy (không commit)
+supabase/.temp/
