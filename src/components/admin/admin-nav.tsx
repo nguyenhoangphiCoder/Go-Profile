@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FileText, Link2, Image, BarChart3 } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  Link2,
+  Image,
+  BarChart3,
+  Users,
+  ShieldCheck,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -34,12 +42,26 @@ const NAV_ITEMS = [
   },
 ];
 
-export function AdminNav() {
+/** Mục chỉ hiện theo quyền: Thành viên (owner), Quản trị hệ thống (quản trị hệ thống). */
+const MEMBERS_ITEM = { name: "Thành viên", href: "/admin/members", icon: Users };
+const SYSTEM_ITEM = { name: "Quản trị hệ thống", href: "/admin/system", icon: ShieldCheck };
+
+export interface AdminNavProps {
+  showMembers?: boolean;
+  showSystem?: boolean;
+}
+
+export function AdminNav({ showMembers = false, showSystem = false }: AdminNavProps) {
   const pathname = usePathname();
+  const items: { name: string; href: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
+    ...NAV_ITEMS,
+    ...(showMembers ? [MEMBERS_ITEM] : []),
+    ...(showSystem ? [SYSTEM_ITEM] : []),
+  ];
 
   return (
     <nav className="space-y-1">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         const isActive = item.exact
           ? pathname === item.href

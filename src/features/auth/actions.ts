@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { safeRedirectPath } from "@/lib/utils";
 import { loginSchema } from "./schemas";
+import { acceptPendingInvitations } from "@/features/workspace/invitations";
 import type { AuthState } from "./types";
 
 export async function loginAction(_prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -39,19 +40,29 @@ export async function loginAction(_prevState: AuthState, formData: FormData): Pr
       };
     }
 
-    // 2. Kiểm tra phân quyền admin_users
-    const { data: adminRecord, error: adminError } = await supabase
-      .from("admin_users")
-      .select("user_id, is_active")
-      .eq("user_id", authData.user.id)
-      .single();
+    // 2. Nhận các lời mời workspace đang chờ (nếu có) rồi kiểm tra quyền vào khu vực quản trị:
+    //    quản trị hệ thống (admin_users) hoặc thành viên của ít nhất một workspace
+    await acceptPendingInvitations();
 
-    if (adminError || !adminRecord || !adminRecord.is_active) {
-      // Thu hồi phiên đăng nhập ngay lập tức nếu không phải admin
+    const [{ data: adminRecord }, { count: membershipCount }] = await Promise.all([
+      supabase
+        .from("admin_users")
+        .select("user_id, is_active")
+        .eq("user_id", authData.user.id)
+        .maybeSingle(),
+      supabase
+        .from("workspace_members")
+        .select("workspace_id", { count: "exact", head: true })
+        .eq("user_id", authData.user.id),
+    ]);
+
+    if (!adminRecord?.is_active && !membershipCount) {
+      // Thu hồi phiên đăng nhập ngay nếu không có quyền vào khu vực quản trị
       await supabase.auth.signOut();
       return {
         success: false,
-        error: "Tài khoản này chưa được cấp quyền quản trị hoặc đã bị vô hiệu hóa.",
+        error:
+          "Tài khoản này chưa thuộc workspace nào. Hãy nhờ chủ sở hữu workspace gửi lời mời tới email này.",
       };
     }
 

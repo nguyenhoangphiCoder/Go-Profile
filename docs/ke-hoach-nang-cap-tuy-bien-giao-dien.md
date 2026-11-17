@@ -334,10 +334,14 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 
 **5c — Lời mời & quản lý:**
 
-- [ ] Mời qua email (Supabase `inviteUserByEmail`), tự nhận lời mời khi đăng nhập bằng đúng email.
-- [ ] Trang thành viên: danh sách, đổi vai trò, xoá, thu hồi lời mời.
-- [ ] Trang quản trị hệ thống: danh sách workspace, tạo workspace + mời owner, đặt giới hạn.
+- [x] Mời qua email (Supabase `inviteUserByEmail`, link về `/auth/accept-invite` để đặt mật khẩu); lời mời tự được nhận khi đăng nhập bằng đúng email đã xác minh (RPC `accept_workspace_invitations`, [migration](../supabase/migrations/20261117000001_accept_invitations.sql)). Lời mời không bao giờ hạ quyền thành viên hiện có.
+- [x] Trang `/admin/members` (owner): mời, đổi vai trò, xoá / rời workspace, gửi lại / thu hồi lời mời. Đăng nhập mở cho thành viên workspace (trước đây chỉ quản trị hệ thống).
+- [x] Trang `/admin/system` (quản trị hệ thống): mức sử dụng từng workspace, tạo workspace + mời owner, đặt giới hạn, lưu trữ / khôi phục.
 - [x] Giới hạn dung lượng ảnh khi tải lên (làm sớm trong 5b).
+
+> **Cấu hình Supabase cần cho lời mời:** thêm `https://<domain>/auth/accept-invite` vào _Authentication → URL Configuration → Redirect URLs_; cấu hình SMTP riêng (_Authentication → Emails → SMTP_) vì SMTP mặc định của Supabase chỉ gửi tới email thành viên nhóm dự án và giới hạn vài email mỗi giờ.
+>
+> **Còn lại:** trang công khai của workspace đã lưu trữ vẫn hiển thị (chưa ẩn theo workspace); bỏ DEFAULT workspace Gờ Cafe.
 
 ---
 

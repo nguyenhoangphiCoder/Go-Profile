@@ -22,7 +22,8 @@ const SUPABASE_STUB = `
   CREATE SCHEMA IF NOT EXISTS auth;
   CREATE TABLE IF NOT EXISTS auth.users (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    email text UNIQUE
+    email text UNIQUE,
+    email_confirmed_at timestamptz DEFAULT now()
   );
   CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
   LANGUAGE sql STABLE AS $$
@@ -54,10 +55,14 @@ export async function createDb(options: { upTo?: string } = {}): Promise<PGlite>
   return db;
 }
 
-export async function createUser(db: PGlite, email: string): Promise<string> {
+export async function createUser(
+  db: PGlite,
+  email: string,
+  opts: { confirmed?: boolean } = {}
+): Promise<string> {
   const res = await db.query<{ id: string }>(
-    "INSERT INTO auth.users (email) VALUES ($1) RETURNING id",
-    [email]
+    "INSERT INTO auth.users (email, email_confirmed_at) VALUES ($1, CASE WHEN $2 THEN now() END) RETURNING id",
+    [email, opts.confirmed ?? true]
   );
   return res.rows[0].id;
 }

@@ -726,6 +726,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      accept_workspace_invitations: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
       sync_revision_media_assets: {
         Args: {
           p_revision_id: string;

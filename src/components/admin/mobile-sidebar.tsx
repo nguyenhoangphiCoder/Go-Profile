@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X, ShieldCheck } from "lucide-react";
-import { AdminNav } from "./admin-nav";
+import { AdminNav, type AdminNavProps } from "./admin-nav";
 import { LogoutButton } from "./logout-button";
 
 interface MobileSidebarProps {
@@ -14,9 +14,10 @@ interface MobileSidebarProps {
     email: string | null;
     userId: string;
   };
+  nav?: AdminNavProps;
 }
 
-export function MobileSidebar({ admin }: MobileSidebarProps) {
+export function MobileSidebar({ admin, nav }: MobileSidebarProps) {
   const pathname = usePathname();
   // Ghi nhớ trang lúc mở menu: khi điều hướng sang trang khác, pathname đổi -> menu tự đóng
   // (không cần useEffect + setState).
@@ -110,7 +111,7 @@ export function MobileSidebar({ admin }: MobileSidebarProps) {
 
               {/* Navigation */}
               <div className="flex-1 p-4 overflow-y-auto">
-                <AdminNav />
+                <AdminNav {...nav} />
               </div>
 
               {/* User Footer */}

@@ -19,6 +19,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
     email: ctx.user.email,
     displayName: ctx.user.displayName,
   };
+  const nav = { showMembers: ctx.role === "owner", showSystem: ctx.isPlatformAdmin };
   const switcher = {
     workspaces: ctx.workspaces.map((w) => ({ id: w.id, name: w.name })),
     currentId: ctx.workspace.id,
@@ -61,7 +62,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
 
         {/* Navigation Links */}
         <div className="flex-1 p-4 overflow-y-auto">
-          <AdminNav />
+          <AdminNav {...nav} />
         </div>
 
         {/* User Card */}
@@ -94,7 +95,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
         {/* Mobile Header (Fixed at top) */}
         <header className="h-16 border-b border-border/60 flex items-center justify-between px-4 md:hidden bg-card/95 backdrop-blur-md shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-2.5">
-            <MobileSidebar admin={admin} />
+            <MobileSidebar admin={admin} nav={nav} />
             <div className="max-w-[9rem]">
               <WorkspaceSwitcher {...switcher} compact />
             </div>
