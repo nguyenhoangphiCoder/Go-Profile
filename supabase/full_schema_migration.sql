@@ -1926,7 +1926,7 @@ REVOKE ALL ON FUNCTION public.accept_workspace_invitations() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.accept_workspace_invitations() TO authenticated;
 
 -- ==============================================================================
--- PHẦN 12: HOÀN THIỆN WORKSPACE (ẨN TRANG WORKSPACE ĐÃ LƯU TRỮ, BỎ DEFAULT)
+-- PHẦN 12: HOÀN THIỆN WORKSPACE (ẨN TRANG WORKSPACE ĐÃ LƯU TRỮ, ẢNH THEO WORKSPACE, BỎ DEFAULT)
 -- (nguồn: supabase/migrations/20261117000002_finish_workspaces.sql)
 -- ==============================================================================
 
@@ -1936,6 +1936,7 @@ GRANT EXECUTE ON FUNCTION public.accept_workspace_invitations() TO authenticated
 --    Hai hàm dưới đây lấy NGUYÊN VĂN định nghĩa đang chạy trên production (pg_get_functiondef,
 --    17/11/2026 — khác bản trong migration 20261106000005), chỉ thêm điều kiện workspace.
 --    CREATE OR REPLACE giữ nguyên quyền EXECUTE hiện có.
+-- 1c. Ảnh "đang dùng" chỉ tính ảnh cùng workspace với trang (xem bên dưới).
 -- 2. Bỏ DEFAULT workspace Gờ Cafe của cột workspace_id: ứng dụng (từ giai đoạn 5b) luôn truyền
 --    workspace tường minh; bản ghi thiếu workspace sẽ bị từ chối thay vì lặng lẽ vào Gờ Cafe.
 -- Chạy lại nhiều lần an toàn.
@@ -2082,6 +2083,58 @@ BEGIN
   );
 END;
 $function$;
+
+-- 1c. Ảnh "đang dùng" chỉ tính ảnh CÙNG workspace với trang (rà soát bảo mật 17/11/2026):
+--     trước đây biên tập viên workspace B có thể ghi ID / đường dẫn ảnh của workspace A vào nội
+--     dung trang để A không xoá được ảnh của chính mình.
+CREATE OR REPLACE FUNCTION private.revision_media_ids(p_revision_id uuid)
+RETURNS TABLE (media_asset_id uuid)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  WITH ws AS (
+    SELECT p.workspace_id
+    FROM public.page_revisions r
+    JOIN public.pages p ON p.id = r.page_id
+    WHERE r.id = p_revision_id
+  ),
+  strings AS (
+    SELECT s #>> '{}' AS v
+    FROM public.page_blocks b
+    CROSS JOIN LATERAL jsonb_path_query(b.payload, 'strict $.**') AS s
+    WHERE b.revision_id = p_revision_id
+      AND jsonb_typeof(s) = 'string'
+    UNION
+    SELECT s #>> '{}'
+    FROM public.page_revisions r
+    CROSS JOIN LATERAL jsonb_path_query(r.theme, 'strict $.**') AS s
+    WHERE r.id = p_revision_id
+      AND jsonb_typeof(s) = 'string'
+  )
+  SELECT ma.id
+  FROM public.media_assets ma
+  WHERE ma.workspace_id = (SELECT workspace_id FROM ws)
+    AND EXISTS (
+      SELECT 1
+      FROM strings st
+      WHERE st.v = ma.id::text
+         OR st.v = ma.object_path
+         OR st.v LIKE '%/' || ma.bucket_id || '/' || ma.object_path
+    )
+  UNION
+  SELECT m
+  FROM public.revision_link_placements pl
+  CROSS JOIN LATERAL unnest(ARRAY[pl.media_override_id, pl.resolved_media_id]) AS m
+  WHERE pl.revision_id = p_revision_id
+    AND m IS NOT NULL;
+$$;
+
+REVOKE ALL ON FUNCTION private.revision_media_ids(uuid) FROM PUBLIC, anon, authenticated;
+
+-- Đồng bộ lại chỉ mục ảnh của mọi revision theo quy tắc mới
+SELECT public.sync_revision_media_assets(id) FROM public.page_revisions;
 
 -- 2. Bỏ DEFAULT workspace_id
 ALTER TABLE public.pages ALTER COLUMN workspace_id DROP DEFAULT;

@@ -124,3 +124,38 @@ describe("bỏ DEFAULT workspace", () => {
     expect(ws.rows[0].workspace_id).toBe("00000000-0000-4000-8000-000000000001");
   });
 });
+
+describe("ảnh đang dùng chỉ tính trong cùng workspace (rà soát bảo mật)", () => {
+  it("trang workspace B nhắc tới ảnh của workspace A thì ảnh A không bị khoá xoá", async () => {
+    const mediaA = await createMedia(db, "cua-a.png"); // workspace Gờ Cafe
+    const mediaB = await db.query<{ id: string }>(
+      "SELECT id FROM public.media_assets WHERE object_path = 'b.png'"
+    );
+    const admin = (
+      await db.query<{ user_id: string }>("SELECT user_id FROM public.admin_users LIMIT 1")
+    ).rows[0].user_id;
+    const draft = await createPageWithAvatar(db, admin, {
+      slug: "trang-b-2",
+      avatarPath: "b.png",
+      workspaceId: wsB,
+    });
+    // Chèn ID + URL ảnh của workspace A vào nội dung trang của workspace B
+    await db.query(
+      `UPDATE public.page_blocks SET payload = payload || jsonb_build_object(
+         'bannerMediaId', $2::text,
+         'bannerUrl', 'https://x.supabase.co/storage/v1/object/public/public_media/cua-a.png')
+       WHERE revision_id = $1`,
+      [draft.revisionId, mediaA]
+    );
+    await db.query("SELECT public.sync_revision_media_assets($1)", [draft.revisionId]);
+
+    const used = (
+      await db.query<{ media_asset_id: string }>(
+        "SELECT media_asset_id FROM public.revision_media_assets WHERE revision_id = $1",
+        [draft.revisionId]
+      )
+    ).rows.map((r) => r.media_asset_id);
+    expect(used).toEqual([mediaB.rows[0].id]);
+    expect(used).not.toContain(mediaA);
+  });
+});
