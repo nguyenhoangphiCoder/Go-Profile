@@ -1,9 +1,12 @@
+import { requireWorkspace } from "@/features/workspace/context";
+import { hasRole } from "@/features/workspace/types";
 import { getMediaAssets } from "@/features/media/queries";
 import { MediaGrid } from "@/features/media/components/media-grid";
 
 export const instant = false;
 
 export default async function AdminMediaPage() {
+  const { role } = await requireWorkspace();
   const assets = await getMediaAssets();
 
   return (
@@ -18,7 +21,7 @@ export default async function AdminMediaPage() {
       </div>
 
       {/* Grid */}
-      <MediaGrid initialAssets={assets} />
+      <MediaGrid initialAssets={assets} canEdit={hasRole(role, "editor")} />
     </div>
   );
 }

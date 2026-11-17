@@ -330,7 +330,7 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 - [x] Chọn workspace đang làm việc (cookie `gp_ws`, chỉ nhận workspace được phép) + bộ chuyển workspace trên thanh quản trị (`src/features/workspace/`).
 - [x] Mọi truy vấn lọc theo workspace; 15 server action ghi kiểm tra vai trò (`getWorkspaceForAction`) và kiểm tra bản ghi thuộc workspace trước khi ghi bằng service role. Giới hạn dung lượng ảnh khi tải lên.
 - [x] Viewer: editor ở chế độ chỉ xem (không lưu / xuất bản), ẩn nút tạo trang trên bảng điều khiển; trang `/admin/no-workspace` cho người chưa thuộc workspace nào.
-- [ ] Bỏ DEFAULT workspace Gờ Cafe (ứng dụng đã truyền workspace tường minh; giữ DEFAULT làm lưới an toàn tới khi 5c ổn định).
+- [x] Bỏ DEFAULT workspace Gờ Cafe (migration 20261117000002).
 
 **5c — Lời mời & quản lý:**
 
@@ -341,7 +341,9 @@ Giao diện bên ngoài không thay đổi, chỉ tái cấu trúc bên trong.
 
 > **Cấu hình Supabase cần cho lời mời:** thêm `https://<domain>/auth/accept-invite` vào _Authentication → URL Configuration → Redirect URLs_; cấu hình SMTP riêng (_Authentication → Emails → SMTP_) vì SMTP mặc định của Supabase chỉ gửi tới email thành viên nhóm dự án và giới hạn vài email mỗi giờ.
 >
-> **Còn lại:** trang công khai của workspace đã lưu trữ vẫn hiển thị (chưa ẩn theo workspace); bỏ DEFAULT workspace Gờ Cafe.
+> **Hoàn thiện (17/11/2026, [migration](../supabase/migrations/20261117000002_finish_workspaces.sql)):** workspace đã lưu trữ thì trang công khai trả 404, link `/r` không chuyển hướng, bị loại khỏi sitemap; bỏ DEFAULT workspace Gờ Cafe; ẩn nút sửa ở trang Liên kết / Kho ảnh / Trang với người xem.
+>
+> **Lệch giữa production và repo:** `get_public_page` / `resolve_public_link` trên production khác bản trong migration 20261106000005 (production không kiểm tra link có nằm trong bản đang xuất bản). Migration hoàn thiện lấy nguyên văn bản production làm gốc để không đổi hành vi.
 
 ---
 

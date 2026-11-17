@@ -21,9 +21,19 @@ export async function getPublishedPages(): Promise<PublishedPageEntry[]> {
   cacheTag(PUBLIC_SITEMAP_TAG);
 
   const db = createSupabaseAdminClient();
+
+  // Trang của workspace đã lưu trữ không còn hiển thị công khai (migration 20261117000002)
+  const { data: activeWorkspaces } = await db
+    .from("workspaces")
+    .select("id")
+    .is("archived_at", null);
+  const activeWorkspaceIds = (activeWorkspaces ?? []).map((w) => w.id);
+  if (activeWorkspaceIds.length === 0) return [];
+
   const { data: pages, error } = await db
     .from("pages")
     .select("id, updated_at")
+    .in("workspace_id", activeWorkspaceIds)
     .eq("status", "published")
     .is("archived_at", null)
     .not("published_revision_id", "is", null);

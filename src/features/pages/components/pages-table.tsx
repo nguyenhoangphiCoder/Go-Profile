@@ -26,10 +26,13 @@ const RenameSlugModal = dynamic(
 );
 
 interface PagesTableProps {
+  /** false với người xem (viewer): ẩn các thao tác sửa — server cũng chặn. */
+  canEdit?: boolean;
+
   initialPages: PageListItem[];
 }
 
-export function PagesTable({ initialPages }: PagesTableProps) {
+export function PagesTable({ initialPages, canEdit = true }: PagesTableProps) {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -214,71 +217,73 @@ export function PagesTable({ initialPages }: PagesTableProps) {
 
                     {/* Thao tác */}
                     <td className="py-2.5 px-3.5 sm:px-4 text-right whitespace-nowrap">
-                      <TableActionMenu title="Thao tác trang">
-                        {(close) => (
-                          <>
-                            <Link
-                              href={`/admin/pages/${page.id}`}
-                              onClick={close}
-                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
-                            >
-                              <Edit3 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                              <span>Chỉnh sửa nội dung</span>
-                            </Link>
-
-                            {page.status === "published" && (
-                              <a
-                                href={`/${page.primarySlug}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                      {canEdit && (
+                        <TableActionMenu title="Thao tác trang">
+                          {(close) => (
+                            <>
+                              <Link
+                                href={`/admin/pages/${page.id}`}
                                 onClick={close}
                                 className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
                               >
-                                <ExternalLink className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <span>Xem trang công khai</span>
-                              </a>
-                            )}
+                                <Edit3 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <span>Chỉnh sửa nội dung</span>
+                              </Link>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedPageForSlug(page);
-                                close();
-                              }}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
-                            >
-                              <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                              <span>Đổi đường dẫn (Slug)</span>
-                            </button>
+                              {page.status === "published" && (
+                                <a
+                                  href={`/${page.primarySlug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={close}
+                                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
+                                >
+                                  <ExternalLink className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                  <span>Xem trang công khai</span>
+                                </a>
+                              )}
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleDuplicate(page);
-                                close();
-                              }}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
-                            >
-                              <Copy className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                              <span>Nhân bản trang</span>
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPageForSlug(page);
+                                  close();
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                              >
+                                <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                                <span>Đổi đường dẫn (Slug)</span>
+                              </button>
 
-                            <div className="my-1 border-t border-border/50" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleDuplicate(page);
+                                  close();
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                              >
+                                <Copy className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                                <span>Nhân bản trang</span>
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                handleArchive(page);
-                                close();
-                              }}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-red-500/10 font-medium text-red-600 dark:text-red-400 transition-colors cursor-pointer text-left"
-                            >
-                              <Archive className="w-4 h-4 text-red-500 shrink-0" />
-                              <span>Lưu trữ trang</span>
-                            </button>
-                          </>
-                        )}
-                      </TableActionMenu>
+                              <div className="my-1 border-t border-border/50" />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleArchive(page);
+                                  close();
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-red-500/10 font-medium text-red-600 dark:text-red-400 transition-colors cursor-pointer text-left"
+                              >
+                                <Archive className="w-4 h-4 text-red-500 shrink-0" />
+                                <span>Lưu trữ trang</span>
+                              </button>
+                            </>
+                          )}
+                        </TableActionMenu>
+                      )}
                     </td>
                   </tr>
                 ))

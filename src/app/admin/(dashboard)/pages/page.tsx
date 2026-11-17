@@ -1,4 +1,6 @@
 import { Metadata } from "next";
+import { requireWorkspace } from "@/features/workspace/context";
+import { hasRole } from "@/features/workspace/types";
 import { getPagesList } from "@/features/pages/queries";
 import { PagesTable } from "@/features/pages/components/pages-table";
 import { PagesHeaderClient } from "@/features/pages/components/pages-header-client";
@@ -11,12 +13,14 @@ export const metadata: Metadata = {
 export const instant = false;
 
 export default async function AdminPagesPage() {
+  const { role } = await requireWorkspace();
   const pages = await getPagesList();
+  const canEdit = hasRole(role, "editor");
 
   return (
     <div className="space-y-6">
-      <PagesHeaderClient />
-      <PagesTable initialPages={pages} />
+      <PagesHeaderClient canEdit={canEdit} />
+      <PagesTable initialPages={pages} canEdit={canEdit} />
     </div>
   );
 }

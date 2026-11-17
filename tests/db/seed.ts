@@ -11,12 +11,18 @@ export async function createPlatformAdmin(db: PGlite, email = "admin@go.test") {
 }
 
 export async function createMedia(db: PGlite, objectPath: string, workspaceId?: string) {
-  const cols = workspaceId ? ", workspace_id" : "";
-  const vals = workspaceId ? ", $2" : "";
+  // Sau migration workspace, cột workspace_id bắt buộc (không còn DEFAULT): mặc định dùng Gờ Cafe
+  const hasWorkspace = (
+    await db.query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM information_schema.columns WHERE table_name = 'media_assets' AND column_name = 'workspace_id'"
+    )
+  ).rows[0].n;
+  const ws = workspaceId ?? (hasWorkspace ? "00000000-0000-4000-8000-000000000001" : undefined);
   const res = await db.query<{ id: string }>(
-    `INSERT INTO public.media_assets (bucket_id, object_path, visibility, status${cols})
-     VALUES ('public_media', $1, 'public', 'ready'${vals}) RETURNING id`,
-    workspaceId ? [objectPath, workspaceId] : [objectPath]
+    ws
+      ? "INSERT INTO public.media_assets (bucket_id, object_path, visibility, status, workspace_id) VALUES ('public_media', $1, 'public', 'ready', $2) RETURNING id"
+      : "INSERT INTO public.media_assets (bucket_id, object_path, visibility, status) VALUES ('public_media', $1, 'public', 'ready') RETURNING id",
+    ws ? [objectPath, ws] : [objectPath]
   );
   return res.rows[0].id;
 }

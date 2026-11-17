@@ -25,9 +25,11 @@ const LinkFormModal = dynamic(() => import("./link-form-modal").then((m) => m.Li
 
 interface LinksTableProps {
   initialLinks: LinkItem[];
+  /** false với người xem (viewer): ẩn các thao tác sửa — server cũng chặn. */
+  canEdit?: boolean;
 }
 
-export function LinksTable({ initialLinks }: LinksTableProps) {
+export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -132,13 +134,15 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
             Tổng số: <strong className="font-mono text-foreground">{filteredLinks.length}</strong>{" "}
             liên kết
           </span>
-          <button
-            onClick={handleCreate}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Thêm liên kết mới</span>
-          </button>
+          {canEdit && (
+            <button
+              onClick={handleCreate}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm liên kết mới</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -191,6 +195,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                           <button
                             type="button"
                             onClick={() => handleToggle(item)}
+                            disabled={!canEdit}
                             className={`inline-flex items-center gap-1.5 min-h-8 px-2.5 rounded-full text-[11px] font-medium cursor-pointer ${
                               item.isActive
                                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
@@ -241,6 +246,7 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
                     <td className="py-2.5 px-3 whitespace-nowrap hidden sm:table-cell">
                       <button
                         onClick={() => handleToggle(item)}
+                        disabled={!canEdit}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium cursor-pointer transition-colors ${
                           item.isActive
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
@@ -257,62 +263,64 @@ export function LinksTable({ initialLinks }: LinksTableProps) {
 
                     {/* Thao tác */}
                     <td className="py-2 px-3.5 sm:px-4 text-right whitespace-nowrap">
-                      <TableActionMenu title="Thao tác liên kết" widthClass="w-48">
-                        {(close) => (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                close();
-                                handleEdit(item);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
-                            >
-                              <Edit2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                              <span>Chỉnh sửa</span>
-                            </button>
+                      {canEdit && (
+                        <TableActionMenu title="Thao tác liên kết" widthClass="w-48">
+                          {(close) => (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  close();
+                                  handleEdit(item);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <span>Chỉnh sửa</span>
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                close();
-                                handleToggle(item);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
-                            >
-                              <Power
-                                className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? "text-amber-500" : "text-emerald-500"}`}
-                              />
-                              <span>{item.isActive ? "Tắt hoạt động" : "Bật hoạt động"}</span>
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  close();
+                                  handleToggle(item);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                              >
+                                <Power
+                                  className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? "text-amber-500" : "text-emerald-500"}`}
+                                />
+                                <span>{item.isActive ? "Tắt hoạt động" : "Bật hoạt động"}</span>
+                              </button>
 
-                            <a
-                              href={item.targetUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={close}
-                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                              <span>Mở liên kết</span>
-                            </a>
+                              <a
+                                href={item.targetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={close}
+                                className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                <span>Mở liên kết</span>
+                              </a>
 
-                            <div className="my-1 border-t border-border/50" />
+                              <div className="my-1 border-t border-border/50" />
 
-                            <button
-                              type="button"
-                              onClick={() => {
-                                close();
-                                handleArchive(item);
-                              }}
-                              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-destructive/10 text-destructive font-medium transition-colors cursor-pointer text-left"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                              <span>Lưu trữ (Xóa)</span>
-                            </button>
-                          </>
-                        )}
-                      </TableActionMenu>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  close();
+                                  handleArchive(item);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-destructive/10 text-destructive font-medium transition-colors cursor-pointer text-left"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>Lưu trữ (Xóa)</span>
+                              </button>
+                            </>
+                          )}
+                        </TableActionMenu>
+                      )}
                     </td>
                   </tr>
                 ))}

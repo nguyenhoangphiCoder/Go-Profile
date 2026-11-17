@@ -1,9 +1,12 @@
+import { requireWorkspace } from "@/features/workspace/context";
+import { hasRole } from "@/features/workspace/types";
 import { getLinks } from "@/features/links/queries";
 import { LinksTable } from "@/features/links/components/links-table";
 
 export const instant = false;
 
 export default async function AdminLinksPage() {
+  const { role } = await requireWorkspace();
   const links = await getLinks();
 
   return (
@@ -18,7 +21,7 @@ export default async function AdminLinksPage() {
       </div>
 
       {/* Table */}
-      <LinksTable initialLinks={links} />
+      <LinksTable initialLinks={links} canEdit={hasRole(role, "editor")} />
     </div>
   );
 }
