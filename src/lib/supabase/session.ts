@@ -10,6 +10,14 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // Bỏ qua gọi Supabase Auth ở các request prefetch ngầm (layout/page vẫn tự kiểm tra quyền)
+  if (
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.get("purpose") === "prefetch"
+  ) {
+    return response;
+  }
+
   const supabase = createServerClient<Database>(
     clientEnv.NEXT_PUBLIC_SUPABASE_URL,
     clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -31,9 +39,9 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Xác thực JWT cục bộ bằng getClaims() (~1ms, không tốn vòng gọi mạng tới Auth server)
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const hasUser = Boolean(claimsData?.claims?.sub);
 
   const { pathname } = request.nextUrl;
   const isAccessingAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
@@ -45,7 +53,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Nếu chưa đăng nhập mà truy cập /admin/* -> chuyển hướng về /login
-  if (isAccessingAdmin && !user) {
+  if (isAccessingAdmin && !hasUser) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     redirectUrl.searchParams.set("redirectTo", request.nextUrl.pathname);
@@ -53,7 +61,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Nếu đã đăng nhập mà vào lại /login -> chuyển hướng thẳng vào /admin
-  if (isAccessingLogin && user) {
+  if (isAccessingLogin && hasUser) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/admin";
     redirectUrl.searchParams.delete("redirectTo");

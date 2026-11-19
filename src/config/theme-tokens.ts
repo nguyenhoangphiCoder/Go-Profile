@@ -20,7 +20,24 @@ import { THEME_PRESETS, resolveTheme, type ThemePreset } from "./themes";
 // ---------------------------------------------------------------------------
 
 export const LAYOUT_IDS = ["standard", "beacons-card", "beacons-portrait"] as const;
-export const FONT_IDS = ["be-vietnam-pro", "inter", "montserrat", "lexend-deca"] as const;
+export const FONT_IDS = [
+  "be-vietnam-pro",
+  "inter",
+  "montserrat",
+  "lexend-deca",
+  "josefin-sans",
+  "quicksand",
+  "space-grotesk",
+  "playfair-display",
+  "cormorant-garamond",
+  "lora",
+  "merriweather",
+  "dancing-script",
+  "great-vibes",
+  "pacifico",
+  "lobster",
+  "patrick-hand",
+] as const;
 export const RADIUS_IDS = ["none", "sm", "md", "lg", "full"] as const;
 export const SHADOW_IDS = ["none", "sm", "md", "lg"] as const;
 export const BUTTON_VARIANTS = ["filled", "outline", "soft", "glass"] as const;
@@ -30,17 +47,41 @@ export const DENSITY_IDS = ["compact", "comfortable", "spacious"] as const;
 export type FontId = (typeof FONT_IDS)[number];
 
 export const FONT_LABELS: Record<FontId, string> = {
-  "be-vietnam-pro": "Be Vietnam Pro",
-  inter: "Inter",
-  montserrat: "Montserrat",
-  "lexend-deca": "Lexend Deca",
+  "be-vietnam-pro": "Be Vietnam Pro (Hiện đại)",
+  inter: "Inter (Tối giản)",
+  montserrat: "Montserrat (Gọn gàng)",
+  "lexend-deca": "Lexend Deca (Dễ đọc)",
+  "josefin-sans": "Josefin Sans (Thanh mảnh hình học)",
+  quicksand: "Quicksand (Bo tròn mềm mại)",
+  "space-grotesk": "Space Grotesk (Cá tính hiện đại)",
+  "playfair-display": "Playfair Display (Có chân sang trọng)",
+  "cormorant-garamond": "Cormorant Garamond (Có chân cổ điển)",
+  lora: "Lora (Có chân mềm mại)",
+  merriweather: "Merriweather (Có chân đậm nét)",
+  "dancing-script": "Dancing Script (Viết tay có đuôi)",
+  "great-vibes": "Great Vibes (Thư pháp có đuôi)",
+  pacifico: "Pacifico (Cọ nét bay bổng)",
+  lobster: "Lobster (Nghiêng có đuôi nổi bật)",
+  "patrick-hand": "Patrick Hand (Viết tay tự nhiên)",
 };
 
-const FONT_STACKS: Record<FontId, string> = {
+export const FONT_STACKS: Record<FontId, string> = {
   "be-vietnam-pro": "var(--font-be-vietnam-pro), sans-serif",
   inter: "var(--font-inter), sans-serif",
   montserrat: "var(--font-montserrat), sans-serif",
   "lexend-deca": "var(--font-lexend-deca), sans-serif",
+  "josefin-sans": "var(--font-josefin-sans), sans-serif",
+  quicksand: "var(--font-quicksand), sans-serif",
+  "space-grotesk": "var(--font-space-grotesk), sans-serif",
+  "playfair-display": "var(--font-playfair-display), Georgia, serif",
+  "cormorant-garamond": "var(--font-cormorant-garamond), Georgia, serif",
+  lora: "var(--font-lora), Georgia, serif",
+  merriweather: "var(--font-merriweather), Georgia, serif",
+  "dancing-script": "var(--font-dancing-script), cursive",
+  "great-vibes": "var(--font-great-vibes), cursive",
+  pacifico: "var(--font-pacifico), cursive",
+  lobster: "var(--font-lobster), cursive",
+  "patrick-hand": "var(--font-patrick-hand), cursive",
 };
 
 const RADIUS_CSS: Record<(typeof RADIUS_IDS)[number], string> = {
@@ -115,6 +156,7 @@ const colorsSchema = z
   .object({
     background: colorSchema,
     text: colorSchema,
+    headingText: colorSchema.optional(),
     accent: colorSchema,
     surface: colorSchema,
     surfaceText: colorSchema,
@@ -149,7 +191,12 @@ const shapeSchema = z
   })
   .strict();
 
-const buttonSchema = z.object({ variant: z.enum(BUTTON_VARIANTS) }).strict();
+const buttonSchema = z
+  .object({
+    variant: z.enum(BUTTON_VARIANTS),
+    height: z.number().int().min(36).max(80),
+  })
+  .strict();
 
 const spacingSchema = z
   .object({
@@ -318,7 +365,7 @@ export function legacyThemeToTokens(theme: ThemePreset, fallback?: ThemeTokens):
       headingFont: legacyFont(theme.fontFamily),
       baseSize: 14,
       headingWeight: 700,
-      textCase: "uppercase",
+      textCase: "normal",
     },
     shape: {
       radius: (RADIUS_IDS as readonly string[]).includes(theme.borderRadius)
@@ -327,7 +374,7 @@ export function legacyThemeToTokens(theme: ThemePreset, fallback?: ThemeTokens):
       borderWidth: 1.5,
       shadow: "sm",
     },
-    button: { variant: theme.cardBackdropBlur ? "glass" : "filled" },
+    button: { variant: theme.cardBackdropBlur ? "glass" : "filled", height: 64 },
     spacing: { maxWidth: 620, density: "comfortable" },
   };
 }
@@ -456,6 +503,7 @@ export function themeToCssVars(t: ThemeTokens): CSSProperties {
   return {
     "--gp-bg": backgroundToCss(t),
     "--gp-text": t.colors.text,
+    "--gp-heading-color": t.colors.headingText || t.colors.text,
     "--gp-accent": t.colors.accent,
     "--gp-surface": t.colors.surface,
     "--gp-surface-text": t.colors.surfaceText,
@@ -466,10 +514,13 @@ export function themeToCssVars(t: ThemeTokens): CSSProperties {
     "--gp-font-body": FONT_STACKS[t.typography.bodyFont],
     "--gp-font-heading": FONT_STACKS[t.typography.headingFont],
     "--gp-heading-weight": String(t.typography.headingWeight),
+    "--gp-page-base-size": `${t.typography.baseSize}px`,
     "--gp-base-size": `${t.typography.baseSize}px`,
-    "--gp-text-case": t.typography.textCase === "uppercase" ? "uppercase" : "none",
+    // Luôn giữ đúng chữ HOA / thường người dùng nhập ở tab Nội dung
+    "--gp-text-case": "none",
     "--gp-gap": `${DENSITY_GAP_PX[t.spacing.density]}px`,
     "--gp-max-w": `${t.spacing.maxWidth}px`,
+    "--gp-btn-height": `${t.button.height}px`,
   } as CSSProperties;
 }
 
@@ -487,7 +538,7 @@ export function buttonStyle(t: ThemeTokens): CSSProperties {
       return {
         ...base,
         backgroundColor: "transparent",
-        color: "var(--gp-text)",
+        color: "var(--gp-surface-text)",
         borderColor: "var(--gp-surface-border)",
         boxShadow: "none",
       };
@@ -495,7 +546,7 @@ export function buttonStyle(t: ThemeTokens): CSSProperties {
       return {
         ...base,
         backgroundColor: "color-mix(in srgb, var(--gp-surface) 22%, transparent)",
-        color: "var(--gp-text)",
+        color: "var(--gp-surface-text)",
         borderColor: "transparent",
       };
     case "glass":

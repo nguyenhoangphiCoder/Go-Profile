@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { memo, useState, type ReactNode } from "react";
 import {
   ChevronUp,
   ChevronDown,
@@ -24,6 +24,8 @@ import {
   ListCollapse,
   PlaySquare,
   MapPin,
+  Pencil,
+  RotateCcw,
 } from "lucide-react";
 import type {
   EditorBlockItem,
@@ -39,6 +41,7 @@ import type {
   DividerBlockPayload,
 } from "../../types";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import {
   AccordionBlockEditor,
   BlockStyleEditor,
@@ -83,9 +86,12 @@ interface BlockItemEditorProps {
   onSelect?: () => void;
   /** Tay kéo để sắp xếp khối (do PageEditor cung cấp). */
   dragHandle?: ReactNode;
+  /** Tuỳ chọn điều khiển đóng/mở từ PageEditor (chế độ chỉ mở 1 khối). */
+  expanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
-export function BlockItemEditor({
+export const BlockItemEditor = memo(function BlockItemEditor({
   block,
   index,
   totalBlocks,
@@ -101,14 +107,32 @@ export function BlockItemEditor({
   selectToken = 0,
   onSelect,
   dragHandle,
+  expanded,
+  onToggleExpand,
 }: BlockItemEditorProps) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const [innerTab, setInnerTab] = useState<"content" | "style">("content");
   // Được chọn từ bản xem trước → mở rộng form (cập nhật state khi prop đổi, không dùng effect)
   const [seenSelectToken, setSeenSelectToken] = useState(selectToken);
   if (selectToken !== seenSelectToken) {
     setSeenSelectToken(selectToken);
-    if (isSelected) setIsExpanded(true);
+    if (isSelected && expanded === undefined) setLocalExpanded(true);
   }
+  const isExpanded = expanded !== undefined ? expanded : localExpanded;
+  const toggleExpand = () => {
+    if (onToggleExpand) {
+      onToggleExpand();
+    } else {
+      setLocalExpanded((prev) => !prev);
+    }
+  };
+  const hasBlockStyle = Boolean(
+    block.payload &&
+    typeof block.payload === "object" &&
+    "blockStyle" in block.payload &&
+    block.payload.blockStyle &&
+    Object.keys(block.payload.blockStyle as Record<string, unknown>).length > 0
+  );
   const [selectedLinkToAdd, setSelectedLinkToAdd] = useState("");
   const [expandedPlacements, setExpandedPlacements] = useState<Record<string, boolean>>({});
 
@@ -186,7 +210,11 @@ export function BlockItemEditor({
     switch (block.type) {
       case "header": {
         const p = block.payload as HeaderBlockPayload;
-        return p.title || p.bio || "Chưa nhập thông tin tiêu đề";
+        const plainBio = (p.bio || "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        return p.title || plainBio || "Chưa nhập thông tin tiêu đề";
       }
       case "heading": {
         const p = block.payload as HeadingBlockPayload;
@@ -194,9 +222,11 @@ export function BlockItemEditor({
       }
       case "text": {
         const p = block.payload as TextBlockPayload;
-        return p.content
-          ? p.content.slice(0, 45) + (p.content.length > 45 ? "..." : "")
-          : "Đoạn văn bản trống";
+        const plain = (p.content || "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        return plain ? plain.slice(0, 45) + (plain.length > 45 ? "..." : "") : "Đoạn văn bản trống";
       }
       case "image": {
         const p = block.payload as ImageBlockPayload;
@@ -329,7 +359,7 @@ export function BlockItemEditor({
       <div className="flex flex-wrap sm:flex-nowrap items-center justify-between p-2.5 sm:p-3.5 border-b border-border/60 bg-muted/20 gap-x-2 gap-y-1.5">
         <div
           onClick={() => {
-            setIsExpanded(!isExpanded);
+            toggleExpand();
             onSelect?.();
           }}
           className="order-1 flex items-center gap-2.5 cursor-pointer select-none flex-1 min-w-0"
@@ -363,7 +393,7 @@ export function BlockItemEditor({
         {/* Thu gọn / mở rộng */}
         <button
           type="button"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={toggleExpand}
           className="order-2 sm:order-3 w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted cursor-pointer transition-colors shrink-0"
           title={isExpanded ? "Thu gọn khối" : "Mở rộng khối"}
           aria-label={isExpanded ? "Thu gọn khối" : "Mở rộng khối"}
@@ -438,257 +468,626 @@ export function BlockItemEditor({
       {/* Block Form Content */}
       {isExpanded && (
         <div className="p-3 sm:p-4 pb-5 sm:pb-6 space-y-4 text-xs bg-card">
-          {/* 1. Header block editor */}
-          {block.type === "header" && (
-            <div className="space-y-3.5">
-              <div>
-                <label className="block font-semibold text-muted-foreground mb-1">
-                  Tiêu đề hiển thị (Profile Title)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Gờ Cafe - Cà phê chuẩn gu"
-                  value={(block.payload as HeaderBlockPayload).title || ""}
-                  onChange={(e) => updatePayload({ title: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
+          {/* 2 tab con bên trong khối: Nội dung | Kiểu khối */}
+          <div className="grid grid-cols-2 p-1 rounded-xl bg-muted/50 border border-border/60">
+            <button
+              type="button"
+              onClick={() => setInnerTab("content")}
+              className={`py-1.5 px-2.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                innerTab === "content"
+                  ? "bg-background text-foreground shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Nội dung
+            </button>
+            <button
+              type="button"
+              onClick={() => setInnerTab("style")}
+              className={`py-1.5 px-2.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
+                innerTab === "style"
+                  ? "bg-background text-foreground shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span>Kiểu khối</span>
+              {hasBlockStyle && (
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" aria-hidden="true" />
+              )}
+            </button>
+          </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="font-semibold text-muted-foreground">
-                    Tiểu sử / Giới thiệu ngắn (Bio)
-                  </label>
-                  <span className="text-[10px] text-muted-foreground">
-                    Gợi ý: Dùng <code className="text-primary font-mono">*chữ nghiêng*</code> để tô
-                    màu điểm nhấn
-                  </span>
-                </div>
-                <textarea
-                  rows={2}
-                  placeholder="Mô tả phong cách, giờ mở cửa hoặc câu khẩu hiệu..."
-                  value={(block.payload as HeaderBlockPayload).bio || ""}
-                  onChange={(e) => updatePayload({ bio: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-
-              {/* Avatar picker */}
-              <MediaPickerField
-                label="Ảnh đại diện (Avatar)"
-                mediaId={(block.payload as HeaderBlockPayload).avatarMediaId}
-                mediaUrl={(block.payload as HeaderBlockPayload).avatarUrl}
-                onChange={(mId, mUrl) =>
-                  updatePayload({
-                    avatarMediaId: mId || undefined,
-                    avatarUrl: mUrl || undefined,
-                  })
-                }
-                availableMedia={availableMedia}
-                onMediaAdded={onMediaAdded}
-                aspectHint="circle"
-                helpText="Hiển thị đầu trang"
-              />
-
-              {/* Banner picker */}
-              <MediaPickerField
-                label="Ảnh bìa / Banner đầu trang (Banner)"
-                mediaId={(block.payload as HeaderBlockPayload).bannerMediaId}
-                mediaUrl={(block.payload as HeaderBlockPayload).bannerUrl}
-                onChange={(mId, mUrl) =>
-                  updatePayload({
-                    bannerMediaId: mId || undefined,
-                    bannerUrl: mUrl || undefined,
-                  })
-                }
-                availableMedia={availableMedia}
-                onMediaAdded={onMediaAdded}
-                aspectHint="banner"
-                helpText="Hiển thị ảnh bìa phía trên avatar"
-              />
-            </div>
-          )}
-
-          {/* 2. Heading block editor */}
-          {block.type === "heading" && (
-            <div className="space-y-3.5">
-              <div>
-                <label className="block font-semibold text-muted-foreground mb-1">
-                  Nội dung tiêu đề
-                </label>
-                <input
-                  type="text"
-                  placeholder="Tiêu đề mục..."
-                  value={(block.payload as HeadingBlockPayload).text || ""}
-                  onChange={(e) => updatePayload({ text: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-muted-foreground mb-1">
-                  Cấp độ tiêu đề
-                </label>
-                <div className="flex gap-2">
-                  {[1, 2, 3].map((lvl) => (
-                    <button
-                      key={lvl}
-                      type="button"
-                      onClick={() => updatePayload({ level: lvl })}
-                      className={`flex-1 py-1.5 rounded-xl border cursor-pointer font-bold transition-all ${
-                        ((block.payload as HeadingBlockPayload).level ?? 2) === lvl
-                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
-                          : "border-border hover:bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      H{lvl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 3. Text block editor */}
-          {block.type === "text" && (
-            <div className="space-y-3.5">
-              <div>
-                <label className="block font-semibold text-muted-foreground mb-1">
-                  Nội dung văn bản
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Nhập nội dung văn bản giới thiệu, ghi chú hoặc thông báo..."
-                  value={(block.payload as TextBlockPayload).content || ""}
-                  onChange={(e) => updatePayload({ content: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <div>
-                <label className="block font-semibold text-muted-foreground mb-1">Căn lề</label>
-                <div className="flex gap-2">
-                  {(["left", "center", "right"] as const).map((al) => (
-                    <button
-                      key={al}
-                      type="button"
-                      onClick={() => updatePayload({ align: al })}
-                      className={`flex-1 min-h-10 sm:min-h-0 py-1.5 rounded-xl border cursor-pointer capitalize transition-all ${
-                        ((block.payload as TextBlockPayload).align || "center") === al
-                          ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
-                          : "border-border hover:bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {al === "left" ? "Căn trái" : al === "center" ? "Căn giữa" : "Căn phải"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 4. Image block editor */}
-          {block.type === "image" && (
-            <div className="space-y-3.5">
-              <MediaPickerField
-                label="Chọn ảnh từ kho lưu trữ"
-                mediaId={(block.payload as ImageBlockPayload).mediaAssetId}
-                mediaUrl={(block.payload as ImageBlockPayload).imageUrl}
-                onChange={(mId, mUrl) =>
-                  updatePayload({
-                    mediaAssetId: mId || undefined,
-                    imageUrl: mUrl || undefined,
-                  })
-                }
-                availableMedia={availableMedia}
-                onMediaAdded={onMediaAdded}
-                aspectHint="standard"
-              />
-
-              <div>
-                <label className="block font-semibold text-muted-foreground mb-1">
-                  Chú thích ảnh (Caption)
-                </label>
-                <input
-                  type="text"
-                  placeholder="VD: Không gian quán tại chi nhánh Quận 1"
-                  value={(block.payload as ImageBlockPayload).caption || ""}
-                  onChange={(e) => updatePayload({ caption: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-muted-foreground mb-1">
-                  Liên kết khi nhấn vào ảnh (Tùy chọn)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  value={(block.payload as ImageBlockPayload).targetUrl || ""}
-                  onChange={(e) => updatePayload({ targetUrl: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* 5. Link List block editor */}
-          {block.type === "link_list" && (
+          {innerTab === "style" ? (
+            <BlockStyleEditor block={block} updatePayload={updatePayload} embedded />
+          ) : (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-border/60">
-                <span className="font-semibold text-muted-foreground">Bố cục hiển thị nút</span>
-                <div className="grid grid-cols-2 sm:flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => updatePayload({ layout: "stack" })}
-                    className={`min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl border cursor-pointer transition-all whitespace-nowrap ${
-                      ((block.payload as LinkListBlockPayload).layout || "stack") === "stack"
-                        ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
-                        : "border-border text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Xếp chồng (Stack)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updatePayload({ layout: "grid" })}
-                    className={`min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl border cursor-pointer transition-all whitespace-nowrap ${
-                      (block.payload as LinkListBlockPayload).layout === "grid"
-                        ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
-                        : "border-border text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    Lưới 2 cột (Grid)
-                  </button>
-                </div>
-              </div>
-
-              {/* Placements list */}
-              <div className="space-y-2.5">
-                <span className="font-semibold text-muted-foreground block">
-                  Các liên kết trong khối này ({block.placements?.length || 0})
-                </span>
-
-                {(block.placements || []).length === 0 ? (
-                  <div className="p-4 text-center rounded-xl bg-muted/20 border border-dashed border-border text-muted-foreground text-xs">
-                    Chưa có liên kết nào. Chọn liên kết ở ô bên dưới và bấm &quot;Thêm vào
-                    khối&quot;.
+              {/* 1. Header block editor */}
+              {block.type === "header" && (
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1">
+                      Tiêu đề hiển thị (Profile Title)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Gờ Cafe - Cà phê chuẩn gu"
+                      value={(block.payload as HeaderBlockPayload).title || ""}
+                      onChange={(e) => updatePayload({ title: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
                   </div>
-                ) : (
-                  (block.placements || []).map((pl, pIdx) => {
-                    const isPlExpanded = Boolean(expandedPlacements[pl.id]);
-                    return (
-                      <div
-                        key={pl.id}
-                        className="p-2 sm:p-3 rounded-xl border border-border bg-background shadow-2xs space-y-2"
+
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1.5">
+                      Tiểu sử / Giới thiệu ngắn (Bio)
+                    </label>
+                    <RichTextEditor
+                      value={(block.payload as HeaderBlockPayload).bio || ""}
+                      onChange={(bio) => updatePayload({ bio })}
+                      placeholder="Mô tả phong cách, giờ mở cửa hoặc câu khẩu hiệu..."
+                      minHeight={110}
+                      ariaLabel="Tiểu sử / Giới thiệu ngắn (Bio)"
+                    />
+                  </div>
+
+                  {/* Avatar picker */}
+                  <MediaPickerField
+                    label="Ảnh đại diện (Avatar)"
+                    mediaId={(block.payload as HeaderBlockPayload).avatarMediaId}
+                    mediaUrl={(block.payload as HeaderBlockPayload).avatarUrl}
+                    onChange={(mId, mUrl) =>
+                      updatePayload({
+                        avatarMediaId: mId || undefined,
+                        avatarUrl: mUrl || undefined,
+                      })
+                    }
+                    availableMedia={availableMedia}
+                    onMediaAdded={onMediaAdded}
+                    aspectHint="circle"
+                    helpText="Hiển thị đầu trang"
+                  />
+
+                  {/* Banner picker */}
+                  <MediaPickerField
+                    label="Ảnh bìa / Banner đầu trang (Banner)"
+                    mediaId={(block.payload as HeaderBlockPayload).bannerMediaId}
+                    mediaUrl={(block.payload as HeaderBlockPayload).bannerUrl}
+                    onChange={(mId, mUrl) =>
+                      updatePayload({
+                        bannerMediaId: mId || undefined,
+                        bannerUrl: mUrl || undefined,
+                      })
+                    }
+                    availableMedia={availableMedia}
+                    onMediaAdded={onMediaAdded}
+                    aspectHint="banner"
+                    helpText="Hiển thị ảnh bìa phía trên avatar"
+                  />
+                </div>
+              )}
+
+              {/* 2. Heading block editor */}
+              {block.type === "heading" && (
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1">
+                      Nội dung tiêu đề
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Tiêu đề mục..."
+                      value={(block.payload as HeadingBlockPayload).text || ""}
+                      onChange={(e) => updatePayload({ text: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1">
+                      Cấp độ tiêu đề
+                    </label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3].map((lvl) => (
+                        <button
+                          key={lvl}
+                          type="button"
+                          onClick={() => updatePayload({ level: lvl })}
+                          className={`flex-1 py-1.5 rounded-xl border cursor-pointer font-bold transition-all ${
+                            ((block.payload as HeadingBlockPayload).level ?? 2) === lvl
+                              ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                              : "border-border hover:bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          H{lvl}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Text block editor */}
+              {block.type === "text" && (
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1.5">
+                      Nội dung văn bản
+                    </label>
+                    <RichTextEditor
+                      value={(block.payload as TextBlockPayload).content || ""}
+                      onChange={(content) => updatePayload({ content })}
+                      placeholder="Nhập nội dung văn bản giới thiệu, ghi chú hoặc thông báo..."
+                      minHeight={130}
+                      ariaLabel="Nội dung văn bản"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1">Căn lề</label>
+                    <div className="flex gap-2">
+                      {(["left", "center", "right"] as const).map((al) => (
+                        <button
+                          key={al}
+                          type="button"
+                          onClick={() => updatePayload({ align: al })}
+                          className={`flex-1 min-h-10 sm:min-h-0 py-1.5 rounded-xl border cursor-pointer capitalize transition-all ${
+                            ((block.payload as TextBlockPayload).align || "center") === al
+                              ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
+                              : "border-border hover:bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {al === "left" ? "Căn trái" : al === "center" ? "Căn giữa" : "Căn phải"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Image block editor */}
+              {block.type === "image" && (
+                <div className="space-y-3.5">
+                  <MediaPickerField
+                    label="Chọn ảnh từ kho lưu trữ"
+                    mediaId={(block.payload as ImageBlockPayload).mediaAssetId}
+                    mediaUrl={(block.payload as ImageBlockPayload).imageUrl}
+                    onChange={(mId, mUrl) =>
+                      updatePayload({
+                        mediaAssetId: mId || undefined,
+                        imageUrl: mUrl || undefined,
+                      })
+                    }
+                    availableMedia={availableMedia}
+                    onMediaAdded={onMediaAdded}
+                    aspectHint="standard"
+                    cropAspect="16:9"
+                  />
+
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1">
+                      Chú thích ảnh (Caption)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: Không gian quán tại chi nhánh Quận 1"
+                      value={(block.payload as ImageBlockPayload).caption || ""}
+                      onChange={(e) => updatePayload({ caption: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1">
+                      Liên kết khi nhấn vào ảnh (Tùy chọn)
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={(block.payload as ImageBlockPayload).targetUrl || ""}
+                      onChange={(e) => updatePayload({ targetUrl: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 5. Link List block editor */}
+              {block.type === "link_list" && (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-border/60">
+                    <span className="font-semibold text-muted-foreground">Bố cục hiển thị nút</span>
+                    <div className="grid grid-cols-2 sm:flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => updatePayload({ layout: "stack" })}
+                        className={`min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl border cursor-pointer transition-all whitespace-nowrap ${
+                          ((block.payload as LinkListBlockPayload).layout || "stack") === "stack"
+                            ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        }`}
                       >
-                        <div className="flex items-center justify-between gap-2">
+                        Xếp chồng (Stack)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updatePayload({ layout: "grid" })}
+                        className={`min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl border cursor-pointer transition-all whitespace-nowrap ${
+                          (block.payload as LinkListBlockPayload).layout === "grid"
+                            ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        Lưới 2 cột (Grid)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Placements list */}
+                  <div className="space-y-2.5">
+                    <span className="font-semibold text-muted-foreground block">
+                      Các liên kết trong khối này ({block.placements?.length || 0})
+                    </span>
+
+                    {(block.placements || []).length === 0 ? (
+                      <div className="p-4 text-center rounded-xl bg-muted/20 border border-dashed border-border text-muted-foreground text-xs">
+                        Chưa có liên kết nào. Chọn liên kết ở ô bên dưới và bấm &quot;Thêm vào
+                        khối&quot;.
+                      </div>
+                    ) : (
+                      (block.placements || []).map((pl, pIdx) => {
+                        const isPlExpanded = Boolean(expandedPlacements[pl.id]);
+                        const hasCustomTitle = Boolean(pl.labelOverride?.trim());
+                        return (
                           <div
-                            onClick={() => togglePlacementExpand(pl.id)}
-                            className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer select-none"
+                            key={pl.id}
+                            className="p-2.5 sm:p-3 rounded-xl border border-border bg-background shadow-2xs space-y-2.5"
                           >
-                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded">
-                              #{pIdx + 1}
-                            </span>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className="font-mono text-[10px] text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded shrink-0">
+                                  #{pIdx + 1}
+                                </span>
+                                <span
+                                  className="text-[11px] text-muted-foreground truncate"
+                                  title={pl.defaultUrl}
+                                >
+                                  {pl.defaultUrl}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => handleMovePlacement(pIdx, "up")}
+                                  disabled={pIdx === 0}
+                                  className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer"
+                                  title="Di chuyển lên"
+                                >
+                                  <ChevronUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMovePlacement(pIdx, "down")}
+                                  disabled={pIdx === (block.placements || []).length - 1}
+                                  className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer"
+                                  title="Di chuyển xuống"
+                                >
+                                  <ChevronDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => togglePlacementExpand(pl.id)}
+                                  className={`inline-flex items-center gap-1 h-8 sm:h-7 px-2 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                                    isPlExpanded || pl.mediaOverrideId
+                                      ? "bg-primary/10 text-primary"
+                                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                  }`}
+                                  title="Tùy biến icon nút"
+                                >
+                                  <ImageIcon className="w-3 h-3" />
+                                  <span className="hidden sm:inline">Icon</span>
+                                  <ChevronRight
+                                    className={`w-3 h-3 transition-transform ${
+                                      isPlExpanded ? "rotate-90" : ""
+                                    }`}
+                                  />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemovePlacement(pl.id)}
+                                  className="w-8 h-8 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer shrink-0"
+                                  title="Xóa liên kết khỏi khối"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Inline button title input — luôn hiển thị để sửa tiêu đề ngay */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label
+                                  htmlFor={`placement-title-${pl.id}`}
+                                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                  <span>Tiêu đề hiển thị trên nút</span>
+                                </label>
+                                {hasCustomTitle && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdatePlacement(pl.id, { labelOverride: null })
+                                    }
+                                    className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+                                    title={`Khôi phục tên gốc: ${pl.defaultLabel}`}
+                                  >
+                                    <RotateCcw className="w-2.5 h-2.5" />
+                                    <span>Dùng tên gốc</span>
+                                  </button>
+                                )}
+                              </div>
+                              <textarea
+                                id={`placement-title-${pl.id}`}
+                                rows={(pl.labelOverride ?? pl.defaultLabel).includes("\n") ? 2 : 1}
+                                maxLength={100}
+                                placeholder={pl.defaultLabel}
+                                value={pl.labelOverride ?? pl.defaultLabel}
+                                onChange={(e) => {
+                                  const next = e.target.value;
+                                  handleUpdatePlacement(pl.id, {
+                                    labelOverride: next === pl.defaultLabel ? null : next,
+                                  });
+                                }}
+                                onBlur={() => {
+                                  if (
+                                    pl.labelOverride !== null &&
+                                    pl.labelOverride !== undefined &&
+                                    pl.labelOverride.trim() === ""
+                                  ) {
+                                    handleUpdatePlacement(pl.id, { labelOverride: null });
+                                  }
+                                }}
+                                className="w-full px-2.5 py-1.5 rounded-lg border border-input bg-card text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                              />
+                            </div>
+
+                            {/* Màu riêng cho từng nút (VD: Shopee màu cam, TikTok màu đen...) */}
+                            {(() => {
+                              const colorMap =
+                                (block.payload as LinkListBlockPayload).buttonColors || {};
+                              const btnColor = colorMap[pl.defaultUrl] || {};
+                              const updateBtnColor = (
+                                patch: { bg?: string; text?: string } | null
+                              ) => {
+                                const nextMap = { ...colorMap };
+                                if (!patch) {
+                                  delete nextMap[pl.defaultUrl];
+                                } else {
+                                  const merged = { ...btnColor, ...patch };
+                                  if (!merged.bg) delete merged.bg;
+                                  if (!merged.text) delete merged.text;
+                                  if (Object.keys(merged).length === 0) {
+                                    delete nextMap[pl.defaultUrl];
+                                  } else {
+                                    nextMap[pl.defaultUrl] = merged;
+                                  }
+                                }
+                                updatePayload({
+                                  buttonColors:
+                                    Object.keys(nextMap).length > 0 ? nextMap : undefined,
+                                });
+                              };
+                              return (
+                                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                  <span className="text-[11px] text-muted-foreground font-medium mr-0.5">
+                                    Màu nút:
+                                  </span>
+                                  {(
+                                    [
+                                      ["#EE4D2D", "Cam Shopee"],
+                                      ["#111111", "Đen TikTok"],
+                                      ["#0068FF", "Xanh Zalo"],
+                                      ["#1877F2", "Xanh Facebook"],
+                                      ["#16A34A", "Xanh lá"],
+                                      ["#D97706", "Vàng"],
+                                    ] as const
+                                  ).map(([hex, name]) => (
+                                    <button
+                                      key={hex}
+                                      type="button"
+                                      title={name}
+                                      onClick={() => updateBtnColor({ bg: hex })}
+                                      className={`w-5 h-5 rounded-full border cursor-pointer transition-transform hover:scale-110 ${
+                                        btnColor.bg?.toUpperCase() === hex
+                                          ? "ring-2 ring-primary ring-offset-1 border-white"
+                                          : "border-black/20"
+                                      }`}
+                                      style={{ backgroundColor: hex }}
+                                    />
+                                  ))}
+                                  <label
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-input bg-card text-[10px] cursor-pointer"
+                                    title="Chọn màu nền nút tuỳ ý"
+                                  >
+                                    <input
+                                      type="color"
+                                      value={btnColor.bg || "#EE4D2D"}
+                                      onChange={(e) =>
+                                        updateBtnColor({ bg: e.target.value.toUpperCase() })
+                                      }
+                                      className="w-3.5 h-3.5 rounded border-0 bg-transparent cursor-pointer p-0"
+                                    />
+                                    <span>Nền</span>
+                                  </label>
+                                  <label
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-input bg-card text-[10px] cursor-pointer"
+                                    title="Chọn màu chữ trên nút tuỳ ý"
+                                  >
+                                    <input
+                                      type="color"
+                                      value={btnColor.text || "#FFFFFF"}
+                                      onChange={(e) =>
+                                        updateBtnColor({ text: e.target.value.toUpperCase() })
+                                      }
+                                      className="w-3.5 h-3.5 rounded border-0 bg-transparent cursor-pointer p-0"
+                                    />
+                                    <span>Chữ</span>
+                                  </label>
+                                  {(btnColor.bg || btnColor.text) && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateBtnColor(null)}
+                                      className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer ml-auto"
+                                      title="Quay về màu chung của trang"
+                                    >
+                                      <RotateCcw className="w-2.5 h-2.5" />
+                                      <span>Mặc định</span>
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                            {/* Nếu là link số điện thoại (tel:...), cho nhập số/link Zalo riêng */}
+                            {pl.defaultUrl?.trim().toLowerCase().startsWith("tel:") && (
+                              <div>
+                                <label
+                                  htmlFor={`placement-zalo-${pl.id}`}
+                                  className="block text-[11px] text-muted-foreground font-medium mb-1"
+                                >
+                                  Số hoặc link Zalo riêng (tuỳ chọn — để trống = dùng SĐT gốc)
+                                </label>
+                                <input
+                                  id={`placement-zalo-${pl.id}`}
+                                  type="text"
+                                  maxLength={200}
+                                  placeholder="VD: 0901234567 hoặc https://zalo.me/gocafe"
+                                  value={
+                                    ((block.payload as LinkListBlockPayload).zaloByTel || {})[
+                                      pl.defaultUrl
+                                    ] || ""
+                                  }
+                                  onChange={(e) => {
+                                    const prevMap = {
+                                      ...((block.payload as LinkListBlockPayload).zaloByTel || {}),
+                                    };
+                                    const val = e.target.value;
+                                    if (val.trim()) {
+                                      prevMap[pl.defaultUrl] = val;
+                                    } else {
+                                      delete prevMap[pl.defaultUrl];
+                                    }
+                                    updatePayload({
+                                      zaloByTel:
+                                        Object.keys(prevMap).length > 0 ? prevMap : undefined,
+                                    });
+                                  }}
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-input bg-card text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                              </div>
+                            )}
+
+                            {/* Icon override drawer */}
+                            {isPlExpanded && (
+                              <div className="pt-2 border-t border-border/40">
+                                <MediaPickerField
+                                  label="Ghi đè icon nút (Tùy chọn)"
+                                  mediaId={pl.mediaOverrideId}
+                                  mediaUrl={pl.mediaOverrideUrl}
+                                  onChange={(mId, mUrl) =>
+                                    handleUpdatePlacement(pl.id, {
+                                      mediaOverrideId: mId || null,
+                                      mediaOverrideUrl: mUrl || null,
+                                    })
+                                  }
+                                  availableMedia={availableMedia}
+                                  onMediaAdded={onMediaAdded}
+                                  aspectHint="circle"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Add link picker */}
+                  <div className="pt-3 pb-1 border-t border-border/60">
+                    <label className="block font-semibold text-muted-foreground mb-1.5">
+                      Thêm liên kết vào danh sách:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={selectedLinkToAdd}
+                        onChange={(e) => setSelectedLinkToAdd(e.target.value)}
+                        className="flex-1 min-w-0 w-full px-3 py-2.5 rounded-xl border border-input bg-background cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 truncate"
+                      >
+                        <option value="">-- Chọn liên kết để thêm vào khối --</option>
+                        {availableLinks.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {l.defaultLabel} ({l.targetUrl})
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleAddLinkPlacement}
+                        disabled={!selectedLinkToAdd}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 disabled:opacity-40 cursor-pointer shrink-0 transition-opacity shadow-2xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Thêm</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 6. Social Icons block editor */}
+              {block.type === "social_icons" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-semibold text-muted-foreground mb-1">
+                      Kiểu hiển thị icon
+                    </label>
+                    <div className="flex gap-2">
+                      {(["colored", "monochrome", "outline"] as const).map((st) => (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => updatePayload({ style: st })}
+                          className={`flex-1 min-h-10 sm:min-h-0 py-1.5 rounded-xl border cursor-pointer capitalize transition-all ${
+                            ((block.payload as SocialIconsBlockPayload).style || "colored") === st
+                              ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
+                              : "border-border hover:bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {st === "colored"
+                            ? "Màu gốc"
+                            : st === "monochrome"
+                              ? "Đơn sắc"
+                              : "Đường viền"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="font-semibold text-muted-foreground block">
+                      Các liên kết mạng xã hội ({block.placements?.length || 0})
+                    </span>
+
+                    {(block.placements || []).length === 0 ? (
+                      <div className="p-4 text-center rounded-xl bg-muted/20 border border-dashed border-border text-muted-foreground text-xs">
+                        Chưa có icon mạng xã hội nào. Chọn link bên dưới để thêm.
+                      </div>
+                    ) : (
+                      (block.placements || []).map((pl) => (
+                        <div
+                          key={pl.id}
+                          className="flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-xl border border-border bg-background shadow-2xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
                             <span className="font-bold truncate text-foreground">
                               {pl.labelOverride || pl.defaultLabel}
                             </span>
@@ -696,297 +1095,127 @@ export function BlockItemEditor({
                               ({pl.defaultUrl})
                             </span>
                           </div>
-
-                          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleMovePlacement(pIdx, "up")}
-                              disabled={pIdx === 0}
-                              className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer"
-                              title="Di chuyển lên"
-                            >
-                              <ChevronUp className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleMovePlacement(pIdx, "down")}
-                              disabled={pIdx === (block.placements || []).length - 1}
-                              className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 cursor-pointer"
-                              title="Di chuyển xuống"
-                            >
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => togglePlacementExpand(pl.id)}
-                              className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted cursor-pointer"
-                              title="Tùy biến nhãn & icon"
-                            >
-                              <ChevronRight
-                                className={`w-3.5 h-3.5 transition-transform ${
-                                  isPlExpanded ? "rotate-90" : ""
-                                }`}
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePlacement(pl.id)}
-                              className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer shrink-0"
-                              title="Xóa liên kết khỏi khối"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePlacement(pl.id)}
+                            className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer shrink-0"
+                            title="Xóa icon"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-
-                        {/* Overrides drawer */}
-                        {isPlExpanded && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-border/40">
-                            <div>
-                              <label className="block text-[11px] text-muted-foreground font-medium mb-1">
-                                Ghi đè nhãn nút (Tùy chọn)
-                              </label>
-                              <input
-                                type="text"
-                                placeholder={pl.defaultLabel}
-                                value={pl.labelOverride || ""}
-                                onChange={(e) =>
-                                  handleUpdatePlacement(pl.id, {
-                                    labelOverride: e.target.value || null,
-                                  })
-                                }
-                                className="w-full px-2.5 py-1.5 rounded-lg border border-input bg-card text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            </div>
-
-                            <MediaPickerField
-                              label="Ghi đè icon nút (Tùy chọn)"
-                              mediaId={pl.mediaOverrideId}
-                              mediaUrl={pl.mediaOverrideUrl}
-                              onChange={(mId, mUrl) =>
-                                handleUpdatePlacement(pl.id, {
-                                  mediaOverrideId: mId || null,
-                                  mediaOverrideUrl: mUrl || null,
-                                })
-                              }
-                              availableMedia={availableMedia}
-                              onMediaAdded={onMediaAdded}
-                              aspectHint="circle"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Add link picker */}
-              <div className="pt-3 pb-1 border-t border-border/60">
-                <label className="block font-semibold text-muted-foreground mb-1.5">
-                  Thêm liên kết vào danh sách:
-                </label>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={selectedLinkToAdd}
-                    onChange={(e) => setSelectedLinkToAdd(e.target.value)}
-                    className="flex-1 min-w-0 w-full px-3 py-2.5 rounded-xl border border-input bg-background cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 truncate"
-                  >
-                    <option value="">-- Chọn liên kết để thêm vào khối --</option>
-                    {availableLinks.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {l.defaultLabel} ({l.targetUrl})
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleAddLinkPlacement}
-                    disabled={!selectedLinkToAdd}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 disabled:opacity-40 cursor-pointer shrink-0 transition-opacity shadow-2xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 6. Social Icons block editor */}
-          {block.type === "social_icons" && (
-            <div className="space-y-4">
-              <div>
-                <label className="block font-semibold text-muted-foreground mb-1">
-                  Kiểu hiển thị icon
-                </label>
-                <div className="flex gap-2">
-                  {(["colored", "monochrome", "outline"] as const).map((st) => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => updatePayload({ style: st })}
-                      className={`flex-1 min-h-10 sm:min-h-0 py-1.5 rounded-xl border cursor-pointer capitalize transition-all ${
-                        ((block.payload as SocialIconsBlockPayload).style || "colored") === st
-                          ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
-                          : "border-border hover:bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {st === "colored"
-                        ? "Màu gốc"
-                        : st === "monochrome"
-                          ? "Đơn sắc"
-                          : "Đường viền"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <span className="font-semibold text-muted-foreground block">
-                  Các liên kết mạng xã hội ({block.placements?.length || 0})
-                </span>
-
-                {(block.placements || []).length === 0 ? (
-                  <div className="p-4 text-center rounded-xl bg-muted/20 border border-dashed border-border text-muted-foreground text-xs">
-                    Chưa có icon mạng xã hội nào. Chọn link bên dưới để thêm.
+                      ))
+                    )}
                   </div>
-                ) : (
-                  (block.placements || []).map((pl) => (
-                    <div
-                      key={pl.id}
-                      className="flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-xl border border-border bg-background shadow-2xs"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-bold truncate text-foreground">
-                          {pl.labelOverride || pl.defaultLabel}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground truncate hidden sm:inline">
-                          ({pl.defaultUrl})
-                        </span>
-                      </div>
+
+                  {/* Add social link picker */}
+                  <div className="pt-3 pb-1 border-t border-border/60">
+                    <label className="block font-semibold text-muted-foreground mb-1.5">
+                      Thêm mạng xã hội vào khối:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={selectedLinkToAdd}
+                        onChange={(e) => setSelectedLinkToAdd(e.target.value)}
+                        className="flex-1 min-w-0 w-full px-3 py-2.5 rounded-xl border border-input bg-background cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 truncate"
+                      >
+                        <option value="">-- Chọn link mạng xã hội --</option>
+                        {availableLinks
+                          .filter((l) => l.kind === "social")
+                          .map((l) => (
+                            <option key={l.id} value={l.id}>
+                              {l.defaultLabel}
+                            </option>
+                          ))}
+                      </select>
                       <button
                         type="button"
-                        onClick={() => handleRemovePlacement(pl.id)}
-                        className="w-9 h-9 sm:w-7 sm:h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer shrink-0"
-                        title="Xóa icon"
+                        onClick={handleAddLinkPlacement}
+                        disabled={!selectedLinkToAdd}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 disabled:opacity-40 cursor-pointer shrink-0 transition-opacity shadow-2xs"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Thêm</span>
                       </button>
                     </div>
-                  ))
-                )}
-              </div>
-
-              {/* Add social link picker */}
-              <div className="pt-3 pb-1 border-t border-border/60">
-                <label className="block font-semibold text-muted-foreground mb-1.5">
-                  Thêm mạng xã hội vào khối:
-                </label>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={selectedLinkToAdd}
-                    onChange={(e) => setSelectedLinkToAdd(e.target.value)}
-                    className="flex-1 min-w-0 w-full px-3 py-2.5 rounded-xl border border-input bg-background cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 truncate"
-                  >
-                    <option value="">-- Chọn link mạng xã hội --</option>
-                    {availableLinks
-                      .filter((l) => l.kind === "social")
-                      .map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.defaultLabel}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleAddLinkPlacement}
-                    disabled={!selectedLinkToAdd}
-                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 disabled:opacity-40 cursor-pointer shrink-0 transition-opacity shadow-2xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm</span>
-                  </button>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* 7. Spacer block editor */}
+              {block.type === "spacer" && (
+                <div>
+                  <label className="block font-semibold text-muted-foreground mb-1.5">
+                    Chiều cao khoảng cách
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {(
+                      [
+                        { key: "sm", label: "Nhỏ (10px)" },
+                        { key: "md", label: "Vừa (20px)" },
+                        { key: "lg", label: "Lớn (32px)" },
+                        { key: "xl", label: "Rất lớn (48px)" },
+                      ] as const
+                    ).map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => updatePayload({ height: item.key })}
+                        className={`py-2 px-1 rounded-xl border cursor-pointer text-center transition-all ${
+                          ((block.payload as SpacerBlockPayload).height || "md") === item.key
+                            ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
+                            : "border-border hover:bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        <span className="block text-xs">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 8. Divider block editor */}
+              {block.type === "divider" && (
+                <div>
+                  <label className="block font-semibold text-muted-foreground mb-1.5">
+                    Kiểu đường kẻ
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(
+                      [
+                        { key: "solid", label: "Nét liền (Solid)" },
+                        { key: "dashed", label: "Nét đứt (Dashed)" },
+                        { key: "dotted", label: "Chấm bi (Dotted)" },
+                      ] as const
+                    ).map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={() => updatePayload({ style: item.key })}
+                        className={`py-2 px-1 rounded-xl border cursor-pointer text-center transition-all ${
+                          ((block.payload as DividerBlockPayload).style || "solid") === item.key
+                            ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
+                            : "border-border hover:bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        <span className="block text-xs">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 9. Khối mới (v2) */}
+              {block.type === "button" && <ButtonBlockEditor {...v2Props} />}
+              {block.type === "gallery" && <GalleryBlockEditor {...v2Props} />}
+              {block.type === "menu_card" && <MenuCardBlockEditor {...v2Props} />}
+              {block.type === "accordion" && <AccordionBlockEditor {...v2Props} />}
+              {block.type === "video_embed" && <VideoBlockEditor {...v2Props} />}
+              {block.type === "map" && <MapBlockEditor {...v2Props} />}
             </div>
           )}
-
-          {/* 7. Spacer block editor */}
-          {block.type === "spacer" && (
-            <div>
-              <label className="block font-semibold text-muted-foreground mb-1.5">
-                Chiều cao khoảng cách
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {(
-                  [
-                    { key: "sm", label: "Nhỏ (10px)" },
-                    { key: "md", label: "Vừa (20px)" },
-                    { key: "lg", label: "Lớn (32px)" },
-                    { key: "xl", label: "Rất lớn (48px)" },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => updatePayload({ height: item.key })}
-                    className={`py-2 px-1 rounded-xl border cursor-pointer text-center transition-all ${
-                      ((block.payload as SpacerBlockPayload).height || "md") === item.key
-                        ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
-                        : "border-border hover:bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    <span className="block text-xs">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 8. Divider block editor */}
-          {block.type === "divider" && (
-            <div>
-              <label className="block font-semibold text-muted-foreground mb-1.5">
-                Kiểu đường kẻ
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {(
-                  [
-                    { key: "solid", label: "Nét liền (Solid)" },
-                    { key: "dashed", label: "Nét đứt (Dashed)" },
-                    { key: "dotted", label: "Chấm bi (Dotted)" },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => updatePayload({ style: item.key })}
-                    className={`py-2 px-1 rounded-xl border cursor-pointer text-center transition-all ${
-                      ((block.payload as DividerBlockPayload).style || "solid") === item.key
-                        ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
-                        : "border-border hover:bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    <span className="block text-xs">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 9. Khối mới (v2) */}
-          {block.type === "button" && <ButtonBlockEditor {...v2Props} />}
-          {block.type === "gallery" && <GalleryBlockEditor {...v2Props} />}
-          {block.type === "menu_card" && <MenuCardBlockEditor {...v2Props} />}
-          {block.type === "accordion" && <AccordionBlockEditor {...v2Props} />}
-          {block.type === "video_embed" && <VideoBlockEditor {...v2Props} />}
-          {block.type === "map" && <MapBlockEditor {...v2Props} />}
-
-          {/* Kiểu khối: căn lề, nền, hiệu ứng, ẩn theo thiết bị */}
-          <BlockStyleEditor block={block} updatePayload={updatePayload} />
         </div>
       )}
     </div>
   );
-}
+});

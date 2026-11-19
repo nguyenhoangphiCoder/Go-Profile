@@ -23,19 +23,37 @@ import {
  */
 export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | null> => {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) return null;
+
+  // Ưu tiên getClaims() (xác thực JWT cục bộ ~1ms); fallback sang getUser() khi môi trường/mock chỉ có getUser
+  let userId: string | null = null;
+  let userEmail: string | null = null;
+
+  if (typeof supabase.auth.getClaims === "function") {
+    const { data, error } = await supabase.auth.getClaims();
+    if (!error && data?.claims?.sub) {
+      userId = String(data.claims.sub);
+      userEmail = typeof data.claims.email === "string" ? data.claims.email : null;
+    }
+  } else {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (!error && user) {
+      userId = user.id;
+      userEmail = user.email ?? null;
+    }
+  }
+
+  if (!userId) return null;
 
   const [{ data: adminRow }, { data: memberRows }] = await Promise.all([
     supabase
       .from("admin_users")
       .select("display_name, is_active")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle(),
-    supabase.from("workspace_members").select("workspace_id, role").eq("user_id", user.id),
+    supabase.from("workspace_members").select("workspace_id, role").eq("user_id", userId),
   ]);
 
   const isPlatformAdmin = Boolean(adminRow?.is_active);
@@ -53,7 +71,7 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | nu
     const ids = [...roleByWorkspace.keys()];
     if (ids.length === 0) {
       return {
-        user: { userId: user.id, email: user.email ?? null, displayName: null },
+        user: { userId, email: userEmail, displayName: null },
         isPlatformAdmin,
         workspace: null,
         role: null,
@@ -89,8 +107,8 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | nu
 
   return {
     user: {
-      userId: user.id,
-      email: user.email ?? null,
+      userId,
+      email: userEmail,
       displayName: adminRow?.display_name ?? null,
     },
     isPlatformAdmin,

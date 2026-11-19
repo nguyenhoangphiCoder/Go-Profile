@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { resolveSmartIcon } from "@/features/public/components/brand-icons";
-import { resolveMediaUrl } from "../media";
+import { isOptimizableImageUrl, resolveMediaUrl } from "../media";
 import { HEADING_STYLE, PageLink, tint } from "../primitives";
 
 const SOCIAL_STYLE = {
@@ -72,29 +72,35 @@ export function HeadingBlock({ block, ctx }: BlockRenderProps) {
   const level = payload.level || 1;
   const isCard = ctx.variant === "beacons-card";
 
-  const sizeClass =
+  const headingFontSize =
     level === 1
-      ? isCard
-        ? "text-[14px] @min-[40rem]:text-[15px] text-white leading-snug whitespace-pre-line"
-        : "text-[16px] @min-[40rem]:text-[18px]"
+      ? "var(--gp-title-size, calc(var(--gp-base-size, 14px) * 1.22))"
       : level === 2
-        ? isCard
-          ? "text-[14px] @min-[40rem]:text-[15px] text-white leading-snug whitespace-pre-line"
-          : "text-[15px] @min-[40rem]:text-[17px]"
-        : isCard
-          ? "text-[13px] @min-[40rem]:text-[14px] text-white leading-snug whitespace-pre-line"
-          : "text-[13px] @min-[40rem]:text-[15px]";
+        ? "var(--gp-title-size, calc(var(--gp-base-size, 14px) * 1.12))"
+        : "var(--gp-title-size, var(--gp-base-size, 14px))";
 
   const className = isCard
-    ? `font-bold uppercase tracking-[0.5px] ${sizeClass}`
-    : `tracking-[0.5px] ${sizeClass}`;
+    ? "font-bold tracking-[0.5px] text-white leading-snug whitespace-pre-line"
+    : "tracking-[0.5px]";
   const Tag = level === 1 ? "h2" : level === 2 ? "h3" : "h4";
 
   return (
     <div
       className={isCard ? "mt-2 mb-1 text-center w-full" : "mt-[28px] mb-[6px] text-center w-full"}
     >
-      <Tag className={className} style={isCard ? { color: "#FFFFFF" } : HEADING_STYLE}>
+      <Tag
+        className={className}
+        style={
+          isCard
+            ? {
+                color: "#FFFFFF",
+                fontFamily: "var(--gp-font-heading)",
+                fontSize: headingFontSize,
+                textTransform: "var(--gp-text-case)" as React.CSSProperties["textTransform"],
+              }
+            : { ...HEADING_STYLE, fontSize: headingFontSize }
+        }
+      >
         {payload.text}
       </Tag>
     </div>
@@ -109,9 +115,10 @@ export function TextBlock({ block, ctx }: BlockRenderProps) {
     <div
       className={
         isCard
-          ? "space-y-3 text-[13px] @min-[40rem]:text-[14px] leading-[1.65] w-full text-neutral-300"
-          : "mt-[14px] space-y-2 text-(length:--gp-base-size) leading-[1.6] tracking-[0.5px] w-full max-w-(--gp-max-w) mx-auto"
+          ? "space-y-3 leading-[1.65] w-full text-neutral-300"
+          : "mt-[14px] space-y-2 leading-[1.6] tracking-[0.5px] w-full max-w-(--gp-max-w) mx-auto"
       }
+      style={{ fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))" }}
     >
       {renderLnkBioFormattedText(
         payload.content || "",
@@ -147,13 +154,19 @@ export function ImageBlock({ block, ctx }: BlockRenderProps) {
           src={imgUrl}
           alt={payload.alt || "Banner ảnh"}
           fill
+          sizes="(max-width: 640px) 100vw, 620px"
           className="object-cover"
-          unoptimized
+          unoptimized={!isOptimizableImageUrl(imgUrl)}
           loading="lazy"
         />
       </div>
       {payload.caption && (
-        <p className="text-xs opacity-75 text-center mt-1.5">{payload.caption}</p>
+        <p
+          className="opacity-75 text-center mt-1.5"
+          style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.85))" }}
+        >
+          {payload.caption}
+        </p>
       )}
     </div>
   );

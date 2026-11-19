@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { FONT_STACKS } from "@/config/theme-tokens";
 import type { BlockStyle } from "@/features/pages/types";
 import { blockStyleSchema } from "./blocks/payload-schemas";
 import { tint } from "./primitives";
@@ -14,6 +15,13 @@ const ALIGN: Record<NonNullable<BlockStyle["align"]>, string> = {
   left: "text-left",
   center: "text-center",
   right: "text-right",
+};
+
+const FONT_SIZE_SCALE: Record<NonNullable<BlockStyle["fontSize"]>, string> = {
+  sm: "calc(var(--gp-page-base-size, 14px) * 0.85)",
+  md: "var(--gp-page-base-size, 14px)",
+  lg: "calc(var(--gp-page-base-size, 14px) * 1.18)",
+  xl: "calc(var(--gp-page-base-size, 14px) * 1.36)",
 };
 
 /** Đọc blockStyle từ payload; giá trị sai (dữ liệu cũ/hỏng) bị bỏ qua. */
@@ -53,6 +61,35 @@ export function BlockFrame({
   if (style.animation === "fade-up") {
     classes.push("gp-anim-fade-up");
     (css as Record<string, string>)["--gp-anim-delay"] = `${Math.min(index, 10) * 60}ms`;
+  }
+  if (style.fontSize && style.fontSize !== "md") {
+    (css as Record<string, string>)["--gp-base-size"] = FONT_SIZE_SCALE[style.fontSize];
+  }
+  if (typeof style.titleFontSize === "number") {
+    (css as Record<string, string>)["--gp-title-size"] = `${style.titleFontSize}px`;
+  }
+  if (typeof style.bodyFontSize === "number") {
+    (css as Record<string, string>)["--gp-body-size"] = `${style.bodyFontSize}px`;
+  }
+  if (style.titleFont) {
+    const stack = FONT_STACKS[style.titleFont];
+    (css as Record<string, string>)["--gp-font-heading"] = stack;
+    (css as Record<string, string>)["--gp-title-font"] = stack;
+  }
+  if (style.bodyFont) {
+    const stack = FONT_STACKS[style.bodyFont];
+    (css as Record<string, string>)["--gp-font-body"] = stack;
+    css.fontFamily = stack;
+  }
+  if (style.titleColor) {
+    (css as Record<string, string>)["--gp-heading-color"] = style.titleColor;
+  }
+  if (style.bodyColor) {
+    (css as Record<string, string>)["--gp-text"] = style.bodyColor;
+    css.color = style.bodyColor;
+  }
+  if (typeof style.buttonHeight === "number") {
+    (css as Record<string, string>)["--gp-btn-height"] = `${style.buttonHeight}px`;
   }
   // Ẩn theo độ rộng khung (container query) — đúng cả ở bản xem trước trong editor
   const hide = style.hideOn ?? [];

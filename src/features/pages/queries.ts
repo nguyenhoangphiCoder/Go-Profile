@@ -178,36 +178,54 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
   const { workspace, role } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
-  // 1. Tải thông tin trang
-  const { data: page, error: pageErr } = await supabase
-    .from("pages")
-    .select("id, internal_name, status, lock_version, published_revision_id, updated_at")
-    .eq("id", pageId)
-    .eq("workspace_id", workspace.id)
-    .is("archived_at", null)
-    .single();
+  // Đợt 1 (chạy song song 5 truy vấn độc lập thay vì nối đuôi nhau):
+  // pages, page_slugs, page_revisions (chỉ lấy 5 bản mới nhất), links, media_assets
+  const [
+    { data: page, error: pageErr },
+    { data: slugsData },
+    { data: revisions },
+    { data: linksData },
+    { data: mediaData },
+  ] = await Promise.all([
+    supabase
+      .from("pages")
+      .select("id, internal_name, status, lock_version, published_revision_id, updated_at")
+      .eq("id", pageId)
+      .eq("workspace_id", workspace.id)
+      .is("archived_at", null)
+      .single(),
+    supabase.from("page_slugs").select("id, slug, is_current").eq("page_id", pageId),
+    supabase
+      .from("page_revisions")
+      .select("id, revision_no, state, lock_version, title, description, theme, seo")
+      .eq("page_id", pageId)
+      .order("revision_no", { ascending: false })
+      .limit(5),
+    supabase
+      .from("links")
+      .select(
+        "id, default_label, target_url, kind, default_media_id, is_active, media_assets(object_path)"
+      )
+      .eq("workspace_id", workspace.id)
+      .is("archived_at", null)
+      .order("default_label", { ascending: true }),
+    supabase
+      .from("media_assets")
+      .select("id, original_filename, object_path")
+      .eq("workspace_id", workspace.id)
+      .eq("status", "ready")
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
+  ]);
 
   if (pageErr || !page) {
     console.error("Không tìm thấy trang:", pageErr);
     return null;
   }
 
-  // 2. Tải danh sách slugs
-  const { data: slugsData } = await supabase
-    .from("page_slugs")
-    .select("id, slug, is_current")
-    .eq("page_id", pageId);
-
   const slugs = (slugsData || []) as unknown as SlugQueryRow[];
   const primarySlug = slugs.find((s) => s.is_current)?.slug || "";
   const aliases = slugs.filter((s) => !s.is_current).map((s) => s.slug);
-
-  // 3. Tải revision: ưu tiên draft revision, nếu không có thì lấy revision sealed mới nhất
-  const { data: revisions } = await supabase
-    .from("page_revisions")
-    .select("id, revision_no, state, lock_version, title, description, theme, seo")
-    .eq("page_id", pageId)
-    .order("revision_no", { ascending: false });
 
   const allRevisions = (revisions || []) as unknown as RevisionQueryRow[];
   const draftRev = allRevisions.find((r) => r.state === "draft");
@@ -218,20 +236,17 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     return null;
   }
 
-  // 4. Tải các khối (page_blocks) của revision mục tiêu
-  const { data: blocksData } = await supabase
-    .from("page_blocks")
-    .select("id, type, position, is_visible, payload")
-    .eq("revision_id", targetRev.id)
-    .order("position", { ascending: true });
-
-  const rawBlocks = (blocksData || []) as unknown as BlockQueryRow[];
-
-  // 5. Tải placements của revision mục tiêu kèm chi tiết link và media
-  const { data: placementsData } = await supabase
-    .from("revision_link_placements")
-    .select(
-      `
+  // Đợt 2 (chạy song song 2 truy vấn phụ thuộc targetRev.id): page_blocks & placements
+  const [{ data: blocksData }, { data: placementsData }] = await Promise.all([
+    supabase
+      .from("page_blocks")
+      .select("id, type, position, is_visible, payload")
+      .eq("revision_id", targetRev.id)
+      .order("position", { ascending: true }),
+    supabase
+      .from("revision_link_placements")
+      .select(
+        `
       id,
       block_id,
       page_link_id,
@@ -256,9 +271,12 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
         object_path
       )
     `
-    )
-    .eq("revision_id", targetRev.id)
-    .order("position", { ascending: true });
+      )
+      .eq("revision_id", targetRev.id)
+      .order("position", { ascending: true }),
+  ]);
+
+  const rawBlocks = (blocksData || []) as unknown as BlockQueryRow[];
 
   // Gom placements theo block_id
   const placementsByBlock: Record<string, LinkPlacementItem[]> = {};
@@ -305,16 +323,6 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     placements: placementsByBlock[b.id] || [],
   }));
 
-  // 6. Tải danh mục link chung đang hoạt động
-  const { data: linksData } = await supabase
-    .from("links")
-    .select(
-      "id, default_label, target_url, kind, default_media_id, is_active, media_assets(object_path)"
-    )
-    .eq("workspace_id", workspace.id)
-    .is("archived_at", null)
-    .order("default_label", { ascending: true });
-
   const availableLinks = ((linksData || []) as unknown as LinkQueryRow[]).map((l) => ({
     id: l.id,
     defaultLabel: l.default_label,
@@ -326,15 +334,6 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
       : null,
     isActive: l.is_active,
   }));
-
-  // 7. Tải danh mục media sẵn sàng
-  const { data: mediaData } = await supabase
-    .from("media_assets")
-    .select("id, original_filename, object_path")
-    .eq("workspace_id", workspace.id)
-    .eq("status", "ready")
-    .is("archived_at", null)
-    .order("created_at", { ascending: false });
 
   const availableMedia = ((mediaData || []) as unknown as MediaAssetQueryRow[]).map((m) => ({
     id: m.id,
@@ -374,15 +373,24 @@ export async function getNewPageEditorData(): Promise<PageEditorData> {
   const { workspace } = await requireWorkspace("editor");
   const supabase = await createSupabaseServerClient();
 
-  // 1. Tải danh mục link chung đang hoạt động
-  const { data: linksData } = await supabase
-    .from("links")
-    .select(
-      "id, default_label, target_url, kind, default_media_id, is_active, media_assets(object_path)"
-    )
-    .eq("workspace_id", workspace.id)
-    .is("archived_at", null)
-    .order("default_label", { ascending: true });
+  // Chạy song song 2 truy vấn danh mục links và media
+  const [{ data: linksData }, { data: mediaData }] = await Promise.all([
+    supabase
+      .from("links")
+      .select(
+        "id, default_label, target_url, kind, default_media_id, is_active, media_assets(object_path)"
+      )
+      .eq("workspace_id", workspace.id)
+      .is("archived_at", null)
+      .order("default_label", { ascending: true }),
+    supabase
+      .from("media_assets")
+      .select("id, original_filename, object_path")
+      .eq("workspace_id", workspace.id)
+      .eq("status", "ready")
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const availableLinks = ((linksData || []) as unknown as LinkQueryRow[]).map((l) => ({
     id: l.id,
@@ -395,15 +403,6 @@ export async function getNewPageEditorData(): Promise<PageEditorData> {
       : null,
     isActive: l.is_active,
   }));
-
-  // 2. Tải danh mục media sẵn sàng
-  const { data: mediaData } = await supabase
-    .from("media_assets")
-    .select("id, original_filename, object_path")
-    .eq("workspace_id", workspace.id)
-    .eq("status", "ready")
-    .is("archived_at", null)
-    .order("created_at", { ascending: false });
 
   const availableMedia = ((mediaData || []) as unknown as MediaAssetQueryRow[]).map((m) => ({
     id: m.id,

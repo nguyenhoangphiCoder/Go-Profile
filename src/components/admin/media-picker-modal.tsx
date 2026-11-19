@@ -2,6 +2,7 @@
 
 import { useState, useRef, useTransition } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import {
   X,
   UploadCloud,
@@ -11,8 +12,16 @@ import {
   Image as ImageIcon,
   Trash2,
   Plus,
+  Crop,
 } from "lucide-react";
 import { uploadMediaDirectAction } from "@/features/media/actions";
+import { isOptimizableImageUrl } from "@/features/renderer/media";
+import type { CropImageSource } from "./image-crop-modal";
+import { isCroppableMimeType, isCroppableUrl, type CropAspectKey } from "@/lib/image-crop";
+
+const ImageCropModal = dynamic(() => import("./image-crop-modal").then((m) => m.ImageCropModal), {
+  ssr: false,
+});
 
 export interface MediaOption {
   id: string;
@@ -29,6 +38,7 @@ export interface MediaPickerModalProps {
   availableMedia: MediaOption[];
   onMediaAdded?: (newMedia: MediaOption) => void;
   aspectHint?: "circle" | "banner" | "standard";
+  cropAspect?: CropAspectKey;
 }
 
 export function MediaPickerModal({
@@ -40,6 +50,7 @@ export function MediaPickerModal({
   availableMedia,
   onMediaAdded,
   aspectHint = "standard",
+  cropAspect,
 }: MediaPickerModalProps) {
   const [search, setSearch] = useState("");
   const [currentSelectedId, setCurrentSelectedId] = useState<string | null>(
@@ -47,6 +58,8 @@ export function MediaPickerModal({
   );
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [cropSource, setCropSource] = useState<CropImageSource | null>(null);
+  const [cropError, setCropError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
 
@@ -58,18 +71,10 @@ export function MediaPickerModal({
 
   const selectedMedia = availableMedia.find((m) => m.id === currentSelectedId);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      setUploadError("Kích thước tệp vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn 5MB.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
+  const uploadFile = (file: File, fromCropModal: boolean) => {
     setIsUploading(true);
     setUploadError(null);
+    setCropError(null);
 
     startTransition(async () => {
       try {
@@ -86,17 +91,64 @@ export function MediaPickerModal({
           onMediaAdded?.(newMedia);
           setCurrentSelectedId(newMedia.id);
           onSelect(newMedia.id, newMedia.publicUrl);
+          if (fromCropModal) {
+            setCropSource(null);
+          }
           onClose();
         } else {
-          setUploadError(res.error || "Tải ảnh lên thất bại.");
+          const msg = res.error || "Tải ảnh lên thất bại.";
+          if (fromCropModal) {
+            setCropError(msg);
+          } else {
+            setUploadError(msg);
+          }
         }
       } catch (err: unknown) {
         console.error("Upload error:", err);
-        setUploadError("Có lỗi xảy ra khi tải ảnh lên.");
+        const msg = "Có lỗi xảy ra khi tải ảnh lên.";
+        if (fromCropModal) {
+          setCropError(msg);
+        } else {
+          setUploadError(msg);
+        }
       } finally {
         setIsUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
+    });
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Kích thước tệp vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn 5MB.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (isCroppableMimeType(file.type)) {
+      setUploadError(null);
+      setCropError(null);
+      setCropSource({
+        file,
+        filename: file.name,
+        mimeType: file.type,
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    uploadFile(file, false);
+  };
+
+  const handleCropSelected = () => {
+    if (!selectedMedia?.publicUrl) return;
+    setCropError(null);
+    setCropSource({
+      url: selectedMedia.publicUrl,
+      filename: selectedMedia.originalFilename,
     });
   };
 
@@ -241,8 +293,9 @@ export function MediaPickerModal({
                             src={m.publicUrl}
                             alt={m.originalFilename || "Media"}
                             fill
+                            sizes="160px"
                             className="object-contain group-hover:scale-105 transition-transform"
-                            unoptimized
+                            unoptimized={!isOptimizableImageUrl(m.publicUrl)}
                             loading="lazy"
                           />
                         </div>
@@ -304,6 +357,17 @@ export function MediaPickerModal({
             >
               Hủy
             </button>
+            {selectedMedia?.publicUrl && isCroppableUrl(selectedMedia.publicUrl) && (
+              <button
+                type="button"
+                onClick={handleCropSelected}
+                disabled={isUploading}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-primary/40 bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Crop className="w-3.5 h-3.5" />
+                <span>Cắt & áp dụng</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handleConfirm}
@@ -314,6 +378,32 @@ export function MediaPickerModal({
           </div>
         </div>
       </div>
+
+      {/* Image Crop Modal */}
+      {cropSource && (
+        <ImageCropModal
+          isOpen={Boolean(cropSource)}
+          source={cropSource}
+          aspectHint={aspectHint}
+          initialAspect={cropAspect}
+          title={title.replace(/^Chọn\s+/i, "Cắt ")}
+          allowUseOriginal={Boolean(cropSource.file)}
+          isSubmitting={isUploading}
+          error={cropError}
+          onCancel={() => {
+            setCropSource(null);
+            setCropError(null);
+          }}
+          onConfirm={(croppedFile) => {
+            uploadFile(croppedFile, true);
+          }}
+          onUseOriginal={() => {
+            if (cropSource.file) {
+              uploadFile(cropSource.file, true);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

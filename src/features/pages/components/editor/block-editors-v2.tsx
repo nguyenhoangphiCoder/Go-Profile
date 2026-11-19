@@ -1,8 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, RotateCcw } from "lucide-react";
+import { FONT_IDS, FONT_LABELS, type FontId } from "@/config/theme-tokens";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { isSafeMapsUrl, parseVideoUrl } from "@/features/renderer/embeds";
 import type {
   AccordionBlockPayload,
@@ -202,6 +204,7 @@ export function ButtonBlockEditor({
         hint="Lượt bấm được ghi nhận vào báo cáo như danh sách liên kết."
       >
         <select
+          aria-label="Liên kết của nút"
           value={current?.linkId || ""}
           onChange={(e) => selectLink(e.target.value)}
           className={inputClass}
@@ -215,9 +218,9 @@ export function ButtonBlockEditor({
         </select>
       </Field>
       {current && (
-        <Field label="Chữ trên nút (để trống = nhãn gốc)">
-          <input
-            type="text"
+        <Field label="Chữ trên nút (để trống = nhãn gốc)" hint="Nhấn Enter để xuống dòng.">
+          <textarea
+            rows={2}
             maxLength={100}
             placeholder={current.defaultLabel}
             value={current.labelOverride || ""}
@@ -227,20 +230,35 @@ export function ButtonBlockEditor({
                 placements: [{ ...current, labelOverride: e.target.value || null }],
               })
             }
-            className={inputClass}
+            className={`${inputClass} resize-y`}
           />
         </Field>
       )}
       <Field label="Dòng phụ dưới nút (tuỳ chọn)">
-        <input
-          type="text"
+        <textarea
+          rows={1}
           maxLength={120}
           placeholder="VD: Giảm 20% cho đơn đầu tiên"
           value={p.subtitle || ""}
           onChange={(e) => updatePayload({ subtitle: e.target.value })}
-          className={inputClass}
+          className={`${inputClass} resize-y`}
         />
       </Field>
+      {current?.defaultUrl?.trim().toLowerCase().startsWith("tel:") && (
+        <Field
+          label="Số hoặc link Zalo riêng (tuỳ chọn)"
+          hint="Để trống sẽ tự mở Zalo theo chính số điện thoại của nút."
+        >
+          <input
+            type="text"
+            maxLength={200}
+            placeholder="VD: 0901234567 hoặc https://zalo.me/gocafe"
+            value={p.zaloTarget || ""}
+            onChange={(e) => updatePayload({ zaloTarget: e.target.value || undefined })}
+            className={inputClass}
+          />
+        </Field>
+      )}
       <Choice
         label="Kích thước"
         value={p.size ?? "lg"}
@@ -257,8 +275,65 @@ export function ButtonBlockEditor({
           { value: "accent", label: "Màu nhấn" },
           { value: "surface", label: "Màu nút liên kết" },
         ]}
-        onChange={(emphasis) => updatePayload({ emphasis })}
+        onChange={(emphasis) =>
+          updatePayload({ emphasis, customBg: undefined, customText: undefined })
+        }
       />
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-muted-foreground">Màu riêng cho nút này</span>
+          {(p.customBg || p.customText) && (
+            <button
+              type="button"
+              onClick={() => updatePayload({ customBg: undefined, customText: undefined })}
+              className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <RotateCcw className="w-2.5 h-2.5" />
+              <span>Theo theme</span>
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {QUICK_BUTTON_SWATCHES.map((s) => (
+            <button
+              key={s.hex}
+              type="button"
+              title={s.name}
+              onClick={() => updatePayload({ customBg: s.hex })}
+              className={`w-6 h-6 rounded-full border cursor-pointer transition-transform hover:scale-110 ${
+                p.customBg?.toUpperCase() === s.hex
+                  ? "ring-2 ring-primary ring-offset-1 border-white"
+                  : "border-black/20"
+              }`}
+              style={{ backgroundColor: s.hex }}
+            />
+          ))}
+          <label
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-input bg-background text-[11px] cursor-pointer"
+            title="Chọn màu nền nút tuỳ ý"
+          >
+            <input
+              type="color"
+              value={p.customBg || "#3598DB"}
+              onChange={(e) => updatePayload({ customBg: e.target.value.toUpperCase() })}
+              className="w-4 h-4 rounded border-0 bg-transparent cursor-pointer p-0"
+            />
+            <span>Nền</span>
+          </label>
+          <label
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-input bg-background text-[11px] cursor-pointer"
+            title="Chọn màu chữ trên nút tuỳ ý"
+          >
+            <input
+              type="color"
+              value={p.customText || "#FFFFFF"}
+              onChange={(e) => updatePayload({ customText: e.target.value.toUpperCase() })}
+              className="w-4 h-4 rounded border-0 bg-transparent cursor-pointer p-0"
+            />
+            <span>Chữ</span>
+          </label>
+        </div>
+      </div>
     </div>
   );
 }
@@ -309,6 +384,7 @@ export function GalleryBlockEditor({
               }
               availableMedia={availableMedia}
               onMediaAdded={onMediaAdded}
+              cropAspect={p.layout === "carousel" ? "4:5" : "1:1"}
             />
             <input
               type="text"
@@ -404,6 +480,7 @@ export function MenuCardBlockEditor({
               }
               availableMedia={availableMedia}
               onMediaAdded={onMediaAdded}
+              cropAspect="1:1"
             />
           </div>
         )}
@@ -431,13 +508,12 @@ export function AccordionBlockEditor({ block, updatePayload }: V2EditorProps) {
             onChange={(e) => update({ title: e.target.value })}
             className={inputClass}
           />
-          <textarea
-            rows={3}
-            maxLength={3000}
-            placeholder="Nội dung trả lời"
+          <RichTextEditor
             value={item.content}
-            onChange={(e) => update({ content: e.target.value })}
-            className={inputClass}
+            onChange={(content) => update({ content })}
+            placeholder="Nội dung trả lời"
+            minHeight={100}
+            ariaLabel="Nội dung trả lời"
           />
         </div>
       )}
@@ -541,10 +617,231 @@ export function MapBlockEditor({ block, updatePayload }: V2EditorProps) {
 // Kiểu khối (áp dụng cho mọi loại khối)
 // ---------------------------------------------------------------------------
 
+interface FontSizeSpec {
+  title?: { label: string; min: number; max: number; fallback: number };
+  body?: { label: string; min: number; max: number; fallback: number };
+}
+
+function fontSizeSpecForBlock(type: EditorBlockItem["type"]): FontSizeSpec {
+  switch (type) {
+    case "header":
+      return {
+        title: { label: "Cỡ chữ tiêu đề (Profile Title)", min: 12, max: 36, fallback: 17 },
+        body: { label: "Cỡ chữ tiểu sử (Bio)", min: 10, max: 28, fallback: 14 },
+      };
+    case "heading":
+      return {
+        title: { label: "Cỡ chữ tiêu đề", min: 12, max: 36, fallback: 17 },
+      };
+    case "text":
+      return {
+        body: { label: "Cỡ chữ nội dung", min: 10, max: 28, fallback: 14 },
+      };
+    case "link_list":
+      return {
+        body: { label: "Cỡ chữ trên nút", min: 10, max: 28, fallback: 14 },
+      };
+    case "button":
+      return {
+        title: { label: "Cỡ chữ tiêu đề nút", min: 12, max: 32, fallback: 16 },
+        body: { label: "Cỡ chữ phụ đề nút", min: 10, max: 24, fallback: 12 },
+      };
+    case "menu_card":
+      return {
+        title: { label: "Cỡ chữ tiêu đề mục", min: 12, max: 32, fallback: 16 },
+        body: { label: "Cỡ chữ tên món & mô tả", min: 10, max: 24, fallback: 14 },
+      };
+    case "accordion":
+      return {
+        title: { label: "Cỡ chữ câu hỏi / tiêu đề", min: 12, max: 28, fallback: 14 },
+        body: { label: "Cỡ chữ nội dung trả lời", min: 10, max: 24, fallback: 13 },
+      };
+    case "map":
+      return {
+        title: { label: "Cỡ chữ tiêu đề chỉ đường", min: 12, max: 28, fallback: 14 },
+        body: { label: "Cỡ chữ địa chỉ", min: 10, max: 24, fallback: 12 },
+      };
+    case "image":
+    case "video_embed":
+      return {
+        body: { label: "Cỡ chữ chú thích", min: 10, max: 24, fallback: 12 },
+      };
+    default:
+      return {};
+  }
+}
+
+function FontSizeSlider({
+  label,
+  value,
+  min,
+  max,
+  fallback,
+  onChange,
+}: {
+  label: string;
+  value: number | undefined;
+  min: number;
+  max: number;
+  fallback: number;
+  onChange: (next: number | undefined) => void;
+}) {
+  const current = value ?? fallback;
+  const clamp = (n: number) => Math.min(max, Math.max(min, Math.round(n)));
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-semibold text-muted-foreground">{label}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-mono text-foreground">
+            {value !== undefined ? `${value}px` : "Mặc định"}
+          </span>
+          {value !== undefined && (
+            <button
+              type="button"
+              onClick={() => onChange(undefined)}
+              className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+              title="Quay về cỡ chữ mặc định của trang"
+            >
+              <RotateCcw className="w-2.5 h-2.5" />
+              <span>Mặc định</span>
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onChange(clamp(current - 1))}
+          disabled={current <= min}
+          className="w-7 h-7 rounded-lg border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer disabled:opacity-40 shrink-0"
+          aria-label={`Giảm ${label}`}
+        >
+          -
+        </button>
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={1}
+          value={current}
+          onChange={(e) => onChange(clamp(Number(e.target.value)))}
+          aria-label={label}
+          className="flex-1 accent-primary cursor-pointer h-1.5"
+        />
+        <button
+          type="button"
+          onClick={() => onChange(clamp(current + 1))}
+          disabled={current >= max}
+          className="w-7 h-7 rounded-lg border border-border bg-background hover:bg-muted text-xs font-bold cursor-pointer disabled:opacity-40 shrink-0"
+          aria-label={`Tăng ${label}`}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FontPickerSelect({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: FontId | undefined;
+  onChange: (next: FontId | undefined) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-semibold text-muted-foreground">{label}</span>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+            title="Quay về font mặc định của trang"
+          >
+            <RotateCcw className="w-2.5 h-2.5" />
+            <span>Mặc định</span>
+          </button>
+        )}
+      </div>
+      <select
+        value={value ?? ""}
+        onChange={(e) => onChange((e.target.value || undefined) as FontId | undefined)}
+        aria-label={label}
+        className={inputClass}
+      >
+        <option value="">-- Theo font chung của trang --</option>
+        {FONT_IDS.map((id) => (
+          <option key={id} value={id}>
+            {FONT_LABELS[id]}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+const QUICK_BUTTON_SWATCHES = [
+  { hex: "#EE4D2D", name: "Cam Shopee" },
+  { hex: "#111111", name: "Đen TikTok" },
+  { hex: "#0068FF", name: "Xanh Zalo" },
+  { hex: "#1877F2", name: "Xanh Facebook" },
+  { hex: "#16A34A", name: "Xanh lá" },
+  { hex: "#D97706", name: "Vàng hổ phách" },
+] as const;
+
+function InlineColorPicker({
+  label,
+  value,
+  fallback,
+  onChange,
+}: {
+  label: string;
+  value: string | undefined;
+  fallback: string;
+  onChange: (next: string | undefined) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="font-semibold text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1.5">
+        <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-input bg-background cursor-pointer">
+          <input
+            type="color"
+            value={value || fallback}
+            onChange={(e) => onChange(e.target.value.toUpperCase())}
+            aria-label={label}
+            className="w-4 h-4 rounded border-0 bg-transparent cursor-pointer p-0"
+          />
+          <span className="text-[11px] font-mono text-foreground">
+            {value ? value.toUpperCase() : "Mặc định"}
+          </span>
+        </label>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
+            title="Quay về màu mặc định của trang"
+          >
+            <RotateCcw className="w-2.5 h-2.5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function BlockStyleEditor({
   block,
   updatePayload,
-}: Pick<V2EditorProps, "block" | "updatePayload">) {
+  embedded = false,
+}: Pick<V2EditorProps, "block" | "updatePayload"> & { embedded?: boolean }) {
   const style = ((block.payload as { blockStyle?: BlockStyle }).blockStyle ?? {}) as BlockStyle;
   const set = (patch: Partial<BlockStyle>) => {
     const next: BlockStyle = { ...style, ...patch };
@@ -558,6 +855,132 @@ export function BlockStyleEditor({
   const toggleHide = (d: "mobile" | "desktop") =>
     set({ hideOn: hide.includes(d) ? hide.filter((x) => x !== d) : [...hide, d] });
   const active = Object.keys(style).length > 0;
+  const fontSpec = fontSizeSpecForBlock(block.type);
+
+  const controls = (
+    <div className={embedded ? "space-y-3.5" : "px-3 pb-3 space-y-3"}>
+      {fontSpec.title && (
+        <div className="space-y-2.5">
+          <FontPickerSelect
+            label={fontSpec.title.label.replace(/^Cỡ chữ\s+/i, "Font ")}
+            value={style.titleFont}
+            onChange={(titleFont) => set({ titleFont })}
+          />
+          <FontSizeSlider
+            label={fontSpec.title.label}
+            value={style.titleFontSize}
+            min={fontSpec.title.min}
+            max={fontSpec.title.max}
+            fallback={fontSpec.title.fallback}
+            onChange={(titleFontSize) => set({ titleFontSize, fontSize: undefined })}
+          />
+          <InlineColorPicker
+            label={fontSpec.title.label.replace(/^Cỡ chữ\s+/i, "Màu ")}
+            value={style.titleColor}
+            fallback="#FFFFFF"
+            onChange={(titleColor) => set({ titleColor })}
+          />
+        </div>
+      )}
+      {fontSpec.body && (
+        <div className="space-y-2.5">
+          <FontPickerSelect
+            label={fontSpec.body.label.replace(/^Cỡ chữ\s+/i, "Font ")}
+            value={style.bodyFont}
+            onChange={(bodyFont) => set({ bodyFont })}
+          />
+          <FontSizeSlider
+            label={fontSpec.body.label}
+            value={style.bodyFontSize}
+            min={fontSpec.body.min}
+            max={fontSpec.body.max}
+            fallback={fontSpec.body.fallback}
+            onChange={(bodyFontSize) => set({ bodyFontSize, fontSize: undefined })}
+          />
+          {block.type !== "link_list" && block.type !== "button" && (
+            <InlineColorPicker
+              label={fontSpec.body.label.replace(/^Cỡ chữ\s+/i, "Màu ")}
+              value={style.bodyColor}
+              fallback="#CBD0D5"
+              onChange={(bodyColor) => set({ bodyColor })}
+            />
+          )}
+        </div>
+      )}
+      {(block.type === "link_list" || block.type === "button") && (
+        <FontSizeSlider
+          label="Chiều cao nút (độ dày)"
+          value={style.buttonHeight}
+          min={36}
+          max={80}
+          fallback={54}
+          onChange={(buttonHeight) => set({ buttonHeight })}
+        />
+      )}
+      <Choice
+        label="Căn lề"
+        value={style.align}
+        options={[
+          { value: "left", label: "Trái" },
+          { value: "center", label: "Giữa" },
+          { value: "right", label: "Phải" },
+        ]}
+        onChange={(align) => set({ align: style.align === align ? undefined : align })}
+      />
+      <Choice
+        label="Khoảng đệm trên/dưới"
+        value={style.paddingY ?? "none"}
+        options={[
+          { value: "none", label: "Không" },
+          { value: "sm", label: "Nhỏ" },
+          { value: "md", label: "Vừa" },
+          { value: "lg", label: "Lớn" },
+        ]}
+        onChange={(paddingY) => set({ paddingY: paddingY === "none" ? undefined : paddingY })}
+      />
+      <Choice
+        label="Nền khối"
+        value={style.surface ?? "none"}
+        options={[
+          { value: "none", label: "Trong suốt" },
+          { value: "card", label: "Thẻ nổi" },
+        ]}
+        onChange={(surface) => set({ surface: surface === "none" ? undefined : surface })}
+      />
+      <Choice
+        label="Hiệu ứng xuất hiện"
+        value={style.animation ?? "none"}
+        options={[
+          { value: "none", label: "Không" },
+          { value: "fade-up", label: "Trượt lên" },
+        ]}
+        onChange={(animation) => set({ animation: animation === "none" ? undefined : animation })}
+      />
+      <div className="space-y-1.5">
+        <span className="block font-semibold text-muted-foreground">Ẩn trên thiết bị</span>
+        <div className="flex gap-3">
+          {(
+            [
+              ["mobile", "Điện thoại"],
+              ["desktop", "Máy tính / tablet"],
+            ] as const
+          ).map(([d, label]) => (
+            <label key={d} className="flex items-center gap-1.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={hide.includes(d)}
+                onChange={() => toggleHide(d)}
+                className="w-4 h-4 rounded"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (embedded) return controls;
 
   return (
     <details className="group rounded-xl border border-border/80 bg-muted/20" open={active}>
@@ -567,68 +990,7 @@ export function BlockStyleEditor({
         </span>
         <ChevronDown className="w-3.5 h-3.5 text-muted-foreground transition-transform group-open:rotate-180" />
       </summary>
-      <div className="px-3 pb-3 space-y-3">
-        <Choice
-          label="Căn lề"
-          value={style.align}
-          options={[
-            { value: "left", label: "Trái" },
-            { value: "center", label: "Giữa" },
-            { value: "right", label: "Phải" },
-          ]}
-          onChange={(align) => set({ align: style.align === align ? undefined : align })}
-        />
-        <Choice
-          label="Khoảng đệm trên/dưới"
-          value={style.paddingY ?? "none"}
-          options={[
-            { value: "none", label: "Không" },
-            { value: "sm", label: "Nhỏ" },
-            { value: "md", label: "Vừa" },
-            { value: "lg", label: "Lớn" },
-          ]}
-          onChange={(paddingY) => set({ paddingY: paddingY === "none" ? undefined : paddingY })}
-        />
-        <Choice
-          label="Nền khối"
-          value={style.surface ?? "none"}
-          options={[
-            { value: "none", label: "Trong suốt" },
-            { value: "card", label: "Thẻ nổi" },
-          ]}
-          onChange={(surface) => set({ surface: surface === "none" ? undefined : surface })}
-        />
-        <Choice
-          label="Hiệu ứng xuất hiện"
-          value={style.animation ?? "none"}
-          options={[
-            { value: "none", label: "Không" },
-            { value: "fade-up", label: "Trượt lên" },
-          ]}
-          onChange={(animation) => set({ animation: animation === "none" ? undefined : animation })}
-        />
-        <div className="space-y-1.5">
-          <span className="block font-semibold text-muted-foreground">Ẩn trên thiết bị</span>
-          <div className="flex gap-3">
-            {(
-              [
-                ["mobile", "Điện thoại"],
-                ["desktop", "Máy tính / tablet"],
-              ] as const
-            ).map(([d, label]) => (
-              <label key={d} className="flex items-center gap-1.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={hide.includes(d)}
-                  onChange={() => toggleHide(d)}
-                  className="w-4 h-4 rounded"
-                />
-                {label}
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
+      {controls}
     </details>
   );
 }

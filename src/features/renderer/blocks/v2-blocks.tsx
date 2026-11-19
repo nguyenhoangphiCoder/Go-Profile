@@ -11,6 +11,7 @@ import type {
   VideoEmbedBlockPayload,
 } from "@/features/pages/types";
 import { resolveMediaUrl } from "../media";
+import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { HEADING_STYLE, PageLink, tint } from "../primitives";
 import { isSafeMapsUrl, mapsEmbedUrl, mapsSearchUrl, parseVideoUrl } from "../embeds";
 import type { BlockRenderProps } from "../types";
@@ -42,8 +43,14 @@ export function ButtonBlock({ block, ctx }: BlockRenderProps) {
   if (!link) return <PreviewPlaceholder ctx={ctx}>Chưa chọn liên kết cho nút</PreviewPlaceholder>;
 
   const useAccent = (p.emphasis ?? "accent") === "accent";
-  const bg = useAccent ? ctx.tokens.colors.accent : ctx.tokens.colors.surface;
-  const fg = useAccent ? readableOn(ctx.tokens.colors.accent) : ctx.tokens.colors.surfaceText;
+  const bg = p.customBg || (useAccent ? ctx.tokens.colors.accent : ctx.tokens.colors.surface);
+  const fg =
+    p.customText ||
+    (p.customBg
+      ? readableOn(p.customBg)
+      : useAccent
+        ? readableOn(ctx.tokens.colors.accent)
+        : ctx.tokens.colors.surfaceText);
   const large = p.size === "lg";
 
   return (
@@ -51,8 +58,9 @@ export function ButtonBlock({ block, ctx }: BlockRenderProps) {
       <PageLink
         ctx={ctx}
         link={link}
+        zaloTarget={p.zaloTarget}
         className={`group flex flex-col items-center justify-center w-full text-center px-5 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:scale-[0.99] select-none ${
-          large ? "min-h-[76px] py-4" : "min-h-[60px] py-3"
+          large ? "py-2.5" : "py-2"
         }`}
         style={{
           backgroundColor: bg,
@@ -60,16 +68,30 @@ export function ButtonBlock({ block, ctx }: BlockRenderProps) {
           borderRadius: "var(--gp-radius)",
           boxShadow: "0 10px 24px -8px rgb(0 0 0 / 0.35)",
           textDecoration: "none",
+          minHeight: large
+            ? "calc(var(--gp-btn-height, 64px) + 10px)"
+            : "var(--gp-btn-height, 64px)",
         }}
       >
         <span
-          className={`font-extrabold tracking-[0.8px] leading-tight ${large ? "text-[17px]" : "text-[15px]"}`}
-          style={{ textTransform: "var(--gp-text-case)" as CSSProperties["textTransform"] }}
+          className="font-extrabold tracking-[0.8px] leading-tight whitespace-pre-line"
+          style={{
+            fontFamily: "var(--gp-title-font, var(--gp-font-body))",
+            fontSize: large
+              ? "var(--gp-title-size, calc(var(--gp-base-size, 14px) * 1.2))"
+              : "var(--gp-title-size, calc(var(--gp-base-size, 14px) * 1.07))",
+            textTransform: "var(--gp-text-case)" as CSSProperties["textTransform"],
+          }}
         >
           {link.label}
         </span>
         {p.subtitle && (
-          <span className="text-[12px] opacity-85 mt-1 font-medium">{p.subtitle}</span>
+          <span
+            className="opacity-85 mt-1 font-medium whitespace-pre-line"
+            style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.86))" }}
+          >
+            {p.subtitle}
+          </span>
         )}
       </PageLink>
     </div>
@@ -150,8 +172,15 @@ export function MenuCardBlock({ block, ctx }: BlockRenderProps) {
     <div className="w-full my-2 space-y-3">
       {p.title && (
         <h3
-          className="text-center text-[15px] tracking-[0.5px]"
-          style={ctx.variant === "standard" ? HEADING_STYLE : undefined}
+          className="text-center tracking-[0.5px]"
+          style={
+            ctx.variant === "standard"
+              ? {
+                  ...HEADING_STYLE,
+                  fontSize: "var(--gp-title-size, calc(var(--gp-base-size, 14px) * 1.1))",
+                }
+              : { fontSize: "var(--gp-title-size, calc(var(--gp-base-size, 14px) * 1.1))" }
+          }
         >
           {p.title}
         </h3>
@@ -194,15 +223,31 @@ export function MenuCardBlock({ block, ctx }: BlockRenderProps) {
               )}
               <div className={`min-w-0 flex-1 ${isGrid ? "p-2.5" : ""}`}>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-bold text-[14px] leading-snug">{item.name}</span>
+                  <span
+                    className="font-bold leading-snug"
+                    style={{ fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))" }}
+                  >
+                    {item.name}
+                  </span>
                   {item.price && (
-                    <span className="font-bold text-[13px] shrink-0" style={{ color: accent }}>
+                    <span
+                      className="font-bold shrink-0"
+                      style={{
+                        color: accent,
+                        fontSize: "calc(var(--gp-body-size, var(--gp-base-size, 14px)) * 0.93)",
+                      }}
+                    >
                       {item.price}
                     </span>
                   )}
                 </div>
                 {item.description && (
-                  <p className="text-[12px] opacity-75 leading-snug mt-0.5 line-clamp-2">
+                  <p
+                    className="opacity-75 leading-snug mt-0.5 line-clamp-2"
+                    style={{
+                      fontSize: "calc(var(--gp-body-size, var(--gp-base-size, 14px)) * 0.86)",
+                    }}
+                  >
                     {item.description}
                   </p>
                 )}
@@ -235,11 +280,22 @@ export function AccordionBlock({ block, ctx }: BlockRenderProps) {
           style={cardSurface(ctx)}
         >
           <summary className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-            <span className="font-semibold text-[14px] text-left">{item.title}</span>
+            <span
+              className="font-semibold text-left"
+              style={{
+                fontFamily: "var(--gp-title-font, var(--gp-font-body))",
+                fontSize: "var(--gp-title-size, var(--gp-base-size, 14px))",
+              }}
+            >
+              {item.title}
+            </span>
             <ChevronDown className="w-4 h-4 shrink-0 opacity-70 transition-transform group-open:rotate-180" />
           </summary>
-          <div className="px-4 pb-3.5 text-[13px] leading-relaxed opacity-85 whitespace-pre-line">
-            {item.content}
+          <div
+            className="px-4 pb-3.5 leading-relaxed opacity-85"
+            style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.93))" }}
+          >
+            {renderLnkBioFormattedText(item.content, "left", "var(--gp-accent)")}
           </div>
         </details>
       ))}
@@ -280,7 +336,14 @@ export function VideoEmbedBlock({ block, ctx }: BlockRenderProps) {
           className="absolute inset-0 w-full h-full border-0"
         />
       </div>
-      {p.caption && <p className="text-xs opacity-75 text-center mt-1.5">{p.caption}</p>}
+      {p.caption && (
+        <p
+          className="opacity-75 text-center mt-1.5"
+          style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.85))" }}
+        >
+          {p.caption}
+        </p>
+      )}
     </div>
   );
 }
@@ -311,8 +374,21 @@ export function MapBlock({ block, ctx }: BlockRenderProps) {
         <MapPin className="w-4 h-4" />
       </span>
       <span className="min-w-0 flex-1 text-left">
-        <span className="block font-bold text-[14px]">{p.label || "Chỉ đường"}</span>
-        <span className="block text-[12px] opacity-75 leading-snug">{address}</span>
+        <span
+          className="block font-bold"
+          style={{
+            fontFamily: "var(--gp-title-font, var(--gp-font-body))",
+            fontSize: "var(--gp-title-size, var(--gp-base-size, 14px))",
+          }}
+        >
+          {p.label || "Chỉ đường"}
+        </span>
+        <span
+          className="block opacity-75 leading-snug"
+          style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.86))" }}
+        >
+          {address}
+        </span>
       </span>
     </>
   );

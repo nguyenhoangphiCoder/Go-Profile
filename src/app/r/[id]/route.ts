@@ -35,6 +35,14 @@ export async function GET(req: NextRequest, { params }: RouteProps) {
     });
   }
 
+  // Chế độ ghi nhận click ngầm (dùng cho nút số điện thoại mở bảng chọn Gọi / Zalo)
+  if (req.nextUrl.searchParams.get("track") === "1") {
+    return new NextResponse(null, {
+      status: 204,
+      headers: NO_CACHE_HEADERS,
+    });
+  }
+
   // Chuyển hướng tạm thời HTTP 307 bảo toàn method và không lưu cache (P07.05)
   return NextResponse.redirect(result.targetUrl, {
     status: 307,

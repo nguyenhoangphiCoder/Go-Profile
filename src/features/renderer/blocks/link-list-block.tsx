@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { buttonStyle } from "@/config/theme-tokens";
+import { readableOn } from "@/lib/color";
+import type { LinkButtonColorOverride } from "@/features/pages/types";
 import { resolveMediaUrl } from "../media";
 import { MoreDotsIcon, PageLink, splitLabel } from "../primitives";
 import type { BlockRenderProps } from "../types";
@@ -8,6 +10,13 @@ import type { BlockRenderProps } from "../types";
 export function LinkListBlock({ block, ctx }: BlockRenderProps) {
   const links = block.links;
   const { tokens, variant } = ctx;
+  const payload = block.payload as {
+    layout?: string;
+    zaloByTel?: Record<string, string>;
+    buttonColors?: Record<string, LinkButtonColorOverride>;
+  };
+  const zaloByTel = payload.zaloByTel;
+  const buttonColors = payload.buttonColors;
 
   // Beacons Portrait: từng nút viên thuốc viền trắng
   if (variant === "beacons-portrait") {
@@ -22,6 +31,7 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
               key={link.id}
               ctx={ctx}
               link={link}
+              zaloTarget={zaloByTel?.[link.targetUrl]}
               className="group relative flex items-center justify-between w-full min-h-[64px] @min-[40rem]:min-h-[66px] px-3.5 py-2 @min-[40rem]:px-4 @min-[40rem]:py-2.5 rounded-full border-2 border-[#FEFEFE] bg-[#1F2125] hover:bg-[#282a2e] transition-all duration-150 text-white select-none shadow-sm active:scale-[0.99]"
             >
               <div className="w-[45px] h-[45px] rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-black/20">
@@ -39,11 +49,22 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
               </div>
 
               <div className="flex-1 flex flex-col items-center justify-center text-center px-3 min-w-0">
-                <span className="text-[15px] @min-[40rem]:text-[16px] font-semibold text-[#FEFEFE] tracking-wide leading-tight line-clamp-1">
+                <span
+                  className="font-semibold text-[#FEFEFE] tracking-wide leading-tight line-clamp-1"
+                  style={{
+                    fontSize:
+                      "var(--gp-title-size, var(--gp-body-size, calc(var(--gp-base-size, 14px) * 1.07)))",
+                  }}
+                >
                   {title}
                 </span>
                 {subtitle && (
-                  <span className="text-[12px] @min-[40rem]:text-[12.5px] text-neutral-300 font-normal leading-tight mt-1 line-clamp-2">
+                  <span
+                    className="text-neutral-300 font-normal leading-tight mt-1 line-clamp-2"
+                    style={{
+                      fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.86))",
+                    }}
+                  >
                     {subtitle}
                   </span>
                 )}
@@ -72,6 +93,7 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
               key={link.id}
               ctx={ctx}
               link={link}
+              zaloTarget={zaloByTel?.[link.targetUrl]}
               className="group relative flex items-center justify-between px-4 py-3.5 @min-[40rem]:px-5 @min-[40rem]:py-4 hover:bg-white/5 transition-colors select-none text-white"
             >
               <div className="w-[46px] h-[46px] @min-[40rem]:w-[50px] @min-[40rem]:h-[50px] rounded-[10px] overflow-hidden shrink-0 shadow-xs bg-black/40 flex items-center justify-center">
@@ -89,11 +111,22 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
               </div>
 
               <div className="flex-1 flex flex-col items-center justify-center text-center px-4 min-w-0">
-                <span className="text-[15px] @min-[40rem]:text-[16px] font-semibold text-white tracking-wide truncate max-w-full">
+                <span
+                  className="font-semibold text-white tracking-wide truncate max-w-full"
+                  style={{
+                    fontSize:
+                      "var(--gp-title-size, var(--gp-body-size, calc(var(--gp-base-size, 14px) * 1.07)))",
+                  }}
+                >
                   {title}
                 </span>
                 {subtitle && (
-                  <span className="text-[12.5px] @min-[40rem]:text-[13px] text-neutral-400 font-normal truncate max-w-full mt-0.5">
+                  <span
+                    className="text-neutral-400 font-normal truncate max-w-full mt-0.5"
+                    style={{
+                      fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.88))",
+                    }}
+                  >
                     {subtitle}
                   </span>
                 )}
@@ -124,19 +157,40 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
     >
       {links.map((link) => {
         const iconUrl = resolveMediaUrl(link.mediaUrl);
+        const customColor = buttonColors?.[link.targetUrl];
+        const linkStyle: CSSProperties = {
+          ...style,
+          minHeight: "var(--gp-btn-height, 64px)",
+          ...(customColor?.bg
+            ? {
+                backgroundColor: customColor.bg,
+                borderColor: customColor.bg,
+                color: customColor.text || readableOn(customColor.bg),
+              }
+            : customColor?.text
+              ? { color: customColor.text }
+              : {}),
+        };
 
         return (
           <PageLink
             key={link.id}
             ctx={ctx}
             link={link}
-            className={`group relative flex items-center justify-center w-full h-[64px] min-h-[64px] px-4 transition-all duration-200 hover:brightness-110 active:scale-[0.99] select-none ${
-              isGlass ? "backdrop-blur-xl" : ""
+            zaloTarget={zaloByTel?.[link.targetUrl]}
+            className={`group relative flex items-center justify-center w-full px-4 py-2 transition-all duration-200 hover:brightness-110 active:scale-[0.99] select-none ${
+              isGlass && !customColor?.bg ? "backdrop-blur-xl" : ""
             }`}
-            style={style}
+            style={linkStyle}
           >
             {iconUrl && (
-              <div className="absolute left-[8px] @min-[40rem]:left-[10px] w-[48px] h-[48px] rounded-full overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+              <div
+                className="absolute left-[8px] @min-[40rem]:left-[10px] rounded-full overflow-hidden shrink-0 flex items-center justify-center shadow-xs"
+                style={{
+                  width: "min(48px, calc(var(--gp-btn-height, 64px) - 12px))",
+                  height: "min(48px, calc(var(--gp-btn-height, 64px) - 12px))",
+                }}
+              >
                 <Image
                   src={iconUrl}
                   alt={link.label}
@@ -149,8 +203,11 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
               </div>
             )}
             <span
-              style={{ textTransform: "var(--gp-text-case)" as CSSProperties["textTransform"] }}
-              className={`text-(length:--gp-base-size) font-bold tracking-[0.8px] text-center leading-snug group-hover:text-[#1FBBFF] transition-colors duration-150 ${
+              style={{
+                fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))",
+                textTransform: "var(--gp-text-case)" as CSSProperties["textTransform"],
+              }}
+              className={`font-bold tracking-[0.8px] text-center leading-snug whitespace-pre-line group-hover:text-[#1FBBFF] transition-colors duration-150 ${
                 iconUrl ? "px-14 @min-[40rem]:px-16" : "px-4"
               }`}
             >

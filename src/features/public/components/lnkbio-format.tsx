@@ -1,14 +1,31 @@
+import { PhoneInlineLink } from "@/features/renderer/phone-action-sheet";
+import { isRichTextHtml, sanitizeRichTextHtml } from "@/lib/rich-text";
+
 /**
- * Hiển thị văn bản giàu định dạng theo phong cách Lnk.Bio (hophuonganh.gocafe):
- * - Dòng bọc trong *...* được hiển thị in nghiêng theo màu chủ đạo Bio (accentColor)
- * - Dòng "- Việc quan trọng: email ..." căn trái, in đậm kèm link email theo màu chủ đạo
- * - Các dòng liên hệ "- Liên hệ..." và số điện thoại được tô đậm & làm nổi bật số điện thoại theo màu chủ đạo
+ * Hiển thị văn bản giàu định dạng theo phong cách Lnk.Bio (hophuonganh.gocafe)
+ * hoặc HTML rich text đã được lọc an toàn (từ RichTextEditor).
  */
 export function renderLnkBioFormattedText(
   content: string,
   defaultAlign: string = "center",
   accentColor: string = "#2563eb"
 ) {
+  if (isRichTextHtml(content)) {
+    const safeHtml = sanitizeRichTextHtml(content);
+    const alignClass =
+      defaultAlign === "left"
+        ? "text-left"
+        : defaultAlign === "right"
+          ? "text-right"
+          : "text-center";
+    return (
+      <div
+        className={`gp-rich-text leading-[1.6] tracking-[0.5px] ${alignClass}`}
+        dangerouslySetInnerHTML={{ __html: safeHtml }}
+      />
+    );
+  }
+
   const lines = content.split("\n");
 
   return lines.map((rawLine, idx) => {
@@ -24,7 +41,7 @@ export function renderLnkBioFormattedText(
       return (
         <p
           key={idx}
-          className={`text-[14px] sm:text-[15px] leading-[1.6] tracking-[0.6px] italic font-medium text-${defaultAlign}`}
+          className={`leading-[1.6] tracking-[0.6px] italic font-medium text-${defaultAlign}`}
           style={{ color: accentColor }}
         >
           {innerText}
@@ -39,7 +56,7 @@ export function renderLnkBioFormattedText(
     if (emailMatch) {
       const [, prefix, email, suffix] = emailMatch;
       return (
-        <p key={idx} className="text-[14px] leading-[1.6] tracking-[0.6px] font-bold text-left">
+        <p key={idx} className="leading-[1.6] tracking-[0.6px] font-bold text-left">
           <span>{prefix}</span>
           <a
             href={`mailto:${email}`}
@@ -57,19 +74,9 @@ export function renderLnkBioFormattedText(
     const phoneMatch = line.match(/^(\d{3,4}(?:\.\d{2,4})+)(\s*\(.*\))?$/);
     if (phoneMatch) {
       const [, phone, note] = phoneMatch;
-      const cleanTel = phone.replace(/\./g, "");
       return (
-        <p
-          key={idx}
-          className={`text-[14px] leading-[1.6] tracking-[0.6px] font-bold text-${defaultAlign}`}
-        >
-          <a
-            href={`tel:${cleanTel}`}
-            className="hover:underline font-bold"
-            style={{ color: accentColor }}
-          >
-            {phone}
-          </a>
+        <p key={idx} className={`leading-[1.6] tracking-[0.6px] font-bold text-${defaultAlign}`}>
+          <PhoneInlineLink phoneText={phone} accentColor={accentColor} />
           {note && <span className="font-normal opacity-90 pl-1 text-current">{note}</span>}
         </p>
       );
@@ -78,10 +85,7 @@ export function renderLnkBioFormattedText(
     // 4. Dòng bắt đầu bằng "- " (tiêu đề mục liên hệ)
     if (line.startsWith("- ")) {
       return (
-        <p
-          key={idx}
-          className={`text-[14px] leading-[1.6] tracking-[0.6px] font-bold text-${defaultAlign}`}
-        >
+        <p key={idx} className={`leading-[1.6] tracking-[0.6px] font-bold text-${defaultAlign}`}>
           {line}
         </p>
       );
@@ -89,7 +93,7 @@ export function renderLnkBioFormattedText(
 
     // 5. Đoạn văn bản thông thường
     return (
-      <p key={idx} className={`text-[14px] leading-[1.6] tracking-[0.6px] text-${defaultAlign}`}>
+      <p key={idx} className={`leading-[1.6] tracking-[0.6px] text-${defaultAlign}`}>
         {line}
       </p>
     );

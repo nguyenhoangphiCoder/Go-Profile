@@ -6,6 +6,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useDeferredValue,
   useSyncExternalStore,
 } from "react";
 import Link from "next/link";
@@ -30,21 +31,14 @@ import {
   Link2,
   Image as ImageIcon,
   BarChart3,
-  Heading,
-  AlignLeft,
-  Share2,
-  Maximize2,
-  Minus,
   Sparkles,
   Undo2,
   Redo2,
   GripVertical,
-  MousePointerClick,
-  Images,
-  UtensilsCrossed,
-  ListCollapse,
-  PlaySquare,
-  MapPin,
+  Plus,
+  MoreVertical,
+  EyeOff,
+  ChevronsDownUp,
 } from "lucide-react";
 import type {
   PageEditorData,
@@ -57,25 +51,16 @@ import { LivePreview } from "./live-preview";
 import { useUndoHistory } from "./use-undo-history";
 import { reorderByInsertion } from "./reorder";
 import { BLOCK_REGISTRY } from "@/features/renderer/blocks/registry";
+import { BlockPickerModal } from "./block-picker-modal";
 
-// Khối mới (giai đoạn 4): payload mặc định lấy từ registry
-const V2_BLOCKS = [
-  { type: "button", label: "Nút nổi bật", Icon: MousePointerClick, tone: "rose" },
-  { type: "gallery", label: "Thư viện ảnh", Icon: Images, tone: "orange" },
-  { type: "menu_card", label: "Thẻ món", Icon: UtensilsCrossed, tone: "yellow" },
-  { type: "accordion", label: "Hỏi đáp", Icon: ListCollapse, tone: "teal" },
-  { type: "video_embed", label: "Video", Icon: PlaySquare, tone: "red" },
-  { type: "map", label: "Bản đồ", Icon: MapPin, tone: "green" },
-] as const;
-
-const TONE_CLASSES: Record<(typeof V2_BLOCKS)[number]["tone"], string> = {
-  rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
-  orange: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  yellow: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
-  teal: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
-  red: "bg-red-500/10 text-red-600 dark:text-red-400",
-  green: "bg-green-500/10 text-green-600 dark:text-green-400",
-};
+const V2_BLOCK_TYPES = new Set<BlockType>([
+  "button",
+  "gallery",
+  "menu_card",
+  "accordion",
+  "video_embed",
+  "map",
+]);
 import { ThemeEditor } from "./theme-editor";
 import { SeoEditor } from "./seo-editor";
 import { BlockItemEditor } from "./block-item-editor";
@@ -142,6 +127,12 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const [blocks, setBlocks] = useState<EditorBlockItem[]>(initialData.blocks);
   const [mediaList, setMediaList] = useState(initialData.availableMedia);
 
+  // Tách ưu tiên render: ưu tiên gõ phím / kéo thanh trượt ở cột trái mượt 60fps,
+  // để khung LivePreview cập nhật ngay sau đó 1 frame mà không gây khựng.
+  const deferredBlocks = useDeferredValue(blocks);
+  const deferredThemeConfig = useDeferredValue(themeConfig);
+  const deferredTitle = useDeferredValue(title);
+
   const handleMediaAdded = useCallback(
     (newMedia: { id: string; originalFilename: string | null; publicUrl: string | null }) => {
       setMediaList((prev) => [newMedia, ...prev]);
@@ -155,6 +146,11 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const [mobileViewMode, setMobileViewMode] = useState<"edit" | "preview">("edit");
   const [isDirty, setIsDirty] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [isBlockPickerOpen, setIsBlockPickerOpen] = useState(false);
+  const [expandedBlockId, setExpandedBlockId] = useState<string | null>(
+    isCreatingNew ? (initialData.blocks[0]?.id ?? null) : null
+  );
 
   const [toast, setToast] = useState<ToastState | null>(null);
   const [confirmModal, setConfirmModal] = useState<ConfirmModalState | null>(null);
@@ -253,7 +249,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     if (type === "social_icons") payload = { style: "colored" };
     if (type === "spacer") payload = { height: "md" };
     if (type === "divider") payload = { style: "solid" };
-    if (V2_BLOCKS.some((b) => b.type === type)) {
+    if (V2_BLOCK_TYPES.has(type)) {
       payload = structuredClone(BLOCK_REGISTRY[type].defaultPayload);
     }
 
@@ -267,8 +263,69 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     };
 
     setBlocks([...blocks, newBlock]);
+    setSelectedBlockId(newBlock.id);
+    setExpandedBlockId(newBlock.id);
     setIsDirty(true);
     showToast(`Đã thêm khối mới: ${getBlockName(type)}`, "info");
+    window.setTimeout(() => {
+      document
+        .getElementById(`block-editor-${newBlock.id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 60);
+  };
+
+  // Áp dụng mẫu khởi tạo nhanh khi tạo trang mới
+  const applyStarterTemplate = (template: "profile" | "store" | "blank") => {
+    const pageDisplayName = internalName.trim() || title || "GỜ CAFÉ";
+    if (template === "blank") {
+      setBlocks([]);
+      setExpandedBlockId(null);
+      setIsDirty(true);
+      showToast("Đã đặt về trang trống.", "info");
+      return;
+    }
+
+    const make = (
+      type: BlockType,
+      position: number,
+      payload: Record<string, unknown>
+    ): EditorBlockItem => ({
+      id: crypto.randomUUID(),
+      type,
+      position,
+      isVisible: true,
+      payload,
+      placements: [],
+    });
+
+    const nextBlocks: EditorBlockItem[] =
+      template === "profile"
+        ? [
+            make("header", 0, {
+              title: pageDisplayName,
+              bio: "Giới thiệu ngắn về bạn hoặc thương hiệu...",
+            }),
+            make("link_list", 1, { layout: "stack" }),
+            make("social_icons", 2, { style: "colored" }),
+          ]
+        : [
+            make("header", 0, {
+              title: pageDisplayName,
+              bio: "Cà phê chuẩn gu — Mở cửa mỗi ngày 06:30 – 22:00",
+            }),
+            make("link_list", 1, { layout: "stack" }),
+            make("menu_card", 2, structuredClone(BLOCK_REGISTRY.menu_card.defaultPayload)),
+            make("map", 3, structuredClone(BLOCK_REGISTRY.map.defaultPayload)),
+          ];
+
+    setBlocks(nextBlocks);
+    setSelectedBlockId(nextBlocks[0]?.id ?? null);
+    setExpandedBlockId(nextBlocks[0]?.id ?? null);
+    setIsDirty(true);
+    showToast(
+      template === "profile" ? "Đã tạo bố cục Hồ sơ cá nhân." : "Đã tạo bố cục Quán / Menu.",
+      "success"
+    );
   };
 
   const getBlockName = (type: BlockType) => {
@@ -301,6 +358,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
   const handleSelectBlockFromPreview = useCallback((blockId: string) => {
     setSelectedBlockId(blockId);
+    setExpandedBlockId(blockId);
     setPreviewPick((prev) => ({ id: blockId, token: (prev?.token ?? 0) + 1 }));
     setActiveTab("blocks");
     setMobileViewMode("edit");
@@ -750,12 +808,15 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             {/* Page Title & Slug Badge */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 min-w-0">
-                <h1
-                  className="text-[13px] sm:text-sm font-bold truncate sm:max-w-xs text-foreground leading-tight"
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("seo")}
+                  className="text-[13px] sm:text-sm font-bold truncate sm:max-w-xs text-foreground hover:text-primary leading-tight transition-colors cursor-pointer text-left"
+                  title="Bấm để sửa tên & đường dẫn trang"
                   suppressHydrationWarning
                 >
                   {internalName || (isCreatingNew ? "Tạo trang mới" : page.internalName)}
-                </h1>
+                </button>
                 <button
                   type="button"
                   onClick={copySlugLink}
@@ -818,69 +879,8 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             </div>
           </div>
 
-          {/* Center Section: Device Switcher & Zoom Scale (desktop only) */}
-          <div className="hidden lg:flex items-center gap-2">
-            <div className="flex items-center rounded-xl border border-border p-1 bg-muted/40">
-              <button
-                type="button"
-                onClick={() => setPreviewMode("mobile")}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                  previewMode === "mobile"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Điện thoại</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewMode("desktop")}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                  previewMode === "desktop"
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Monitor className="w-3.5 h-3.5" />
-                <span>Máy tính</span>
-              </button>
-            </div>
-
-            <div className="flex items-center rounded-xl border border-border p-1 bg-muted/40 text-xs">
-              {([1, 0.9, 0.8] as const).map((z) => (
-                <button
-                  key={z}
-                  type="button"
-                  onClick={() => setZoomScale(z)}
-                  className={`px-2 py-1 rounded-lg font-mono text-[11px] transition-colors cursor-pointer ${
-                    zoomScale === z
-                      ? "bg-background text-foreground font-bold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title={`Thu phóng ${Math.round(z * 100)}%`}
-                >
-                  {Math.round(z * 100)}%
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Right Section: Actions */}
+          {/* Right Section: Actions (gọn gàng, tránh bấm nhầm Ẩn trang) */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Open live page */}
-            {!isCreatingNew && page.status === "published" && (
-              <a
-                href={`/${slug || initialData.primarySlug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden xl:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Xem trang</span>
-              </a>
-            )}
-
             {/* Undo / Redo */}
             <div className="hidden sm:flex items-center rounded-xl border border-border">
               <button
@@ -932,18 +932,6 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
               )}
             </button>
 
-            {/* Unpublish button if published */}
-            {!isCreatingNew && page.status === "published" && (
-              <button
-                type="button"
-                onClick={handleUnpublish}
-                disabled={isPending || !canEdit}
-                className="hidden sm:flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-red-500/30 text-red-600 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                <span>Ẩn trang</span>
-              </button>
-            )}
-
             {/* Publish Button */}
             <button
               type="button"
@@ -961,6 +949,69 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                 {isCreatingNew ? "Tạo & Xuất bản" : "Xuất bản"}
               </span>
             </button>
+
+            {/* More menu (Xem trang, Cài đặt, Ẩn trang) */}
+            {!isCreatingNew && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setMoreMenuOpen((v) => !v)}
+                  className="w-9 h-9 flex items-center justify-center rounded-xl border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  title="Thêm thao tác"
+                  aria-label="Thêm thao tác"
+                  aria-expanded={moreMenuOpen}
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+                {moreMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setMoreMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1.5 w-48 rounded-2xl border border-border bg-popover shadow-xl p-1.5 z-50 text-xs space-y-0.5">
+                      {page.status === "published" && (
+                        <a
+                          href={`/${slug || initialData.primarySlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => setMoreMenuOpen(false)}
+                          className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-primary" />
+                          <span>Xem trang công khai</span>
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMoreMenuOpen(false);
+                          setActiveTab("seo");
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer text-left"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>Đổi tên & đường dẫn</span>
+                      </button>
+                      {page.status === "published" && (
+                        <>
+                          <div className="my-1 border-t border-border/60" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMoreMenuOpen(false);
+                              handleUnpublish();
+                            }}
+                            disabled={isPending || !canEdit}
+                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-red-500/10 text-red-600 transition-colors cursor-pointer text-left disabled:opacity-50"
+                          >
+                            <EyeOff className="w-3.5 h-3.5" />
+                            <span>Ẩn trang khỏi công khai</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1069,9 +1120,234 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
           {/* Studio Tab Content (Independent scroll) */}
           <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5 pb-24 sm:pb-40 space-y-6">
             {activeTab === "blocks" && (
-              <div className="space-y-6">
-                {/* 1. Core Page Settings: Internal Name & Slug & Title */}
-                <div className="p-4 rounded-2xl border border-border/80 bg-muted/10 space-y-3 shadow-2xs">
+              <div className="space-y-4">
+                {/* Chỉ hiện bước khởi tạo nhanh khi đang TẠO TRANG MỚI */}
+                {isCreatingNew && (
+                  <div className="p-4 rounded-2xl border border-primary/25 bg-primary/5 space-y-3 shadow-2xs">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                      <Sparkles className="w-3.5 h-3.5 text-primary" />
+                      <span>Khởi tạo trang mới</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Tên trang quản lý <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={internalName}
+                          onChange={(e) => handleInternalNameChange(e.target.value)}
+                          placeholder="VD: Hồ sơ Hồ Phượng Ánh"
+                          className="w-full px-3 py-2 text-xs rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Đường dẫn (Slug) <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex items-center rounded-xl border border-input bg-background overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
+                          <span className="px-2.5 py-2 text-[11px] text-muted-foreground bg-muted/40 font-mono border-r border-border/60 shrink-0">
+                            /
+                          </span>
+                          <input
+                            type="text"
+                            value={slug}
+                            onChange={(e) => {
+                              setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9.-]/g, "-"));
+                              setIsDirty(true);
+                            }}
+                            placeholder="ho-phuong-anh"
+                            className="w-full px-2.5 py-2 text-xs font-mono bg-transparent focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-1 space-y-1.5">
+                      <span className="block text-[11px] font-semibold text-muted-foreground">
+                        Bắt đầu nhanh với bố cục gợi ý:
+                      </span>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => applyStarterTemplate("profile")}
+                          className="px-2.5 py-2 rounded-xl border border-border bg-background hover:border-primary/50 hover:bg-primary/5 text-[11px] font-semibold text-foreground transition-all cursor-pointer text-center"
+                        >
+                          Hồ sơ cá nhân
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyStarterTemplate("store")}
+                          className="px-2.5 py-2 rounded-xl border border-border bg-background hover:border-primary/50 hover:bg-primary/5 text-[11px] font-semibold text-foreground transition-all cursor-pointer text-center"
+                        >
+                          Quán / Menu
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => applyStarterTemplate("blank")}
+                          className="px-2.5 py-2 rounded-xl border border-border bg-background hover:border-primary/50 hover:bg-muted text-[11px] font-semibold text-muted-foreground transition-all cursor-pointer text-center"
+                        >
+                          Trang trống
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Thanh hành động nhanh: + Thêm khối & Thu gọn */}
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsBlockPickerOpen(true)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-all cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Thêm khối nội dung</span>
+                  </button>
+                  {expandedBlockId && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedBlockId(null)}
+                      className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border border-border bg-background hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0"
+                      title="Thu gọn khối đang mở"
+                    >
+                      <ChevronsDownUp className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Thu gọn</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Blocks List */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                      Cấu trúc trang ({blocks.length} khối)
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Bấm vào khối để chỉnh sửa
+                    </span>
+                  </div>
+
+                  {blocks.length === 0 ? (
+                    <div className="p-8 text-center rounded-2xl border-2 border-dashed border-border/80 text-muted-foreground text-xs space-y-2.5">
+                      <Layers className="w-8 h-8 mx-auto opacity-40 text-muted-foreground" />
+                      <p className="font-semibold text-foreground">Trang chưa có khối nào</p>
+                      <p>
+                        Bấm nút &quot;Thêm khối nội dung&quot; ở trên để bắt đầu xây dựng trang.
+                      </p>
+                    </div>
+                  ) : (
+                    blocks.map((block, idx) => (
+                      <div
+                        key={block.id}
+                        onDragOver={(e) => {
+                          if (dragIndex === null) return;
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const after = e.clientY > rect.top + rect.height / 2;
+                          setDropIndex(after ? idx + 1 : idx);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (dragIndex !== null && dropIndex !== null) {
+                            handleReorderBlock(dragIndex, dropIndex);
+                          }
+                          resetDrag();
+                        }}
+                        className={`relative transition-opacity ${dragIndex === idx ? "opacity-40" : ""}`}
+                      >
+                        {dropIndex === idx && dragIndex !== null && (
+                          <div
+                            className="absolute -top-2 inset-x-2 h-1 rounded-full bg-primary"
+                            aria-hidden="true"
+                          />
+                        )}
+                        {dropIndex === idx + 1 &&
+                          idx === blocks.length - 1 &&
+                          dragIndex !== null && (
+                            <div
+                              className="absolute -bottom-2 inset-x-2 h-1 rounded-full bg-primary"
+                              aria-hidden="true"
+                            />
+                          )}
+                        <BlockItemEditor
+                          isSelected={selectedBlockId === block.id}
+                          selectToken={previewPick?.id === block.id ? previewPick.token : 0}
+                          onSelect={() => setSelectedBlockId(block.id)}
+                          expanded={expandedBlockId === block.id}
+                          onToggleExpand={() =>
+                            setExpandedBlockId((prev) => (prev === block.id ? null : block.id))
+                          }
+                          dragHandle={
+                            <span
+                              draggable
+                              onClick={(e) => e.stopPropagation()}
+                              onDragStart={(e) => {
+                                e.stopPropagation();
+                                e.dataTransfer.effectAllowed = "move";
+                                e.dataTransfer.setData("text/plain", String(idx));
+                                const card = (e.currentTarget as HTMLElement).closest(
+                                  "[data-block-card]"
+                                );
+                                if (card) e.dataTransfer.setDragImage(card, 24, 24);
+                                setDragIndex(idx);
+                              }}
+                              onDragEnd={resetDrag}
+                              className="hidden lg:flex items-center justify-center w-6 h-8 -ml-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing shrink-0"
+                              title="Kéo để sắp xếp lại khối"
+                              aria-label="Kéo để sắp xếp lại khối"
+                            >
+                              <GripVertical className="w-4 h-4" />
+                            </span>
+                          }
+                          block={block}
+                          index={idx}
+                          totalBlocks={blocks.length}
+                          availableLinks={initialData.availableLinks}
+                          availableMedia={mediaList}
+                          onMediaAdded={handleMediaAdded}
+                          onUpdateBlock={(updated) => handleUpdateBlock(idx, updated)}
+                          onMoveUp={() => handleMoveBlock(idx, "up")}
+                          onMoveDown={() => handleMoveBlock(idx, "down")}
+                          onDelete={() => handleDeleteBlock(idx)}
+                          onDuplicate={() => handleDuplicateBlock(idx)}
+                        />
+                      </div>
+                    ))
+                  )}
+
+                  {blocks.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsBlockPickerOpen(true)}
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Thêm khối mới</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "theme" && (
+              <ThemeEditor
+                themeConfig={themeConfig}
+                imageUrls={pageImageUrls}
+                onChange={(newTheme) => {
+                  setThemeConfig(newTheme);
+                  setIsDirty(true);
+                }}
+              />
+            )}
+
+            {activeTab === "seo" && (
+              <div className="space-y-5">
+                {/* Thông tin định danh trang (đã dời từ tab Nội dung sang đây) */}
+                <div className="p-4 rounded-2xl border border-border bg-card space-y-3 shadow-2xs">
                   <div className="flex items-center gap-1.5 pb-2 border-b border-border/50 text-xs font-bold text-foreground">
                     <Sparkles className="w-3.5 h-3.5 text-primary" />
                     <span>Thông tin định danh trang</span>
@@ -1116,22 +1392,6 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
                   <div>
                     <label className="block text-xs font-semibold text-muted-foreground mb-1">
-                      Tiêu đề hiển thị trên trang
-                    </label>
-                    <input
-                      type="text"
-                      value={title}
-                      onChange={(e) => {
-                        setTitle(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      placeholder="Gờ Cafe - Cà phê chuẩn gu"
-                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1">
                       Ghi chú nội bộ
                     </label>
                     <input
@@ -1147,237 +1407,16 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                   </div>
                 </div>
 
-                {/* Quick Add Block Toolbar: toàn bộ 14 loại khối */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-foreground">Thêm khối nội dung:</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 2xl:grid-cols-4 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleAddBlock("header")}
-                      className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-blue-500/50 hover:bg-blue-500/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                        <FileText className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">Avatar & Bio</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAddBlock("link_list")}
-                      className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-purple-500/50 hover:bg-purple-500/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
-                        <Link2 className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">DS liên kết</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAddBlock("heading")}
-                      className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-indigo-500/50 hover:bg-indigo-500/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
-                        <Heading className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">Tiêu đề mục</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAddBlock("text")}
-                      className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-emerald-500/50 hover:bg-emerald-500/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                        <AlignLeft className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">Văn bản</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAddBlock("image")}
-                      className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-amber-500/50 hover:bg-amber-500/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
-                        <ImageIcon className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">Ảnh / Banner</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAddBlock("social_icons")}
-                      className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-pink-500/50 hover:bg-pink-500/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-pink-500/10 text-pink-600 dark:text-pink-400 group-hover:scale-110 transition-transform">
-                        <Share2 className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">Mạng xã hội</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAddBlock("spacer")}
-                      className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-slate-400/50 hover:bg-slate-500/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-slate-500/10 text-slate-500 group-hover:scale-110 transition-transform">
-                        <Maximize2 className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">Khoảng cách</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleAddBlock("divider")}
-                      className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-slate-400/50 hover:bg-slate-500/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                    >
-                      <div className="p-1.5 rounded-lg bg-slate-500/10 text-slate-500 group-hover:scale-110 transition-transform">
-                        <Minus className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">Đường kẻ</span>
-                    </button>
-
-                    {V2_BLOCKS.map(({ type, label, Icon, tone }) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => handleAddBlock(type)}
-                        className="flex items-center gap-2 p-2.5 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 text-xs font-medium transition-all cursor-pointer text-left shadow-2xs group"
-                      >
-                        <div
-                          className={`p-1.5 rounded-lg group-hover:scale-110 transition-transform ${TONE_CLASSES[tone]}`}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="truncate">{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Blocks List */}
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between pb-1">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      Cấu trúc trang ({blocks.length} khối)
-                    </span>
-                  </div>
-
-                  {blocks.length === 0 ? (
-                    <div className="p-8 text-center rounded-2xl border-2 border-dashed border-border/80 text-muted-foreground text-xs space-y-2">
-                      <Layers className="w-8 h-8 mx-auto opacity-40 text-muted-foreground" />
-                      <p className="font-semibold text-foreground">Trang chưa có khối nào</p>
-                      <p>
-                        Nhấn vào các nút phía trên để thêm Tiêu đề, Danh sách liên kết hoặc Hình
-                        ảnh.
-                      </p>
-                    </div>
-                  ) : (
-                    blocks.map((block, idx) => (
-                      <div
-                        key={block.id}
-                        onDragOver={(e) => {
-                          if (dragIndex === null) return;
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = "move";
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const after = e.clientY > rect.top + rect.height / 2;
-                          setDropIndex(after ? idx + 1 : idx);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (dragIndex !== null && dropIndex !== null) {
-                            handleReorderBlock(dragIndex, dropIndex);
-                          }
-                          resetDrag();
-                        }}
-                        className={`relative transition-opacity ${dragIndex === idx ? "opacity-40" : ""}`}
-                      >
-                        {dropIndex === idx && dragIndex !== null && (
-                          <div
-                            className="absolute -top-2 inset-x-2 h-1 rounded-full bg-primary"
-                            aria-hidden="true"
-                          />
-                        )}
-                        {dropIndex === idx + 1 &&
-                          idx === blocks.length - 1 &&
-                          dragIndex !== null && (
-                            <div
-                              className="absolute -bottom-2 inset-x-2 h-1 rounded-full bg-primary"
-                              aria-hidden="true"
-                            />
-                          )}
-                        <BlockItemEditor
-                          isSelected={selectedBlockId === block.id}
-                          selectToken={previewPick?.id === block.id ? previewPick.token : 0}
-                          onSelect={() => setSelectedBlockId(block.id)}
-                          dragHandle={
-                            <span
-                              draggable
-                              onClick={(e) => e.stopPropagation()}
-                              onDragStart={(e) => {
-                                e.stopPropagation();
-                                e.dataTransfer.effectAllowed = "move";
-                                e.dataTransfer.setData("text/plain", String(idx));
-                                const card = (e.currentTarget as HTMLElement).closest(
-                                  "[data-block-card]"
-                                );
-                                if (card) e.dataTransfer.setDragImage(card, 24, 24);
-                                setDragIndex(idx);
-                              }}
-                              onDragEnd={resetDrag}
-                              className="hidden lg:flex items-center justify-center w-6 h-8 -ml-1 rounded-md text-muted-foreground/70 hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing shrink-0"
-                              title="Kéo để sắp xếp lại khối"
-                              aria-label="Kéo để sắp xếp lại khối"
-                            >
-                              <GripVertical className="w-4 h-4" />
-                            </span>
-                          }
-                          block={block}
-                          index={idx}
-                          totalBlocks={blocks.length}
-                          availableLinks={initialData.availableLinks}
-                          availableMedia={mediaList}
-                          onMediaAdded={handleMediaAdded}
-                          onUpdateBlock={(updated) => handleUpdateBlock(idx, updated)}
-                          onMoveUp={() => handleMoveBlock(idx, "up")}
-                          onMoveDown={() => handleMoveBlock(idx, "down")}
-                          onDelete={() => handleDeleteBlock(idx)}
-                          onDuplicate={() => handleDuplicateBlock(idx)}
-                        />
-                      </div>
-                    ))
-                  )}
-                </div>
+                <SeoEditor
+                  seo={seo}
+                  onChange={(newSeo) => {
+                    setSeo(newSeo);
+                    setIsDirty(true);
+                  }}
+                  availableMedia={mediaList}
+                  onMediaAdded={handleMediaAdded}
+                />
               </div>
-            )}
-
-            {activeTab === "theme" && (
-              <ThemeEditor
-                themeConfig={themeConfig}
-                imageUrls={pageImageUrls}
-                onChange={(newTheme) => {
-                  setThemeConfig(newTheme);
-                  setIsDirty(true);
-                }}
-              />
-            )}
-
-            {activeTab === "seo" && (
-              <SeoEditor
-                seo={seo}
-                onChange={(newSeo) => {
-                  setSeo(newSeo);
-                  setIsDirty(true);
-                }}
-                availableMedia={mediaList}
-                onMediaAdded={handleMediaAdded}
-              />
             )}
           </div>
         </div>
@@ -1424,19 +1463,68 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             aria-hidden="true"
           />
 
-          {/* Current Theme Pill Info */}
-          <div className="absolute top-3 left-4 hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border/60 text-[11px] text-muted-foreground shadow-2xs z-20">
-            <span className="w-2 h-2 rounded-full bg-primary" />
-            <span>
-              Mẫu: <strong className="text-foreground">{themeConfig.preset}</strong>
-            </span>
+          {/* Current Theme Pill Info + Device/Zoom Controls */}
+          <div className="absolute top-3 inset-x-4 hidden lg:flex items-center justify-between gap-2 z-20 pointer-events-none">
+            <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/85 backdrop-blur-md border border-border/60 text-[11px] text-muted-foreground shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span>
+                Mẫu: <strong className="text-foreground">{themeConfig.preset}</strong>
+              </span>
+            </div>
+
+            <div className="pointer-events-auto flex items-center gap-1.5">
+              <div className="flex items-center rounded-xl border border-border/70 p-0.5 bg-background/85 backdrop-blur-md shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("mobile")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                    previewMode === "mobile"
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Điện thoại</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewMode("desktop")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                    previewMode === "desktop"
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span>Máy tính</span>
+                </button>
+              </div>
+
+              <div className="flex items-center rounded-xl border border-border/70 p-0.5 bg-background/85 backdrop-blur-md shadow-2xs text-xs">
+                {([1, 0.9, 0.8] as const).map((z) => (
+                  <button
+                    key={z}
+                    type="button"
+                    onClick={() => setZoomScale(z)}
+                    className={`px-2 py-1 rounded-lg font-mono text-[11px] transition-colors cursor-pointer ${
+                      zoomScale === z
+                        ? "bg-muted text-foreground font-bold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title={`Thu phóng ${Math.round(z * 100)}%`}
+                  >
+                    {Math.round(z * 100)}%
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <LivePreview
             key={previewMode}
-            themeConfig={themeConfig}
-            title={title}
-            blocks={blocks}
+            themeConfig={deferredThemeConfig}
+            title={deferredTitle}
+            blocks={deferredBlocks}
             previewMode={previewMode}
             zoomScale={zoomScale}
             selectedBlockId={selectedBlockId}
@@ -1444,6 +1532,13 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
           />
         </div>
       </div>
+
+      {/* 2.5 BLOCK PICKER MODAL */}
+      <BlockPickerModal
+        isOpen={isBlockPickerOpen}
+        onClose={() => setIsBlockPickerOpen(false)}
+        onSelect={handleAddBlock}
+      />
 
       {/* 3. CONFIRMATION MODAL */}
       {confirmModal && (

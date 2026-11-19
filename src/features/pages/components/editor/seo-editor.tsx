@@ -109,6 +109,7 @@ export function SeoEditor({ seo, onChange, availableMedia, onMediaAdded }: SeoEd
             availableMedia={availableMedia}
             onMediaAdded={onMediaAdded}
             aspectHint="standard"
+            cropAspect="2:1"
             helpText="Khuyến nghị: 1200 × 630 px"
           />
           <p className="text-[11px] text-muted-foreground">

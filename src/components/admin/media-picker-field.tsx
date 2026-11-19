@@ -3,14 +3,20 @@
 import { useState, useRef, useTransition } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { UploadCloud, ImageIcon, FolderOpen, Trash2, Loader2, RefreshCw } from "lucide-react";
+import { UploadCloud, ImageIcon, FolderOpen, Trash2, Loader2, RefreshCw, Crop } from "lucide-react";
 import type { MediaOption } from "./media-picker-modal";
+import type { CropImageSource } from "./image-crop-modal";
 import { uploadMediaDirectAction } from "@/features/media/actions";
+import { isCroppableMimeType, isCroppableUrl, type CropAspectKey } from "@/lib/image-crop";
 
 const MediaPickerModal = dynamic(
   () => import("./media-picker-modal").then((m) => m.MediaPickerModal),
   { ssr: false }
 );
+
+const ImageCropModal = dynamic(() => import("./image-crop-modal").then((m) => m.ImageCropModal), {
+  ssr: false,
+});
 
 export interface MediaPickerFieldProps {
   label: string;
@@ -20,6 +26,7 @@ export interface MediaPickerFieldProps {
   availableMedia: MediaOption[];
   onMediaAdded?: (newMedia: MediaOption) => void;
   aspectHint?: "circle" | "banner" | "standard";
+  cropAspect?: CropAspectKey;
   helpText?: string;
   className?: string;
 }
@@ -32,11 +39,14 @@ export function MediaPickerField({
   availableMedia,
   onMediaAdded,
   aspectHint = "standard",
+  cropAspect,
   helpText,
   className = "",
 }: MediaPickerFieldProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [cropSource, setCropSource] = useState<CropImageSource | null>(null);
+  const [cropError, setCropError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
 
@@ -45,17 +55,9 @@ export function MediaPickerField({
   const effectiveUrl = mediaUrl || matchedMedia?.publicUrl || null;
   const filename = matchedMedia?.originalFilename || (mediaId ? "Hình ảnh đã chọn" : null);
 
-  const handleDirectUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Kích thước tệp vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn 5MB.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
+  const uploadFile = (file: File, fromCropModal: boolean) => {
     setIsUploading(true);
+    setCropError(null);
     startTransition(async () => {
       try {
         const formData = new FormData();
@@ -70,16 +72,62 @@ export function MediaPickerField({
           };
           onMediaAdded?.(newMedia);
           onChange(newMedia.id, newMedia.publicUrl);
+          if (fromCropModal) {
+            setCropSource(null);
+          }
         } else {
-          alert(res.error || "Tải ảnh lên thất bại.");
+          const msg = res.error || "Tải ảnh lên thất bại.";
+          if (fromCropModal) {
+            setCropError(msg);
+          } else {
+            alert(msg);
+          }
         }
       } catch (err) {
         console.error("Direct upload error:", err);
-        alert("Có lỗi xảy ra khi tải ảnh lên.");
+        const msg = "Có lỗi xảy ra khi tải ảnh lên.";
+        if (fromCropModal) {
+          setCropError(msg);
+        } else {
+          alert(msg);
+        }
       } finally {
         setIsUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
+    });
+  };
+
+  const handleDirectUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Kích thước tệp vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn 5MB.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    if (isCroppableMimeType(file.type)) {
+      setCropError(null);
+      setCropSource({
+        file,
+        filename: file.name,
+        mimeType: file.type,
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    uploadFile(file, false);
+  };
+
+  const handleOpenCropExisting = () => {
+    if (!effectiveUrl) return;
+    setCropError(null);
+    setCropSource({
+      url: effectiveUrl,
+      filename,
     });
   };
 
@@ -139,6 +187,19 @@ export function MediaPickerField({
                   <RefreshCw className="w-3 h-3 text-muted-foreground" />
                   <span>Đổi ảnh</span>
                 </button>
+
+                {isCroppableUrl(effectiveUrl) && (
+                  <button
+                    type="button"
+                    onClick={handleOpenCropExisting}
+                    disabled={isUploading}
+                    className="inline-flex items-center gap-1 min-h-9 sm:min-h-0 px-2.5 py-1 rounded-lg border border-border bg-background hover:bg-muted text-xs sm:text-[11px] font-medium transition-colors cursor-pointer text-foreground disabled:opacity-50"
+                    title="Cắt và di chuyển vị trí ảnh"
+                  >
+                    <Crop className="w-3 h-3 text-muted-foreground" />
+                    <span>Cắt ảnh</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -223,6 +284,33 @@ export function MediaPickerField({
           availableMedia={availableMedia}
           onMediaAdded={onMediaAdded}
           aspectHint={aspectHint}
+          cropAspect={cropAspect}
+        />
+      )}
+
+      {/* Image Crop Modal */}
+      {cropSource && (
+        <ImageCropModal
+          isOpen={Boolean(cropSource)}
+          source={cropSource}
+          aspectHint={aspectHint}
+          initialAspect={cropAspect}
+          title={`Cắt ${label.toLowerCase()}`}
+          allowUseOriginal={Boolean(cropSource.file)}
+          isSubmitting={isUploading}
+          error={cropError}
+          onCancel={() => {
+            setCropSource(null);
+            setCropError(null);
+          }}
+          onConfirm={(croppedFile) => {
+            uploadFile(croppedFile, true);
+          }}
+          onUseOriginal={() => {
+            if (cropSource.file) {
+              uploadFile(cropSource.file, true);
+            }
+          }}
         />
       )}
     </div>

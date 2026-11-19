@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
-import { resolveMediaUrl } from "../media";
+import { isOptimizableImageUrl, resolveMediaUrl } from "../media";
 import type { BlockRenderProps } from "../types";
 import { HEADING_STYLE } from "../primitives";
 
@@ -27,8 +27,9 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
             src={bannerUrl}
             alt={displayTitle}
             fill
+            sizes="(max-width: 640px) 100vw, 620px"
             className="object-cover"
-            unoptimized
+            unoptimized={!isOptimizableImageUrl(bannerUrl)}
             priority={priority}
           />
 
@@ -51,7 +52,10 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
             )}
 
             {payload.bio && (
-              <div className="text-[14.5px] @min-[40rem]:text-[15.5px] leading-[1.5] text-[#FEFEFE] font-medium whitespace-pre-line max-w-[340px] mx-auto">
+              <div
+                className="leading-[1.5] text-[#FEFEFE] font-medium whitespace-pre-line max-w-[340px] mx-auto"
+                style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 1.04))" }}
+              >
                 {payload.bio}
               </div>
             )}
@@ -69,8 +73,9 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
             src={bannerUrl}
             alt={displayTitle}
             fill
+            sizes="(max-width: 640px) 100vw, 620px"
             className="object-cover"
-            unoptimized
+            unoptimized={!isOptimizableImageUrl(bannerUrl)}
             priority={priority}
           />
         </div>
@@ -92,13 +97,22 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
         )}
 
         {displayTitle && (
-          <h1 className="text-[20px] @min-[40rem]:text-[22px] font-bold text-white tracking-wide text-center mt-1">
+          <h1
+            className="font-bold text-white tracking-wide text-center mt-1"
+            style={{
+              fontFamily: "var(--gp-font-heading)",
+              fontSize: "var(--gp-title-size, calc(var(--gp-base-size, 14px) * 1.45))",
+            }}
+          >
             {displayTitle}
           </h1>
         )}
 
         {payload.bio && (
-          <div className="mt-3 space-y-2 text-[14px] @min-[40rem]:text-[15px] leading-[1.7] text-neutral-300 text-center max-w-[580px] mx-auto">
+          <div
+            className="mt-3 space-y-2 leading-[1.7] text-neutral-300 text-center max-w-[580px] mx-auto"
+            style={{ fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))" }}
+          >
             {renderLnkBioFormattedText(payload.bio, "center", accent)}
           </div>
         )}
@@ -115,8 +129,9 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
             src={bannerUrl}
             alt={displayTitle}
             fill
+            sizes="(max-width: 640px) 100vw, 620px"
             className="object-cover"
-            unoptimized
+            unoptimized={!isOptimizableImageUrl(bannerUrl)}
             priority={priority}
           />
         </div>
@@ -134,8 +149,9 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
             src={avatarUrl}
             alt={displayTitle}
             fill
+            sizes="96px"
             className="object-cover rounded-full"
-            unoptimized
+            unoptimized={!isOptimizableImageUrl(avatarUrl)}
             priority={priority}
           />
         </div>
@@ -143,15 +159,21 @@ export function HeaderBlock({ block, ctx }: BlockRenderProps) {
 
       {displayTitle && (
         <h1
-          className="text-[16px] @min-[40rem]:text-[18px] tracking-[1px] text-center mt-2.5"
-          style={HEADING_STYLE}
+          className="tracking-[1px] text-center mt-2.5"
+          style={{
+            ...HEADING_STYLE,
+            fontSize: "var(--gp-title-size, calc(var(--gp-base-size, 14px) * 1.2))",
+          }}
         >
           {displayTitle}
         </h1>
       )}
 
       {payload.bio && (
-        <div className="mt-4 space-y-3 text-(length:--gp-base-size) leading-[1.6] tracking-[0.5px] text-center max-w-[620px] mx-auto">
+        <div
+          className="mt-4 space-y-3 leading-[1.6] tracking-[0.5px] text-center max-w-[620px] mx-auto"
+          style={{ fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))" }}
+        >
           {renderLnkBioFormattedText(payload.bio, "center", accent)}
         </div>
       )}

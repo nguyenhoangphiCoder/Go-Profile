@@ -1,5 +1,5 @@
 import type { ThemePreset } from "@/config/themes";
-import type { ThemeOverrides } from "@/config/theme-tokens";
+import type { FontId, ThemeOverrides } from "@/config/theme-tokens";
 
 export type PageStatus = "published" | "unpublished";
 export type RevisionState = "draft" | "sealed";
@@ -26,6 +26,14 @@ export interface BlockStyle {
   paddingY?: "none" | "sm" | "md" | "lg";
   surface?: "none" | "card";
   animation?: "none" | "fade-up";
+  fontSize?: "sm" | "md" | "lg" | "xl";
+  titleFontSize?: number;
+  bodyFontSize?: number;
+  titleFont?: FontId;
+  bodyFont?: FontId;
+  titleColor?: string;
+  bodyColor?: string;
+  buttonHeight?: number;
   hideOn?: ("mobile" | "desktop")[];
 }
 
@@ -33,6 +41,11 @@ export interface ButtonBlockPayload {
   subtitle?: string;
   size?: "md" | "lg";
   emphasis?: "accent" | "surface";
+  /** Màu nền và màu chữ tuỳ chỉnh riêng cho nút (để trống = theo theme). */
+  customBg?: string;
+  customText?: string;
+  /** Số điện thoại hoặc link zalo.me riêng cho nút SĐT (để trống = dùng chính số tel:). */
+  zaloTarget?: string;
 }
 
 export interface GalleryImageItem {
@@ -110,8 +123,17 @@ export interface TextBlockPayload {
   align?: "left" | "center" | "right";
 }
 
+export interface LinkButtonColorOverride {
+  bg?: string;
+  text?: string;
+}
+
 export interface LinkListBlockPayload {
   layout?: "stack" | "grid";
+  /** Bản đồ targetUrl (`tel:...`) -> số hoặc link zalo.me riêng. */
+  zaloByTel?: Record<string, string>;
+  /** Bản đồ targetUrl -> màu nền / màu chữ riêng cho từng nút trong khối. */
+  buttonColors?: Record<string, LinkButtonColorOverride>;
 }
 
 export interface SocialIconsBlockPayload {

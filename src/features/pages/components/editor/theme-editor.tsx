@@ -736,9 +736,15 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
               />
               <ColorField
                 label="Màu chữ chính"
-                description="Tên, tiêu đề, đoạn văn"
+                description="Nội dung, đoạn văn, tiểu sử"
                 value={tokens.colors.text}
                 onChange={(c) => update("colors", { text: c })}
+              />
+              <ColorField
+                label="Màu chữ tiêu đề"
+                description="Tên trang, tiêu đề mục"
+                value={tokens.colors.headingText || tokens.colors.text}
+                onChange={(c) => update("colors", { headingText: c })}
               />
               <ColorField
                 label="Màu nút liên kết"
@@ -913,13 +919,13 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                         variant === "outline"
                           ? {
                               borderColor: tokens.colors.surfaceBorder,
-                              color: tokens.colors.text,
+                              color: tokens.colors.surfaceText,
                               background: tokens.colors.background,
                             }
                           : variant === "soft"
                             ? {
                                 borderColor: "transparent",
-                                color: tokens.colors.text,
+                                color: tokens.colors.surfaceText,
                                 background: `color-mix(in srgb, ${tokens.colors.surface} 22%, ${tokens.colors.background})`,
                               }
                             : {
@@ -931,6 +937,44 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                     >
                       LIÊN KẾT
                     </span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block space-y-1">
+                <span className="text-xs font-semibold block">
+                  Chiều cao nút: {tokens.button.height}px
+                </span>
+                <input
+                  type="range"
+                  min={36}
+                  max={80}
+                  step={2}
+                  value={tokens.button.height}
+                  onChange={(e) => update("button", { height: Number(e.target.value) })}
+                  className="w-full"
+                />
+              </label>
+              <div className="flex gap-1.5">
+                {(
+                  [
+                    [44, "Mỏng (44px)"],
+                    [54, "Vừa (54px)"],
+                    [64, "Dày (64px)"],
+                  ] as const
+                ).map(([h, label]) => (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => update("button", { height: h })}
+                    className={`flex-1 py-1 px-2 rounded-lg border text-[11px] font-medium cursor-pointer transition-colors ${
+                      tokens.button.height === h
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
+                        : "border-border text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
                     {label}
                   </button>
                 ))}
@@ -1044,15 +1088,6 @@ export function ThemeEditor({ themeConfig, onChange, imageUrls = [] }: ThemeEdit
                 label: { 500: "Vừa", 600: "Hơi đậm", 700: "Đậm", 800: "Rất đậm" }[w],
               }))}
               onChange={(headingWeight) => update("typography", { headingWeight })}
-            />
-            <Segmented
-              label="Kiểu chữ tiêu đề & nút"
-              value={tokens.typography.textCase}
-              options={[
-                { value: "uppercase", label: "IN HOA" },
-                { value: "normal", label: "Bình thường" },
-              ]}
-              onChange={(textCase) => update("typography", { textCase })}
             />
           </>
         )}

@@ -53,7 +53,9 @@ describe("form chỉnh sửa khối mới", () => {
 
   it("nút nổi bật: chọn liên kết tạo đúng một placement", () => {
     const onUpdate = renderEditor("button");
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "l1" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Liên kết của nút" }), {
+      target: { value: "l1" },
+    });
     const updated = onUpdate.mock.calls.at(-1)![0] as EditorBlockItem;
     expect(updated.placements).toHaveLength(1);
     expect(updated.placements![0]).toMatchObject({
@@ -74,6 +76,7 @@ describe("form chỉnh sửa khối mới", () => {
 
   it("kiểu khối: bật 'Thẻ nổi' ghi blockStyle, tắt lại thì xoá", () => {
     const onUpdate = renderEditor("map");
+    fireEvent.click(screen.getByRole("button", { name: "Kiểu khối" }));
     fireEvent.click(screen.getByRole("button", { name: "Thẻ nổi" }));
     expect(
       ((onUpdate.mock.calls.at(-1)![0] as EditorBlockItem).payload as Record<string, unknown>)

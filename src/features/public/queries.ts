@@ -1,12 +1,41 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { cacheLife, cacheTag } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
+import { clientEnv } from "@/lib/env.client";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
+import type { Database } from "@/types/database.generated";
 import type { PublicPageDTO, ResolveLinkResult, RecordClickResult } from "./types";
 
+/** Tag cache cho toàn bộ trang công khai — xoá ngay khi xuất bản / ẩn / đổi slug / lưu trữ. */
+export const PUBLIC_PAGES_TAG = "public-pages";
+
+let publicAnonClient: ReturnType<typeof createClient<Database>> | null = null;
+
+function getPublicAnonClient() {
+  if (!publicAnonClient) {
+    publicAnonClient = createClient<Database>(
+      clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+      clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+  }
+  return publicAnonClient;
+}
+
+/**
+ * Tải dữ liệu trang công khai theo slug với Next.js Cache Components (`"use cache"`).
+ * - Được cache ở server theo tag `public-pages` (và tự làm mới sau vài phút).
+ * - Khi Admin bấm Xuất bản / Ẩn trang / Đổi slug / Lưu trữ -> gọi revalidateTag(PUBLIC_PAGES_TAG, "max").
+ */
 export async function fetchPublicPage(slug: string): Promise<PublicPageDTO> {
-  const supabase = await createSupabaseServerClient();
+  "use cache";
+  const normalized = slug.trim().toLowerCase();
+  cacheLife("minutes");
+  cacheTag(PUBLIC_PAGES_TAG, `public-page:${normalized}`);
+
+  const supabase = getPublicAnonClient();
 
   const { data, error } = await supabase.rpc("get_public_page", {
-    p_slug: slug.trim().toLowerCase(),
+    p_slug: normalized,
   });
 
   if (error || !data) {

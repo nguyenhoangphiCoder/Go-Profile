@@ -97,3 +97,33 @@ select:hover {
 .pb-safe {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
+
+/* Định dạng hiển thị cho trình soạn thảo Rich Text (cả trong editor lẫn trang công khai) */
+.gp-rich-text p {
+  margin: 0.25em 0;
+}
+.gp-rich-text p:first-child {
+  margin-top: 0;
+}
+.gp-rich-text p:last-child {
+  margin-bottom: 0;
+}
+.gp-rich-text ul {
+  list-style-type: disc;
+  padding-left: 1.4em;
+  margin: 0.35em 0;
+  text-align: left;
+}
+.gp-rich-text ol {
+  list-style-type: decimal;
+  padding-left: 1.4em;
+  margin: 0.35em 0;
+  text-align: left;
+}
+.gp-rich-text li {
+  margin: 0.15em 0;
+}
+.gp-rich-text a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

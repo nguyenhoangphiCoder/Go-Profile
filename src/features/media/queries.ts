@@ -15,10 +15,12 @@ export async function getMediaAssets(): Promise<MediaAssetItem[]> {
   const { workspace } = await requireWorkspace();
   const supabase = await createSupabaseServerClient();
 
-  const { data: rows, error } = await supabase
-    .from("media_assets")
-    .select(
-      `
+  // Chạy song song 3 truy vấn độc lập: media_assets, links tham chiếu, và revision_media_assets
+  const [{ data: rows, error }, { data: referencedInLinks }, referencedSet] = await Promise.all([
+    supabase
+      .from("media_assets")
+      .select(
+        `
       id,
       bucket_id,
       object_path,
@@ -31,26 +33,23 @@ export async function getMediaAssets(): Promise<MediaAssetItem[]> {
       original_filename,
       created_at
     `
-    )
-    .eq("workspace_id", workspace.id)
-    .is("archived_at", null)
-    .order("created_at", { ascending: false });
+      )
+      .eq("workspace_id", workspace.id)
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("links")
+      .select("default_media_id")
+      .not("default_media_id", "is", null)
+      .is("archived_at", null),
+    // Ảnh trong bản đang xuất bản / bản nháp của trang (cùng quy tắc với deleteMediaAction)
+    getMediaUsedByActiveRevisions(createSupabaseAdminClient()),
+  ]);
 
   if (error || !rows) {
     console.error("Error fetching media assets:", error);
     return [];
   }
-
-  // Lấy danh sách asset IDs đang được tham chiếu trong links hoặc revision_media_assets
-  const { data: referencedInLinks } = await supabase
-    .from("links")
-    .select("default_media_id")
-    .not("default_media_id", "is", null)
-    .is("archived_at", null);
-
-  // Ảnh trong bản đang xuất bản / bản nháp của trang (cùng quy tắc với deleteMediaAction)
-  // Quét toàn hệ thống (service role) — cùng quy tắc với deleteMediaAction
-  const referencedSet = await getMediaUsedByActiveRevisions(createSupabaseAdminClient());
 
   (referencedInLinks || []).forEach((l) => {
     if (l.default_media_id) referencedSet.add(l.default_media_id);

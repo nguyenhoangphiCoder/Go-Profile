@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
+import { isOptimizableImageUrl } from "@/features/renderer/media";
 import { Plus, Copy, Trash2, Check, Lock, Image as ImageIcon, Search } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { MediaAssetItem } from "@/features/media/types";
@@ -124,13 +126,14 @@ export function MediaGrid({ initialAssets, canEdit = true }: MediaGridProps) {
                 {/* Thumbnail Container */}
                 <div className="relative aspect-square bg-muted/20 overflow-hidden flex items-center justify-center p-2">
                   {asset.publicUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={asset.publicUrl}
                       alt={asset.originalFilename || "Media"}
-                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform"
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
+                      className="object-contain p-2 group-hover:scale-105 transition-transform"
+                      unoptimized={!isOptimizableImageUrl(asset.publicUrl)}
                       loading="lazy"
-                      decoding="async"
                     />
                   ) : (
                     <ImageIcon className="w-8 h-8 text-muted-foreground" />

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -10,8 +10,15 @@ import {
   BarChart3,
   Users,
   ShieldCheck,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function NavPendingSpinner() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return <Loader2 className="w-3.5 h-3.5 animate-spin ml-auto shrink-0 opacity-80" />;
+}
 
 const NAV_ITEMS = [
   {
@@ -79,7 +86,8 @@ export function AdminNav({ showMembers = false, showSystem = false }: AdminNavPr
             )}
           >
             <Icon className="w-4 h-4 shrink-0" />
-            <span>{item.name}</span>
+            <span className="truncate">{item.name}</span>
+            <NavPendingSpinner />
           </Link>
         );
       })}

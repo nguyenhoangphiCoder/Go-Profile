@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { memo, useMemo, useState, useRef } from "react";
 import { PageRenderer } from "@/features/renderer/page-renderer";
 import { fromEditorBlocks } from "@/features/renderer/adapters";
 import type { EditorBlockItem, PageThemeConfig } from "../../types";
@@ -16,7 +16,7 @@ interface LivePreviewProps {
   onSelectBlock?: (blockId: string) => void;
 }
 
-export function LivePreview({
+export const LivePreview = memo(function LivePreview({
   themeConfig,
   title,
   blocks,
@@ -29,6 +29,7 @@ export function LivePreview({
   const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
   const dragStartXRef = useRef(0);
   const startWidthRef = useRef(frameWidth);
+  const renderBlocks = useMemo(() => fromEditorBlocks(blocks), [blocks]);
   // Khi đổi Mobile / Desktop ở thanh tiêu đề, PageEditor truyền key={previewMode} để component
   // khởi tạo lại với độ rộng mặc định (thay cho useEffect + setState gây render lặp).
 
@@ -211,7 +212,7 @@ export function LivePreview({
               mode="preview"
               title={title}
               theme={themeConfig}
-              blocks={fromEditorBlocks(blocks)}
+              blocks={renderBlocks}
               selectedBlockId={selectedBlockId}
               onSelectBlock={onSelectBlock}
             />
@@ -236,4 +237,4 @@ export function LivePreview({
       </div>
     </div>
   );
-}
+});

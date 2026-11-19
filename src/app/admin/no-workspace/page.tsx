@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getWorkspaceContext } from "@/features/workspace/context";
+import { acceptPendingInvitations } from "@/features/workspace/invitations";
 import { LogoutButton } from "@/components/admin/logout-button";
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export const instant = false;
 
 /** Người đã đăng nhập nhưng chưa thuộc workspace nào (lời mời chưa được nhận / đã bị xoá khỏi workspace). */
 export default async function NoWorkspacePage() {
+  await acceptPendingInvitations();
   const ctx = await getWorkspaceContext();
   if (!ctx) redirect("/login");
   if (ctx.workspace) redirect("/admin");
