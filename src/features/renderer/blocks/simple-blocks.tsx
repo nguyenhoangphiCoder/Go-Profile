@@ -2,6 +2,7 @@ import Image from "next/image";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { resolveSmartIcon } from "@/features/public/components/brand-icons";
 import { isOptimizableImageUrl, resolveMediaUrl } from "../media";
+import { alignJustifyClass, alignTextClass, resolveBlockAlign } from "../block-frame";
 import { HEADING_STYLE, PageLink, tint } from "../primitives";
 
 const SOCIAL_STYLE = {
@@ -14,10 +15,11 @@ import type { BlockRenderProps } from "../types";
 export function SocialIconsBlock({ block, ctx }: BlockRenderProps) {
   const links = block.links;
   if (links.length === 0) return null;
+  const justify = alignJustifyClass(resolveBlockAlign(block.payload, "center"));
 
   if (ctx.variant !== "standard") {
     return (
-      <div className="flex items-center justify-center gap-6 my-1">
+      <div className={`flex items-center ${justify} gap-6 my-1`}>
         {links.map((link) => (
           <PageLink
             key={link.id}
@@ -34,7 +36,7 @@ export function SocialIconsBlock({ block, ctx }: BlockRenderProps) {
   }
 
   return (
-    <div className="flex items-center justify-center gap-3.5 my-1 flex-wrap">
+    <div className={`flex items-center ${justify} gap-3.5 my-1 flex-wrap`}>
       {links.map((link) => {
         const iconUrl = resolveMediaUrl(link.mediaUrl);
         return (
@@ -83,10 +85,13 @@ export function HeadingBlock({ block, ctx }: BlockRenderProps) {
     ? "font-bold tracking-[0.5px] text-white leading-snug whitespace-pre-line"
     : "tracking-[0.5px]";
   const Tag = level === 1 ? "h2" : level === 2 ? "h3" : "h4";
+  const textAlign = alignTextClass(resolveBlockAlign(block.payload, "center"));
 
   return (
     <div
-      className={isCard ? "mt-2 mb-1 text-center w-full" : "mt-[28px] mb-[6px] text-center w-full"}
+      className={
+        isCard ? `mt-2 mb-1 ${textAlign} w-full` : `mt-[28px] mb-[6px] ${textAlign} w-full`
+      }
     >
       <Tag
         className={className}
@@ -110,6 +115,10 @@ export function HeadingBlock({ block, ctx }: BlockRenderProps) {
 export function TextBlock({ block, ctx }: BlockRenderProps) {
   const payload = block.payload as { content?: string; align?: "left" | "center" | "right" };
   const isCard = ctx.variant === "beacons-card";
+  const effectiveAlign = resolveBlockAlign(
+    block.payload,
+    payload.align || (isCard ? "left" : "center")
+  );
 
   return (
     <div
@@ -120,11 +129,7 @@ export function TextBlock({ block, ctx }: BlockRenderProps) {
       }
       style={{ fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))" }}
     >
-      {renderLnkBioFormattedText(
-        payload.content || "",
-        payload.align || (isCard ? "left" : "center"),
-        "var(--gp-accent)"
-      )}
+      {renderLnkBioFormattedText(payload.content || "", effectiveAlign, "var(--gp-accent)")}
     </div>
   );
 }
@@ -162,7 +167,7 @@ export function ImageBlock({ block, ctx }: BlockRenderProps) {
       </div>
       {payload.caption && (
         <p
-          className="opacity-75 text-center mt-1.5"
+          className={`opacity-75 ${alignTextClass(resolveBlockAlign(block.payload, "center"))} mt-1.5`}
           style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.85))" }}
         >
           {payload.caption}

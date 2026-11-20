@@ -133,3 +133,18 @@ select:hover {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+.gp-rich-text b,
+.gp-rich-text strong {
+  font-weight: 700;
+}
+.gp-rich-text i,
+.gp-rich-text em {
+  font-style: italic;
+}
+.gp-rich-text u {
+  text-decoration: underline;
+}
+.gp-rich-text s,
+.gp-rich-text strike {
+  text-decoration: line-through;
+}

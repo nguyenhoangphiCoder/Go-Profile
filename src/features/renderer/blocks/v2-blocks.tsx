@@ -11,7 +11,7 @@ import type {
   VideoEmbedBlockPayload,
 } from "@/features/pages/types";
 import { resolveMediaUrl } from "../media";
-import { readBlockStyle } from "../block-frame";
+import { alignItemsClass, alignTextClass, readBlockStyle, resolveBlockAlign } from "../block-frame";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { HEADING_STYLE, PageLink, tint } from "../primitives";
 import { isSafeMapsUrl, mapsEmbedUrl, mapsSearchUrl, parseVideoUrl } from "../embeds";
@@ -53,6 +53,7 @@ export function ButtonBlock({ block, ctx }: BlockRenderProps) {
         ? readableOn(ctx.tokens.colors.accent)
         : ctx.tokens.colors.surfaceText);
   const large = p.size === "lg";
+  const btnAlign = resolveBlockAlign(block.payload, "center");
 
   return (
     <div className="w-full max-w-(--gp-max-w) mx-auto mt-(--gp-gap)">
@@ -60,7 +61,7 @@ export function ButtonBlock({ block, ctx }: BlockRenderProps) {
         ctx={ctx}
         link={link}
         zaloTarget={p.zaloTarget}
-        className={`group flex flex-col items-center justify-center w-full text-center px-5 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:scale-[0.99] select-none ${
+        className={`group flex flex-col ${alignItemsClass(btnAlign)} justify-center w-full ${alignTextClass(btnAlign)} px-5 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 active:scale-[0.99] select-none ${
           large ? "py-2.5" : "py-2"
         }`}
         style={{
@@ -173,7 +174,7 @@ export function MenuCardBlock({ block, ctx }: BlockRenderProps) {
     <div className="w-full my-2 space-y-3">
       {p.title && (
         <h3
-          className="text-center tracking-[0.5px]"
+          className={`${alignTextClass(resolveBlockAlign(block.payload, "center"))} tracking-[0.5px]`}
           style={
             ctx.variant === "standard"
               ? {
@@ -276,6 +277,9 @@ export function AccordionBlock({ block, ctx }: BlockRenderProps) {
   if (items.length === 0)
     return <PreviewPlaceholder ctx={ctx}>Chưa có mục hỏi đáp nào</PreviewPlaceholder>;
 
+  const accAlign = resolveBlockAlign(block.payload, "left");
+  const accTextAlign = alignTextClass(accAlign);
+
   return (
     <div className="w-full my-2 flex flex-col gap-2">
       {items.map((item, i) => (
@@ -286,7 +290,7 @@ export function AccordionBlock({ block, ctx }: BlockRenderProps) {
         >
           <summary className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
             <span
-              className="font-semibold text-left"
+              className={`font-semibold flex-1 ${accTextAlign}`}
               style={{
                 fontFamily: "var(--gp-title-font, var(--gp-font-body))",
                 fontSize: "var(--gp-title-size, var(--gp-base-size, 14px))",
@@ -297,10 +301,10 @@ export function AccordionBlock({ block, ctx }: BlockRenderProps) {
             <ChevronDown className="w-4 h-4 shrink-0 opacity-70 transition-transform group-open:rotate-180" />
           </summary>
           <div
-            className="px-4 pb-3.5 leading-relaxed opacity-85"
+            className={`px-4 pb-3.5 leading-relaxed opacity-85 ${accTextAlign}`}
             style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.93))" }}
           >
-            {renderLnkBioFormattedText(item.content, "left", "var(--gp-accent)")}
+            {renderLnkBioFormattedText(item.content, accAlign, "var(--gp-accent)")}
           </div>
         </details>
       ))}
@@ -343,7 +347,7 @@ export function VideoEmbedBlock({ block, ctx }: BlockRenderProps) {
       </div>
       {p.caption && (
         <p
-          className="opacity-75 text-center mt-1.5"
+          className={`opacity-75 ${alignTextClass(resolveBlockAlign(block.payload, "center"))} mt-1.5`}
           style={{ fontSize: "var(--gp-body-size, calc(var(--gp-base-size, 14px) * 0.85))" }}
         >
           {p.caption}

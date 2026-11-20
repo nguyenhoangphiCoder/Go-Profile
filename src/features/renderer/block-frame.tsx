@@ -32,6 +32,27 @@ export function readBlockStyle(payload: Record<string, unknown>): BlockStyle | n
   return parsed.success ? parsed.data : null;
 }
 
+export type TextAlign = NonNullable<BlockStyle["align"]>;
+
+export function resolveBlockAlign(
+  payload: Record<string, unknown>,
+  fallback: TextAlign = "center"
+): TextAlign {
+  return readBlockStyle(payload)?.align ?? fallback;
+}
+
+export function alignTextClass(align: TextAlign): string {
+  return ALIGN[align];
+}
+
+export function alignJustifyClass(align: TextAlign): string {
+  return align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center";
+}
+
+export function alignItemsClass(align: TextAlign): string {
+  return align === "left" ? "items-start" : align === "right" ? "items-end" : "items-center";
+}
+
 /**
  * Lớp bao áp dụng style riêng của khối: căn lề, khoảng đệm, nền thẻ, hiệu ứng, ẩn theo thiết bị.
  * Khối không có style nào được render trực tiếp (không thêm phần tử thừa).

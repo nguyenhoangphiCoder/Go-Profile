@@ -4,6 +4,12 @@ import { buttonStyle } from "@/config/theme-tokens";
 import { readableOn } from "@/lib/color";
 import type { LinkButtonColorOverride } from "@/features/pages/types";
 import { resolveMediaUrl } from "../media";
+import {
+  alignItemsClass,
+  alignJustifyClass,
+  alignTextClass,
+  resolveBlockAlign,
+} from "../block-frame";
 import { parsePhoneTarget } from "../phone-action-sheet";
 import { MoreDotsIcon, PageLink, splitLabel, tint } from "../primitives";
 import type { BlockRenderProps } from "../types";
@@ -20,6 +26,10 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
   const zaloByTel = payload.zaloByTel;
   const buttonColors = payload.buttonColors;
   const rightTextByUrl = payload.rightTextByUrl;
+  const linkAlign = resolveBlockAlign(block.payload, "center");
+  const linkTextAlign = alignTextClass(linkAlign);
+  const linkItemsAlign = alignItemsClass(linkAlign);
+  const linkJustifyAlign = alignJustifyClass(linkAlign);
 
   // Bố cục 2 bên (Trái – Phải): tiêu đề bên trái, chữ nhấn (SĐT / phụ đề) bên phải
   if (payload.layout === "split") {
@@ -137,7 +147,9 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
                 )}
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center text-center px-3 min-w-0">
+              <div
+                className={`flex-1 flex flex-col ${linkItemsAlign} justify-center ${linkTextAlign} px-3 min-w-0`}
+              >
                 <span
                   className="font-semibold text-[#FEFEFE] tracking-wide leading-tight line-clamp-1"
                   style={{
@@ -199,7 +211,9 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
                 )}
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center text-center px-4 min-w-0">
+              <div
+                className={`flex-1 flex flex-col ${linkItemsAlign} justify-center ${linkTextAlign} px-4 min-w-0`}
+              >
                 <span
                   className="font-semibold text-white tracking-wide truncate max-w-full"
                   style={{
@@ -267,7 +281,7 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
             ctx={ctx}
             link={link}
             zaloTarget={zaloByTel?.[link.targetUrl]}
-            className={`group relative flex items-center justify-center w-full px-4 py-2 transition-all duration-200 hover:brightness-110 active:scale-[0.99] select-none ${
+            className={`group relative flex items-center ${linkJustifyAlign} w-full px-4 py-2 transition-all duration-200 hover:brightness-110 active:scale-[0.99] select-none ${
               isGlass && !customColor?.bg ? "backdrop-blur-xl" : ""
             }`}
             style={linkStyle}
@@ -296,8 +310,12 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
                 fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))",
                 textTransform: "var(--gp-text-case)" as CSSProperties["textTransform"],
               }}
-              className={`font-bold tracking-[0.8px] text-center leading-snug whitespace-pre-line group-hover:text-[#1FBBFF] transition-colors duration-150 ${
-                iconUrl ? "px-14 @min-[40rem]:px-16" : "px-4"
+              className={`font-bold tracking-[0.8px] ${linkTextAlign} leading-snug whitespace-pre-line group-hover:text-[#1FBBFF] transition-colors duration-150 ${
+                iconUrl
+                  ? linkAlign === "left"
+                    ? "pl-14 @min-[40rem]:pl-16 pr-2"
+                    : "px-14 @min-[40rem]:px-16"
+                  : "px-4"
               }`}
             >
               {link.label}

@@ -159,7 +159,10 @@ async function syncRevisionMedia(
   if (error) console.error("Không ghi được danh sách ảnh của bản nháp:", error.message);
 }
 
-export async function saveDraftAction(input: SaveDraftInput) {
+export async function saveDraftAction(
+  input: SaveDraftInput,
+  options?: { skipRevalidate?: boolean }
+) {
   const parsed = saveDraftSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -432,8 +435,10 @@ export async function saveDraftAction(input: SaveDraftInput) {
   // 4. Ghi lại danh sách ảnh bản nháp đang dùng để kho media không cho xoá nhầm
   await syncRevisionMedia(privileged, activeDraftId);
 
-  revalidatePath(`/admin/pages/${pageId}`);
-  revalidatePath("/admin/pages");
+  if (!options?.skipRevalidate) {
+    revalidatePath(`/admin/pages/${pageId}`);
+    revalidatePath("/admin/pages");
+  }
 
   return {
     success: true,
@@ -554,6 +559,7 @@ export async function duplicatePageAction(sourcePageId: string) {
     .select(
       `
       internal_name,
+      published_revision_id,
       page_slugs(slug, is_current),
       page_revisions!page_revisions_page_id_fkey(id, revision_no, title, description, theme, seo, state)
     `
@@ -585,9 +591,16 @@ export async function duplicatePageAction(sourcePageId: string) {
     candidateSlug = `${primarySlug}-copy-${suffix}`;
   }
 
-  // Chọn revision nguồn: ưu tiên draft, nếu không thì revision mới nhất
-  const revs = (sourcePage.page_revisions || []) as unknown as SourceRevisionRow[];
-  const sourceRev = revs.find((r) => r.state === "draft") || revs[0];
+  // Chọn revision nguồn: ưu tiên bản nháp mới nhất -> bản đang xuất bản -> revision_no lớn nhất
+  const revs = [...((sourcePage.page_revisions || []) as unknown as SourceRevisionRow[])].sort(
+    (a, b) => Number(b.revision_no) - Number(a.revision_no)
+  );
+  const sourceRev =
+    revs.find((r) => r.state === "draft") ||
+    (sourcePage.published_revision_id
+      ? revs.find((r) => r.id === sourcePage.published_revision_id)
+      : undefined) ||
+    revs[0];
   const newTitle = sourceRev?.title || newInternalName;
 
   // 2. Gọi RPC create_page

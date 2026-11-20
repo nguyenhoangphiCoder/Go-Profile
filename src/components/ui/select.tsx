@@ -34,6 +34,8 @@ export interface SelectProps {
   id?: string;
   name?: string;
   onTriggerMouseDown?: (e: MouseEvent<HTMLButtonElement>) => void;
+  /** Mặc định true; đặt false khi dùng trên toolbar RichTextEditor để không cướp focus khỏi vùng soạn thảo. */
+  restoreFocusOnSelect?: boolean;
 }
 
 const SIZE_CLASSES = {
@@ -56,6 +58,7 @@ export function Select({
   id,
   name,
   onTriggerMouseDown,
+  restoreFocusOnSelect = true,
 }: SelectProps) {
   const autoId = useId();
   const listboxId = `${id || autoId}-listbox`;
@@ -122,11 +125,13 @@ export function Select({
   const pick = useCallback(
     (opt: SelectOption) => {
       if (opt.disabled) return;
-      onChange(opt.value);
       closeMenu();
-      triggerRef.current?.focus();
+      onChange(opt.value);
+      if (restoreFocusOnSelect) {
+        triggerRef.current?.focus();
+      }
     },
-    [closeMenu, onChange]
+    [closeMenu, onChange, restoreFocusOnSelect]
   );
 
   useEffect(() => {

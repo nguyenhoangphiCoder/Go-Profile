@@ -90,16 +90,43 @@ export function RichTextEditor({
     }
   }, []);
 
-  const restoreSelection = useCallback(() => {
+  const ensureSelection = useCallback((selectAllIfCollapsed = false) => {
     const el = editorRef.current;
-    if (!el) return;
-    el.focus();
-    const saved = savedRangeRef.current;
-    if (!saved) return;
+    if (!el) return null;
     const sel = window.getSelection();
-    if (!sel) return;
-    sel.removeAllRanges();
-    sel.addRange(saved);
+    if (!sel) return null;
+
+    // Nếu vùng chọn hiện tại đã nằm trong editor, giữ nguyên vùng chọn sống
+    const hasLiveRange =
+      sel.rangeCount > 0 && el.contains(sel.getRangeAt(0).commonAncestorContainer);
+
+    if (!hasLiveRange) {
+      el.focus();
+      if (savedRangeRef.current && el.contains(savedRangeRef.current.commonAncestorContainer)) {
+        sel.removeAllRanges();
+        sel.addRange(savedRangeRef.current);
+      } else {
+        const fallback = document.createRange();
+        fallback.selectNodeContents(el);
+        if (!selectAllIfCollapsed) fallback.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(fallback);
+      }
+    }
+
+    if (
+      selectAllIfCollapsed &&
+      sel.rangeCount > 0 &&
+      sel.getRangeAt(0).collapsed &&
+      el.textContent?.trim()
+    ) {
+      const all = document.createRange();
+      all.selectNodeContents(el);
+      sel.removeAllRanges();
+      sel.addRange(all);
+    }
+
+    return sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
   }, []);
 
   const refreshFormatState = useCallback(() => {
@@ -139,58 +166,74 @@ export function RichTextEditor({
 
   const exec = useCallback(
     (command: string, commandValue?: string) => {
-      restoreSelection();
+      const needsTextSelection =
+        command === "bold" ||
+        command === "italic" ||
+        command === "underline" ||
+        command === "strikeThrough" ||
+        command === "foreColor" ||
+        command === "removeFormat";
+      ensureSelection(needsTextSelection);
       try {
-        document.execCommand("styleWithCSS", false, "true");
+        const useSemanticTag =
+          command === "bold" ||
+          command === "italic" ||
+          command === "underline" ||
+          command === "strikeThrough";
+        document.execCommand("styleWithCSS", false, useSemanticTag ? "false" : "true");
         document.execCommand(command, false, commandValue);
       } catch {
         // Bỏ qua nếu trình duyệt không hỗ trợ
       }
+      saveSelection();
       emitChange();
       refreshFormatState();
     },
-    [restoreSelection, emitChange, refreshFormatState]
+    [ensureSelection, saveSelection, emitChange, refreshFormatState]
   );
 
-  /** Bọc vùng chọn hiện tại bằng <span> với style inline (dùng cho font-size & font-family). */
+  /**
+   * Áp dụng font-size / font-family cho vùng chọn (hoạt động an toàn cả khi bôi đen nhiều đoạn <p>
+   * nhờ tận dụng execCommand('fontName') với mã sentinel rồi thay thế bằng <span style="..."> sạch).
+   */
   const applyInlineStyle = useCallback(
     (cssProp: "fontSize" | "fontFamily", cssVal: string) => {
-      restoreSelection();
-      const sel = window.getSelection();
       const el = editorRef.current;
-      if (!sel || sel.rangeCount === 0 || !el) return;
-      const range = sel.getRangeAt(0);
-      if (!el.contains(range.commonAncestorContainer)) return;
+      if (!el) return;
+      const range = ensureSelection(true);
+      if (!range) return;
 
-      if (range.collapsed) {
-        // Không bôi đen chữ nào -> chọn toàn bộ nội dung trong editor nếu có, hoặc chèn span
-        const span = document.createElement("span");
-        span.style[cssProp] = cssVal;
-        span.innerHTML = "\u200B";
-        range.insertNode(span);
-        const nextRange = document.createRange();
-        nextRange.setStart(span.firstChild!, 1);
-        nextRange.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(nextRange);
-      } else {
-        const span = document.createElement("span");
-        span.style[cssProp] = cssVal;
-        try {
-          span.appendChild(range.extractContents());
-          range.insertNode(span);
-          const nextRange = document.createRange();
-          nextRange.selectNodeContents(span);
-          sel.removeAllRanges();
-          sel.addRange(nextRange);
-          savedRangeRef.current = nextRange.cloneRange();
-        } catch {
-          // Fallback nếu vùng chọn cắt ngang nhiều phần tử phức tạp
-        }
+      const sentinel = "__gp_inline_style__";
+      try {
+        document.execCommand("styleWithCSS", false, "true");
+        document.execCommand("fontName", false, sentinel);
+
+        // Chuyển mọi thẻ <font face="__gp_inline_style__"> hoặc <span style="font-family: ..."> thành <span> sạch
+        const marked = el.querySelectorAll<HTMLElement>(
+          `font[face*="${sentinel}"], span[style*="${sentinel}"]`
+        );
+        marked.forEach((node) => {
+          if (node.tagName === "FONT") {
+            const span = document.createElement("span");
+            span.style[cssProp] = cssVal;
+            while (node.firstChild) span.appendChild(node.firstChild);
+            node.replaceWith(span);
+          } else {
+            if (cssProp === "fontFamily") {
+              node.style.fontFamily = cssVal;
+            } else {
+              node.style.removeProperty("font-family");
+              node.style.fontSize = cssVal;
+            }
+          }
+        });
+      } catch {
+        // Fallback nếu trình duyệt không hỗ trợ execCommand
       }
+      saveSelection();
       emitChange();
     },
-    [restoreSelection, emitChange]
+    [ensureSelection, saveSelection, emitChange]
   );
 
   const handleInsertLink = () => {
@@ -200,6 +243,18 @@ export function RichTextEditor({
     const trimmed = raw.trim();
     if (!/^(https?:\/\/|mailto:|tel:)/i.test(trimmed)) {
       window.alert("Liên kết phải bắt đầu bằng https://, http://, mailto: hoặc tel:");
+      return;
+    }
+    const range = ensureSelection(false);
+    if (range && range.collapsed) {
+      const a = document.createElement("a");
+      a.href = trimmed;
+      a.textContent = trimmed;
+      range.insertNode(a);
+      range.setStartAfter(a);
+      range.collapse(true);
+      saveSelection();
+      emitChange();
       return;
     }
     exec("createLink", trimmed);
@@ -241,6 +296,7 @@ export function RichTextEditor({
           ariaLabel="Chọn font chữ"
           value={selectedFont}
           onTriggerMouseDown={saveSelection}
+          restoreFocusOnSelect={false}
           onChange={(val) => {
             const id = val as FontId | "";
             setSelectedFont(id);
@@ -262,6 +318,7 @@ export function RichTextEditor({
           ariaLabel="Chọn cỡ chữ"
           value={selectedSize}
           onTriggerMouseDown={saveSelection}
+          restoreFocusOnSelect={false}
           onChange={(size) => {
             setSelectedSize(size);
             if (size) applyInlineStyle("fontSize", `${size}px`);

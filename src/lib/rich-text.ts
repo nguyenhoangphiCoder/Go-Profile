@@ -21,6 +21,23 @@ const ALLOWED_TAGS = new Set([
 const VOID_TAGS = new Set(["br"]);
 
 const SAFE_ALIGN = new Set(["left", "center", "right", "justify"]);
+const SAFE_FONT_WEIGHT = new Set([
+  "normal",
+  "bold",
+  "bolder",
+  "lighter",
+  "100",
+  "200",
+  "300",
+  "400",
+  "500",
+  "600",
+  "700",
+  "800",
+  "900",
+]);
+const SAFE_FONT_STYLE = new Set(["normal", "italic", "oblique"]);
+const SAFE_TEXT_DECORATION_TOKENS = new Set(["none", "underline", "line-through"]);
 
 /** Kiểm tra chuỗi có chứa thẻ HTML định dạng hay chỉ là văn bản thuần cũ. */
 export function isRichTextHtml(input: string | null | undefined): boolean {
@@ -63,6 +80,18 @@ function sanitizeStyleAttr(rawStyle: string): string {
       safeParts.push(`color: ${val}`);
     } else if (prop === "text-align" && SAFE_ALIGN.has(val.toLowerCase())) {
       safeParts.push(`text-align: ${val.toLowerCase()}`);
+    } else if (prop === "font-weight" && SAFE_FONT_WEIGHT.has(val.toLowerCase())) {
+      safeParts.push(`font-weight: ${val.toLowerCase()}`);
+    } else if (prop === "font-style" && SAFE_FONT_STYLE.has(val.toLowerCase())) {
+      safeParts.push(`font-style: ${val.toLowerCase()}`);
+    } else if (prop === "text-decoration" || prop === "text-decoration-line") {
+      const tokens = val
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((t) => SAFE_TEXT_DECORATION_TOKENS.has(t));
+      if (tokens.length > 0) {
+        safeParts.push(`${prop}: ${tokens.join(" ")}`);
+      }
     } else if (prop === "font-size") {
       const m = val.match(/^(\d{1,2}(?:\.\d+)?)\s*px$/i);
       if (m) {
@@ -137,9 +166,18 @@ export function sanitizeRichTextHtml(html: string): string {
       }
 
       const styleMatch = rawAttrs.match(/\bstyle\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
-      if (styleMatch) {
-        const rawStyle = styleMatch[1] ?? styleMatch[2] ?? "";
-        const safeStyle = sanitizeStyleAttr(rawStyle);
+      const alignMatch = rawAttrs.match(/\balign\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+      const rawAlign = (alignMatch?.[1] ?? alignMatch?.[2] ?? alignMatch?.[3] ?? "")
+        .trim()
+        .toLowerCase();
+      let combinedStyle = styleMatch ? (styleMatch[1] ?? styleMatch[2] ?? "") : "";
+      if (rawAlign && SAFE_ALIGN.has(rawAlign) && !/text-align\s*:/i.test(combinedStyle)) {
+        combinedStyle = combinedStyle
+          ? `${combinedStyle}; text-align: ${rawAlign}`
+          : `text-align: ${rawAlign}`;
+      }
+      if (combinedStyle) {
+        const safeStyle = sanitizeStyleAttr(combinedStyle);
         if (safeStyle) {
           keptAttrs.push(`style="${safeStyle}"`);
         }

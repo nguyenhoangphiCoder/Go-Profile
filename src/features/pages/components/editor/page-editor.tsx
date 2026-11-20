@@ -6,6 +6,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   useDeferredValue,
   useSyncExternalStore,
 } from "react";
@@ -49,6 +50,7 @@ import type {
 } from "../../types";
 import { LivePreview } from "./live-preview";
 import { useUndoHistory } from "./use-undo-history";
+import { useAutoSave } from "./use-auto-save";
 import { reorderByInsertion } from "./reorder";
 import { BLOCK_REGISTRY } from "@/features/renderer/blocks/registry";
 import { BlockPickerModal } from "./block-picker-modal";
@@ -444,12 +446,79 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     setIsDirty(true);
   };
 
+  // Hoàn tác / làm lại & Tự động lưu nháp: theo dõi toàn bộ nội dung có thể chỉnh sửa của trang
+  const editorSnapshot = useMemo(
+    () => ({ title, description, themeConfig, seo, blocks }),
+    [title, description, themeConfig, seo, blocks]
+  );
+
+  // Ref đồng bộ mới nhất để auto-save / save thủ công / publish không bị lệch lockVersion
+  const draftRevRef = useRef(draftRev);
+  const editorSnapshotRef = useRef(editorSnapshot);
+  useEffect(() => {
+    draftRevRef.current = draftRev;
+    editorSnapshotRef.current = editorSnapshot;
+  });
+
+  const performAutoSave = useCallback(async () => {
+    const snap = editorSnapshotRef.current;
+    const rev = draftRevRef.current;
+    const res = await saveDraftAction(
+      {
+        pageId: page.id,
+        draftId: rev.id,
+        expectedDraftVersion: rev.lockVersion,
+        title: snap.title,
+        description: snap.description,
+        theme: snap.themeConfig,
+        seo: snap.seo,
+        blocks: snap.blocks,
+      },
+      { skipRevalidate: true }
+    );
+
+    if (res.success && res.newLockVersion) {
+      const nextRev = {
+        ...rev,
+        id: res.draftId || rev.id,
+        lockVersion: res.newLockVersion,
+        state: "draft" as const,
+      };
+      draftRevRef.current = nextRev;
+      setDraftRev(nextRev);
+      return { ok: true };
+    }
+    return { ok: false, error: res.error || "Không thể tự động lưu nháp" };
+  }, [page.id]);
+
+  const autoSave = useAutoSave({
+    enabled: !isCreatingNew && canEdit,
+    isDirty,
+    snapshot: editorSnapshot,
+    delayMs: 2000,
+    onSave: performAutoSave,
+    onClean: () => setIsDirty(false),
+  });
+
+  // Cảnh báo nếu đóng tab khi còn thay đổi chưa lưu xong
+  useEffect(() => {
+    const shouldWarn = isDirty || autoSave.status === "saving" || autoSave.status === "error";
+    if (!shouldWarn) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty, autoSave.status]);
+
   // Lưu bản nháp (Hỗ trợ cả tạo mới trang lẫn cập nhật trang cũ)
   const handleSaveDraft = useCallback(() => {
     if (!canEdit) {
       showToast(READ_ONLY_MESSAGE, "error");
       return;
     }
+    autoSave.cancel();
     startTransition(async () => {
       // 1. Trường hợp tạo trang mới
       if (isCreatingNew) {
@@ -489,6 +558,9 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
         return;
       }
 
+      // Chờ lượt auto-save đang chạy (nếu có) hoàn tất trước khi lưu thủ công
+      await autoSave.waitForIdle();
+
       // 2. Trường hợp trang đã tồn tại - kiểm tra đổi slug nếu có
       if (slug && slug !== initialData.primarySlug) {
         const renameRes = await renameSlugAction(page.id, slug, page.lockVersion);
@@ -498,10 +570,11 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
         }
       }
 
+      const rev = draftRevRef.current;
       const res = await saveDraftAction({
         pageId: page.id,
-        draftId: draftRev.id,
-        expectedDraftVersion: draftRev.lockVersion,
+        draftId: rev.id,
+        expectedDraftVersion: rev.lockVersion,
         title,
         description,
         theme: themeConfig,
@@ -510,13 +583,16 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
       });
 
       if (res.success && res.newLockVersion) {
-        setDraftRev((prev) => ({
-          ...prev,
-          id: res.draftId || prev.id,
+        const nextRev = {
+          ...rev,
+          id: res.draftId || rev.id,
           lockVersion: res.newLockVersion,
-          state: "draft",
-        }));
+          state: "draft" as const,
+        };
+        draftRevRef.current = nextRev;
+        setDraftRev(nextRev);
         setIsDirty(false);
+        autoSave.markSaved();
         showToast("Đã lưu bản nháp thành công!", "success");
       } else {
         showToast(res.error || "Không thể lưu bản nháp", "error");
@@ -533,19 +609,13 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     blocks,
     page.id,
     page.lockVersion,
-    draftRev.id,
-    draftRev.lockVersion,
     initialData.primarySlug,
     router,
     showToast,
     canEdit,
+    autoSave,
   ]);
 
-  // Hoàn tác / làm lại: theo dõi toàn bộ nội dung có thể chỉnh sửa của trang
-  const editorSnapshot = useMemo(
-    () => ({ title, description, themeConfig, seo, blocks }),
-    [title, description, themeConfig, seo, blocks]
-  );
   const applySnapshot = useCallback((snap: typeof editorSnapshot) => {
     setTitle(snap.title);
     setDescription(snap.description);
@@ -607,11 +677,15 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
       confirmVariant: "primary",
       onConfirm: () => {
         setConfirmModal(null);
+        autoSave.cancel();
         startTransition(async () => {
+          // Chờ lượt auto-save đang chạy (nếu có) xong để lấy lockVersion mới nhất
+          await autoSave.waitForIdle();
+
           let targetPageId = page.id;
-          const targetDraftId = draftRev.id;
+          const targetDraftId = draftRevRef.current.id;
           let targetPageLockVersion = page.lockVersion;
-          let targetDraftLockVersion = draftRev.lockVersion;
+          let targetDraftLockVersion = draftRevRef.current.lockVersion;
 
           // Nếu là tạo mới
           if (isCreatingNew) {
@@ -666,6 +740,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
           if (pubRes.success) {
             setIsDirty(false);
+            autoSave.markSaved();
             showToast("Trang đã được xuất bản công khai thành công!", "success");
             if (isCreatingNew) {
               router.replace(`/admin/pages/${targetPageId}`);
@@ -676,10 +751,14 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                 lockVersion: prev.lockVersion + 1,
                 publishedRevisionId: draftIdToPublish,
               }));
-              setDraftRev((prev) => ({
-                ...prev,
-                state: "sealed",
-              }));
+              const sealedRev = {
+                ...draftRevRef.current,
+                id: draftIdToPublish,
+                lockVersion: draftLockVersion,
+                state: "sealed" as const,
+              };
+              draftRevRef.current = sealedRev;
+              setDraftRev(sealedRev);
             }
           } else {
             showToast(pubRes.error || "Xuất bản thất bại", "error");
@@ -867,14 +946,46 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                     • Chỉ xem
                   </span>
                 )}
-                {isDirty && (
+                {autoSave.status === "saving" ? (
+                  <span className="text-muted-foreground font-medium inline-flex items-center gap-1 shrink-0">
+                    <span>•</span>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span className="hidden sm:inline">Đang tự động lưu...</span>
+                  </span>
+                ) : autoSave.status === "error" ? (
+                  <span className="text-red-500 font-medium inline-flex items-center gap-1 shrink-0">
+                    <span>•</span>
+                    <span className="hidden sm:inline" title={autoSave.errorMessage || undefined}>
+                      Lỗi lưu nháp
+                    </span>
+                    <button
+                      type="button"
+                      onClick={autoSave.retryNow}
+                      className="underline hover:text-red-600 cursor-pointer"
+                    >
+                      Thử lại
+                    </button>
+                  </span>
+                ) : isDirty ? (
                   <span className="text-amber-500 font-medium shrink-0">
                     <span className="sm:hidden" title="Chưa lưu thay đổi">
                       •
                     </span>
                     <span className="hidden sm:inline">• Chưa lưu thay đổi</span>
                   </span>
-                )}
+                ) : autoSave.status === "saved" && autoSave.lastSavedAt ? (
+                  <span className="text-muted-foreground font-medium hidden sm:inline-flex items-center gap-1 shrink-0 tabular-nums">
+                    <span>•</span>
+                    <Check className="w-3 h-3 text-emerald-500" />
+                    <span>
+                      Đã lưu lúc{" "}
+                      {autoSave.lastSavedAt.toLocaleTimeString("vi-VN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </span>
+                ) : null}
               </div>
             </div>
           </div>
