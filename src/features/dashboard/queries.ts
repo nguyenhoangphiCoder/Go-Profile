@@ -1,12 +1,22 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export interface DashboardRecentPage {
+  id: string;
+  internalName: string;
+  status: string;
+  slug: string | null;
+  updatedAt: string;
+}
+
 export interface DashboardSummary {
   publishedPagesCount: number;
+  totalPagesCount: number;
   pagesSummaryText: string;
   totalLinksCount: number;
   linksSummaryText: string;
   totalClicksCount: number;
   clicksSummaryText: string;
+  recentPages: DashboardRecentPage[];
 }
 
 export async function getDashboardSummary(workspaceId: string): Promise<DashboardSummary> {
@@ -15,7 +25,7 @@ export async function getDashboardSummary(workspaceId: string): Promise<Dashboar
   const [pagesRes, linksRes] = await Promise.all([
     supabase
       .from("pages")
-      .select("id, internal_name, status, page_slugs(slug, is_current)")
+      .select("id, internal_name, status, updated_at, page_slugs(slug, is_current)")
       .eq("workspace_id", workspaceId)
       .is("archived_at", null)
       .order("updated_at", { ascending: false }),
@@ -102,13 +112,27 @@ export async function getDashboardSummary(workspaceId: string): Promise<Dashboar
     }
   }
 
+  const recentPages: DashboardRecentPage[] = pages.slice(0, 5).map((p) => {
+    const slugs = Array.isArray(p.page_slugs) ? p.page_slugs : [];
+    const cur = slugs.find((s) => s.is_current)?.slug || slugs[0]?.slug || null;
+    return {
+      id: p.id,
+      internalName: p.internal_name,
+      status: p.status,
+      slug: cur,
+      updatedAt: p.updated_at,
+    };
+  });
+
   return {
     publishedPagesCount,
+    totalPagesCount: pages.length,
     pagesSummaryText,
     totalLinksCount,
     linksSummaryText,
     totalClicksCount,
     clicksSummaryText,
+    recentPages,
   };
 }
 

@@ -18,6 +18,9 @@ import type { LinkItem } from "@/features/links/types";
 import { toggleLinkStatusAction, archiveLinkAction } from "@/features/links/actions";
 import { TablePagination } from "@/components/admin/table-pagination";
 import { TableActionMenu } from "@/components/admin/table-action-menu";
+import { StatusBadge } from "@/components/ui/badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useToast } from "@/components/ui/toast";
 
 const LinkFormModal = dynamic(() => import("./link-form-modal").then((m) => m.LinkFormModal), {
   ssr: false,
@@ -30,13 +33,15 @@ interface LinksTableProps {
 }
 
 export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedLink, setSelectedLink] = useState<LinkItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [, startTransition] = useTransition();
+  const [linkToArchive, setLinkToArchive] = useState<LinkItem | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const filteredLinks = initialLinks.filter((l) => {
     const matchesSearch =
@@ -63,46 +68,66 @@ export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
 
   const handleToggle = (link: LinkItem) => {
     startTransition(async () => {
-      await toggleLinkStatusAction(link.id, link.isActive, link.lockVersion);
+      const res = await toggleLinkStatusAction(link.id, link.isActive, link.lockVersion);
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success(
+          link.isActive
+            ? `Đã tắt liên kết "${link.defaultLabel}"`
+            : `Đã bật liên kết "${link.defaultLabel}"`
+        );
+      }
     });
   };
 
-  const handleArchive = (link: LinkItem) => {
-    if (
-      link.usageCount > 0 &&
-      !confirm(
-        `Liên kết này đang được dùng trên ${link.usageCount} trang. Bạn có chắc chắn muốn lưu trữ (ngừng sử dụng)?`
-      )
-    ) {
-      return;
-    }
-
-    if (confirm(`Bạn có chắc muốn lưu trữ liên kết "${link.defaultLabel}"?`)) {
-      startTransition(async () => {
-        await archiveLinkAction(link.id, link.lockVersion);
-      });
-    }
+  const confirmArchive = () => {
+    if (!linkToArchive) return;
+    const target = linkToArchive;
+    startTransition(async () => {
+      const res = await archiveLinkAction(target.id, target.lockVersion);
+      setLinkToArchive(null);
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success(`Đã lưu trữ liên kết "${target.defaultLabel}"`);
+      }
+    });
   };
 
-  const getKindIcon = (kind: string) => {
+  const getKindBadge = (kind: string) => {
     switch (kind) {
       case "tel":
-        return <Phone className="w-3.5 h-3.5 text-blue-500" />;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-border bg-muted/60 text-xs font-medium text-foreground">
+            <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Hotline</span>
+          </span>
+        );
       case "mailto":
-        return <Mail className="w-3.5 h-3.5 text-amber-500" />;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-border bg-muted/60 text-xs font-medium text-foreground">
+            <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Email</span>
+          </span>
+        );
       default:
-        return <Globe className="w-3.5 h-3.5 text-emerald-500" />;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-border bg-muted/60 text-xs font-medium text-foreground">
+            <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Website</span>
+          </span>
+        );
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Top Controls */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        {/* Search & Filter */}
-        <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center gap-2 sm:gap-3 flex-1 max-w-lg">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={search}
@@ -110,74 +135,88 @@ export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              placeholder="Tìm kiếm liên kết theo tên, URL..."
-              className="w-full pl-10 pr-3.5 py-2 rounded-xl border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Tìm tên liên kết hoặc URL..."
+              className="w-full h-9 pl-9 pr-3.5 rounded-lg border border-border bg-card text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-ring/20 focus:border-foreground/40 transition-all"
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value as "all" | "active" | "inactive");
-              setCurrentPage(1);
-            }}
-            className="w-full min-[420px]:w-auto px-3 py-2 rounded-xl border border-border bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Đang bật (Active)</option>
-            <option value="inactive">Đang tắt (Inactive)</option>
-          </select>
+
+          <div className="inline-flex items-center p-0.5 rounded-lg border border-border bg-muted/60 self-start sm:self-auto">
+            {(
+              [
+                ["all", "Tất cả"],
+                ["active", "Đang bật"],
+                ["inactive", "Đã tắt"],
+              ] as const
+            ).map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(val);
+                  setCurrentPage(1);
+                }}
+                className={`h-8 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  statusFilter === val
+                    ? "bg-card text-foreground shadow-2xs font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Create Button */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            Tổng số: <strong className="font-mono text-foreground">{filteredLinks.length}</strong>{" "}
-            liên kết
+        <div className="flex items-center justify-between sm:justify-end gap-3">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            <strong className="font-semibold text-foreground">{filteredLinks.length}</strong> liên
+            kết
           </span>
           {canEdit && (
             <button
+              type="button"
               onClick={handleCreate}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-10 sm:min-h-0 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:bg-blue-700 shadow-xs shadow-blue-500/20 transition-colors cursor-pointer shrink-0"
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold hover:opacity-90 shadow-2xs transition-opacity cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>Thêm liên kết mới</span>
+              <span>Thêm liên kết</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Links List */}
-      <div className="rounded-2xl border border-border/80 bg-card shadow-2xs">
+      {/* Links Table */}
+      <div className="rounded-2xl border border-border/80 bg-card shadow-2xs overflow-hidden">
         {filteredLinks.length === 0 ? (
-          <div className="p-12 text-center space-y-3">
-            <Globe className="w-8 h-8 text-muted-foreground mx-auto" />
-            <h3 className="text-sm font-semibold">Chưa có liên kết nào</h3>
+          <div className="p-14 text-center space-y-2">
+            <Globe className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+            <h3 className="text-sm font-semibold text-foreground">Chưa có liên kết nào</h3>
             <p className="text-xs text-muted-foreground max-w-xs mx-auto">
               {search
                 ? "Không tìm thấy liên kết nào khớp với từ khóa tìm kiếm."
-                : "Bắt đầu bằng cách tạo liên kết đầu tiên để sử dụng trên các trang hồ sơ."}
+                : "Bắt đầu bằng cách tạo liên kết đầu tiên để dùng chung trên các trang hồ sơ."}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto min-h-[280px]">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-muted/40 border-b border-border/60 text-muted-foreground font-semibold text-[11px] uppercase tracking-wider">
+          <div className="overflow-x-auto min-h-[260px]">
+            <table className="w-full text-left text-[13px]">
+              <thead className="bg-muted/40 border-b border-border/70 text-muted-foreground font-semibold text-xs">
                 <tr>
-                  <th className="py-2.5 px-3.5 sm:px-4 rounded-tl-2xl">Tên hiển thị & URL</th>
-                  <th className="py-2.5 px-3 hidden md:table-cell">Loại</th>
-                  <th className="py-2.5 px-3 hidden lg:table-cell">Trang sử dụng</th>
-                  <th className="py-2.5 px-3 hidden sm:table-cell">Trạng thái</th>
-                  <th className="py-2.5 px-3.5 sm:px-4 text-right rounded-tr-2xl w-12">
+                  <th className="py-3 px-4">Tên hiển thị & URL</th>
+                  <th className="py-3 px-3 hidden md:table-cell">Loại</th>
+                  <th className="py-3 px-3 hidden lg:table-cell">Đang dùng</th>
+                  <th className="py-3 px-3 hidden sm:table-cell">Trạng thái</th>
+                  <th className="py-3 px-4 text-right w-14">
                     <span className="sr-only sm:not-sr-only">Thao tác</span>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
                 {paginatedLinks.map((item) => (
-                  <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                  <tr key={item.id} className="hover:bg-muted/35 transition-colors">
                     {/* Name & URL */}
-                    <td className="py-3 sm:py-2.5 px-3.5 sm:px-4">
-                      <div className="space-y-0.5 min-w-0 max-w-[calc(100vw-9.5rem)] sm:max-w-sm">
+                    <td className="py-3.5 px-4">
+                      <div className="space-y-1 min-w-0 max-w-[calc(100vw-9.5rem)] sm:max-w-sm">
                         <span className="font-semibold text-foreground block break-words">
                           {item.defaultLabel}
                         </span>
@@ -185,84 +224,67 @@ export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
                           href={item.targetUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-muted-foreground hover:text-blue-600 flex items-center gap-1 min-w-0"
+                          className="font-mono text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1 max-w-full"
                         >
                           <span className="truncate">{item.targetUrl}</span>
-                          <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                          <ExternalLink className="w-3 h-3 shrink-0" />
                         </a>
-                        {/* Trạng thái trên điện thoại (cột Trạng thái bị ẩn) — bấm để bật/tắt */}
                         <div className="sm:hidden mt-1.5 flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => handleToggle(item)}
                             disabled={!canEdit}
-                            className={`inline-flex items-center gap-1.5 min-h-8 px-2.5 rounded-full text-[11px] font-medium cursor-pointer ${
-                              item.isActive
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                : "bg-muted text-muted-foreground border border-border"
-                            }`}
-                            title="Bấm để bật/tắt kích hoạt liên kết"
+                            className="cursor-pointer"
+                            title="Bấm để bật/tắt liên kết"
                           >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${item.isActive ? "bg-emerald-500" : "bg-muted-foreground"}`}
-                            />
-                            <span>{item.isActive ? "Đang bật" : "Đã tắt"}</span>
+                            <StatusBadge tone={item.isActive ? "success" : "neutral"}>
+                              {item.isActive ? "Đang bật" : "Đã tắt"}
+                            </StatusBadge>
                           </button>
-                          <span className="text-[11px] text-muted-foreground">
-                            Dùng ở {item.usageCount} trang
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {item.usageCount} trang
                           </span>
                         </div>
                       </div>
                     </td>
 
                     {/* Kind */}
-                    <td className="py-2.5 px-3 whitespace-nowrap hidden md:table-cell">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-border bg-muted/40 text-[11px] font-medium capitalize">
-                        {getKindIcon(item.kind)}
-                        <span>{item.kind}</span>
-                      </span>
+                    <td className="py-3.5 px-3 whitespace-nowrap hidden md:table-cell">
+                      {getKindBadge(item.kind)}
                     </td>
 
                     {/* Usage */}
-                    <td className="py-2.5 px-3 whitespace-nowrap hidden lg:table-cell">
+                    <td className="py-3.5 px-3 whitespace-nowrap hidden lg:table-cell">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                          item.usageCount > 0
-                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                            : "bg-muted text-muted-foreground"
-                        }`}
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted text-xs font-medium text-foreground tabular-nums"
                         title={
                           item.usageCount > 0
                             ? `Đang dùng trên: ${item.affectedPages?.map((p) => p.internalName).join(", ")}`
                             : "Chưa gắn vào trang nào"
                         }
                       >
-                        <Layers className="w-3 h-3" />
+                        <Layers className="w-3.5 h-3.5 text-muted-foreground" />
                         <span>{item.usageCount} trang</span>
                       </span>
                     </td>
 
                     {/* Status */}
-                    <td className="py-2.5 px-3 whitespace-nowrap hidden sm:table-cell">
+                    <td className="py-3.5 px-3 whitespace-nowrap hidden sm:table-cell">
                       <button
+                        type="button"
                         onClick={() => handleToggle(item)}
                         disabled={!canEdit}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium cursor-pointer transition-colors ${
-                          item.isActive
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                            : "bg-muted text-muted-foreground border border-border"
-                        }`}
+                        className="cursor-pointer disabled:cursor-default"
                         title="Bấm để bật/tắt kích hoạt liên kết"
                       >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${item.isActive ? "bg-emerald-500" : "bg-muted-foreground"}`}
-                        />
-                        <span>{item.isActive ? "Đang bật" : "Đã tắt"}</span>
+                        <StatusBadge tone={item.isActive ? "success" : "neutral"}>
+                          {item.isActive ? "Đang bật" : "Đã tắt"}
+                        </StatusBadge>
                       </button>
                     </td>
 
                     {/* Thao tác */}
-                    <td className="py-2 px-3.5 sm:px-4 text-right whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       {canEdit && (
                         <TableActionMenu title="Thao tác liên kết" widthClass="w-48">
                           {(close) => (
@@ -273,9 +295,9 @@ export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
                                   close();
                                   handleEdit(item);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
                               >
-                                <Edit2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <Edit2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                 <span>Chỉnh sửa</span>
                               </button>
 
@@ -285,7 +307,7 @@ export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
                                   close();
                                   handleToggle(item);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted font-medium text-foreground transition-colors cursor-pointer text-left"
                               >
                                 <Power
                                   className={`w-3.5 h-3.5 shrink-0 ${item.isActive ? "text-amber-500" : "text-emerald-500"}`}
@@ -298,21 +320,21 @@ export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={close}
-                                className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
+                                className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted font-medium text-foreground transition-colors cursor-pointer"
                               >
                                 <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                 <span>Mở liên kết</span>
                               </a>
 
-                              <div className="my-1 border-t border-border/50" />
+                              <div className="my-1 border-t border-border/60" />
 
                               <button
                                 type="button"
                                 onClick={() => {
                                   close();
-                                  handleArchive(item);
+                                  setLinkToArchive(item);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-destructive/10 text-destructive font-medium transition-colors cursor-pointer text-left"
+                                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-red-500/10 text-red-600 dark:text-red-400 font-medium transition-colors cursor-pointer text-left"
                               >
                                 <Trash2 className="w-3.5 h-3.5 shrink-0" />
                                 <span>Lưu trữ (Xóa)</span>
@@ -348,6 +370,24 @@ export function LinksTable({ initialLinks, canEdit = true }: LinksTableProps) {
           link={selectedLink}
         />
       )}
+
+      {/* Confirm Archive Dialog */}
+      <ConfirmDialog
+        open={linkToArchive !== null}
+        variant="danger"
+        title="Lưu trữ liên kết?"
+        description={
+          linkToArchive
+            ? linkToArchive.usageCount > 0
+              ? `Liên kết "${linkToArchive.defaultLabel}" hiện đang được dùng trên ${linkToArchive.usageCount} trang. Bạn có chắc muốn lưu trữ và ngừng sử dụng?`
+              : `Bạn có chắc muốn lưu trữ liên kết "${linkToArchive.defaultLabel}"?`
+            : ""
+        }
+        confirmLabel="Lưu trữ"
+        loading={isPending}
+        onConfirm={confirmArchive}
+        onCancel={() => setLinkToArchive(null)}
+      />
     </div>
   );
 }

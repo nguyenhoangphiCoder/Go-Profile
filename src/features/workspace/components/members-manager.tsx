@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, MailPlus, RotateCw, Trash2, UserMinus } from "lucide-react";
+import { Select } from "@/components/ui/select";
 import {
   inviteMemberAction,
   removeMemberAction,
@@ -77,18 +78,13 @@ export function MembersManager({
             placeholder="email@vidu.com"
             className="flex-1 min-w-0 px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
-          <select
+          <Select
             value={role}
-            onChange={(e) => setRole(e.target.value as WorkspaceRole)}
-            aria-label="Vai trò"
-            className="px-3 py-2 rounded-xl border border-input bg-background text-sm"
-          >
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABELS[r]}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setRole(v as WorkspaceRole)}
+            ariaLabel="Vai trò"
+            options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+            className="sm:min-w-36"
+          />
           <button
             type="submit"
             disabled={isPending}
@@ -130,26 +126,22 @@ export function MembersManager({
                   Tham gia {formatDate(m.joinedAt)}
                 </span>
               </div>
-              <select
+              <Select
                 value={m.role}
                 disabled={isPending}
-                aria-label={`Vai trò của ${m.email ?? m.userId}`}
-                onChange={(e) =>
+                size="sm"
+                ariaLabel={`Vai trò của ${m.email ?? m.userId}`}
+                onChange={(v) =>
                   run(() =>
                     updateMemberRoleAction({
                       userId: m.userId,
-                      role: e.target.value as WorkspaceRole,
+                      role: v as WorkspaceRole,
                     })
                   )
                 }
-                className="px-2.5 py-1.5 rounded-lg border border-input bg-background text-xs"
-              >
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABELS[r]}
-                  </option>
-                ))}
-              </select>
+                options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+                className="min-w-32"
+              />
               <button
                 type="button"
                 disabled={isPending}

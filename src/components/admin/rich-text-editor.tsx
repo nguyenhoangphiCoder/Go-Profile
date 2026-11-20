@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { Select } from "@/components/ui/select";
 import {
   Bold,
   Italic,
@@ -235,44 +236,45 @@ export function RichTextEditor({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 px-2 py-1.5 border-b border-border/80 bg-muted/30">
         {/* Font family */}
-        <select
-          aria-label="Chọn font chữ"
+        <Select
+          size="xs"
+          ariaLabel="Chọn font chữ"
           value={selectedFont}
-          onMouseDown={saveSelection}
-          onChange={(e) => {
-            const id = e.target.value as FontId | "";
+          onTriggerMouseDown={saveSelection}
+          onChange={(val) => {
+            const id = val as FontId | "";
             setSelectedFont(id);
             if (id) applyInlineStyle("fontFamily", FONT_STACKS[id]);
           }}
-          className="h-7 max-w-[118px] px-1.5 rounded-lg border border-border/80 bg-background text-[11px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
-        >
-          <option value="">Font chữ</option>
-          {FONT_IDS.map((id) => (
-            <option key={id} value={id}>
-              {FONT_LABELS[id].split(" (")[0]}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "", label: "Font chữ" },
+            ...FONT_IDS.map((id) => ({
+              value: id,
+              label: FONT_LABELS[id].split(" (")[0],
+            })),
+          ]}
+          className="w-[118px]"
+        />
 
         {/* Font size */}
-        <select
-          aria-label="Chọn cỡ chữ"
+        <Select
+          size="xs"
+          ariaLabel="Chọn cỡ chữ"
           value={selectedSize}
-          onMouseDown={saveSelection}
-          onChange={(e) => {
-            const size = e.target.value;
+          onTriggerMouseDown={saveSelection}
+          onChange={(size) => {
             setSelectedSize(size);
             if (size) applyInlineStyle("fontSize", `${size}px`);
           }}
-          className="h-7 w-[54px] px-1.5 rounded-lg border border-border/80 bg-background text-[11px] font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
-        >
-          <option value="">Cỡ</option>
-          {FONT_SIZE_OPTIONS.map((sz) => (
-            <option key={sz} value={String(sz)}>
-              {sz}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: "", label: "Cỡ" },
+            ...FONT_SIZE_OPTIONS.map((sz) => ({
+              value: String(sz),
+              label: String(sz),
+            })),
+          ]}
+          className="w-[62px]"
+        />
 
         <span className="w-px h-4 bg-border/80 mx-0.5" aria-hidden="true" />
 

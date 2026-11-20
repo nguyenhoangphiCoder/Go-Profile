@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Select } from "@/components/ui/select";
 
 export interface TablePaginationProps {
   currentPage: number;
@@ -63,32 +64,32 @@ export function TablePagination({
     >
       {/* Information & Page size selector */}
       <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-        <div>
+        <div className="tabular-nums">
           Hiển thị{" "}
-          <span className="font-semibold text-foreground font-mono">
-            {startItem}-{endItem}
+          <span className="font-semibold text-foreground">
+            {startItem}–{endItem}
           </span>{" "}
-          trên tổng số <span className="font-semibold text-foreground font-mono">{totalItems}</span>{" "}
+          trên tổng số <span className="font-semibold text-foreground">{totalItems}</span>{" "}
           {itemName}
         </div>
 
         {onPageSizeChange && (
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-muted-foreground">Hiển thị:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                onPageSizeChange(Number(e.target.value));
+            <Select
+              size="sm"
+              ariaLabel="Số dòng mỗi trang"
+              value={String(pageSize)}
+              onChange={(v) => {
+                onPageSizeChange(Number(v));
                 onPageChange(1);
               }}
-              className="px-2 py-1 rounded-lg border border-border bg-background text-foreground text-xs focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer"
-            >
-              {pageSizeOptions.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt} / trang
-                </option>
-              ))}
-            </select>
+              options={pageSizeOptions.map((opt) => ({
+                value: String(opt),
+                label: `${opt} / trang`,
+              }))}
+              className="min-w-24"
+            />
           </div>
         )}
       </div>
@@ -136,9 +137,9 @@ export function TablePagination({
                 key={p}
                 type="button"
                 onClick={() => onPageChange(p)}
-                className={`min-w-9 h-9 sm:min-w-7 sm:h-7 px-2 rounded-lg text-xs font-mono font-medium transition-colors cursor-pointer ${
+                className={`min-w-9 h-9 sm:min-w-7 sm:h-7 px-2 rounded-lg text-xs tabular-nums font-medium transition-colors cursor-pointer ${
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-2xs font-bold"
+                    ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
                     : "border border-border hover:bg-muted text-muted-foreground hover:text-foreground"
                 }`}
               >

@@ -115,13 +115,13 @@ export function MobileSidebar({ admin, nav }: MobileSidebarProps) {
               </div>
 
               {/* User Footer */}
-              <div className="p-4 pb-safe border-t border-border/60 bg-muted/20 space-y-3 shrink-0">
+              <div className="p-4 pb-safe border-t border-border/70 bg-muted/30 space-y-2.5 shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
                     {admin.displayName ? admin.displayName.charAt(0).toUpperCase() : "A"}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-xs font-semibold block truncate text-foreground">
+                    <span className="text-[13px] font-semibold block truncate text-foreground">
                       {admin.displayName || "Quản trị viên"}
                     </span>
                     <span className="text-[11px] text-muted-foreground block truncate">
@@ -129,10 +129,10 @@ export function MobileSidebar({ admin, nav }: MobileSidebarProps) {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-1">
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Admin</span>
+                <div className="flex items-center justify-between pt-1.5 border-t border-border/50">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                    <ShieldCheck className="w-3.5 h-3.5 text-foreground" />
+                    <span>Quản trị</span>
                   </span>
                   <LogoutButton />
                 </div>

@@ -26,6 +26,7 @@ import {
   MapPin,
   Pencil,
   RotateCcw,
+  SlidersHorizontal,
 } from "lucide-react";
 import type {
   EditorBlockItem,
@@ -42,6 +43,7 @@ import type {
 } from "../../types";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { Select } from "@/components/ui/select";
 import { parsePhoneTarget } from "@/features/renderer/phone-action-sheet";
 import {
   AccordionBlockEditor,
@@ -747,18 +749,26 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                       (block.placements || []).map((pl, pIdx) => {
                         const isPlExpanded = Boolean(expandedPlacements[pl.id]);
                         const hasCustomTitle = Boolean(pl.labelOverride?.trim());
+                        const linkPayload = block.payload as LinkListBlockPayload;
+                        const btnColor = (linkPayload.buttonColors || {})[pl.defaultUrl] || {};
+                        const hasZaloOverride = Boolean(
+                          (linkPayload.zaloByTel || {})[pl.defaultUrl]?.trim()
+                        );
+                        const hasAdvancedCustom = Boolean(
+                          pl.mediaOverrideId || btnColor.bg || btnColor.text || hasZaloOverride
+                        );
                         return (
                           <div
                             key={pl.id}
-                            className="p-2.5 sm:p-3 rounded-xl border border-border bg-background shadow-2xs space-y-2.5"
+                            className="p-3 rounded-xl border border-border bg-card shadow-2xs space-y-2.5"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <span className="font-mono text-[10px] text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded shrink-0">
+                                <span className="tabular-nums text-[11px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md shrink-0">
                                   #{pIdx + 1}
                                 </span>
                                 <span
-                                  className="text-[11px] text-muted-foreground truncate"
+                                  className="font-mono text-[11px] text-muted-foreground truncate"
                                   title={pl.defaultUrl}
                                 >
                                   {pl.defaultUrl}
@@ -787,15 +797,18 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                                 <button
                                   type="button"
                                   onClick={() => togglePlacementExpand(pl.id)}
-                                  className={`inline-flex items-center gap-1 h-8 sm:h-7 px-2 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-                                    isPlExpanded || pl.mediaOverrideId
-                                      ? "bg-primary/10 text-primary"
+                                  className={`relative inline-flex items-center gap-1 h-8 sm:h-7 px-2 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+                                    isPlExpanded || hasAdvancedCustom
+                                      ? "bg-muted text-foreground font-semibold"
                                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                   }`}
-                                  title="Tùy biến icon nút"
+                                  title="Tuỳ chỉnh màu nút, icon và Zalo riêng"
                                 >
-                                  <ImageIcon className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Icon</span>
+                                  <SlidersHorizontal className="w-3 h-3" />
+                                  <span className="hidden sm:inline">Tuỳ chỉnh</span>
+                                  {hasAdvancedCustom && !isPlExpanded && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                  )}
                                   <ChevronRight
                                     className={`w-3 h-3 transition-transform ${
                                       isPlExpanded ? "rotate-90" : ""
@@ -910,145 +923,138 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                               </div>
                             )}
 
-                            {/* Màu riêng cho từng nút (VD: Shopee màu cam, TikTok màu đen...) */}
-                            {(() => {
-                              const colorMap =
-                                (block.payload as LinkListBlockPayload).buttonColors || {};
-                              const btnColor = colorMap[pl.defaultUrl] || {};
-                              const updateBtnColor = (
-                                patch: { bg?: string; text?: string } | null
-                              ) => {
-                                const nextMap = { ...colorMap };
-                                if (!patch) {
-                                  delete nextMap[pl.defaultUrl];
-                                } else {
-                                  const merged = { ...btnColor, ...patch };
-                                  if (!merged.bg) delete merged.bg;
-                                  if (!merged.text) delete merged.text;
-                                  if (Object.keys(merged).length === 0) {
-                                    delete nextMap[pl.defaultUrl];
-                                  } else {
-                                    nextMap[pl.defaultUrl] = merged;
-                                  }
-                                }
-                                updatePayload({
-                                  buttonColors:
-                                    Object.keys(nextMap).length > 0 ? nextMap : undefined,
-                                });
-                              };
-                              return (
-                                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                                  <span className="text-[11px] text-muted-foreground font-medium mr-0.5">
-                                    Màu nút:
-                                  </span>
-                                  {(
-                                    [
-                                      ["#EE4D2D", "Cam Shopee"],
-                                      ["#111111", "Đen TikTok"],
-                                      ["#0068FF", "Xanh Zalo"],
-                                      ["#1877F2", "Xanh Facebook"],
-                                      ["#16A34A", "Xanh lá"],
-                                      ["#D97706", "Vàng"],
-                                    ] as const
-                                  ).map(([hex, name]) => (
-                                    <button
-                                      key={hex}
-                                      type="button"
-                                      title={name}
-                                      onClick={() => updateBtnColor({ bg: hex })}
-                                      className={`w-5 h-5 rounded-full border cursor-pointer transition-transform hover:scale-110 ${
-                                        btnColor.bg?.toUpperCase() === hex
-                                          ? "ring-2 ring-primary ring-offset-1 border-white"
-                                          : "border-black/20"
-                                      }`}
-                                      style={{ backgroundColor: hex }}
-                                    />
-                                  ))}
-                                  <label
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-input bg-card text-[10px] cursor-pointer"
-                                    title="Chọn màu nền nút tuỳ ý"
-                                  >
-                                    <input
-                                      type="color"
-                                      value={btnColor.bg || "#EE4D2D"}
-                                      onChange={(e) =>
-                                        updateBtnColor({ bg: e.target.value.toUpperCase() })
-                                      }
-                                      className="w-3.5 h-3.5 rounded border-0 bg-transparent cursor-pointer p-0"
-                                    />
-                                    <span>Nền</span>
-                                  </label>
-                                  <label
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-input bg-card text-[10px] cursor-pointer"
-                                    title="Chọn màu chữ trên nút tuỳ ý"
-                                  >
-                                    <input
-                                      type="color"
-                                      value={btnColor.text || "#FFFFFF"}
-                                      onChange={(e) =>
-                                        updateBtnColor({ text: e.target.value.toUpperCase() })
-                                      }
-                                      className="w-3.5 h-3.5 rounded border-0 bg-transparent cursor-pointer p-0"
-                                    />
-                                    <span>Chữ</span>
-                                  </label>
-                                  {(btnColor.bg || btnColor.text) && (
-                                    <button
-                                      type="button"
-                                      onClick={() => updateBtnColor(null)}
-                                      className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer ml-auto"
-                                      title="Quay về màu chung của trang"
-                                    >
-                                      <RotateCcw className="w-2.5 h-2.5" />
-                                      <span>Mặc định</span>
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            })()}
-
-                            {/* Nếu là link số điện thoại (tel:...), cho nhập số/link Zalo riêng */}
-                            {pl.defaultUrl?.trim().toLowerCase().startsWith("tel:") && (
-                              <div>
-                                <label
-                                  htmlFor={`placement-zalo-${pl.id}`}
-                                  className="block text-[11px] text-muted-foreground font-medium mb-1"
-                                >
-                                  Số hoặc link Zalo riêng (tuỳ chọn — để trống = dùng SĐT gốc)
-                                </label>
-                                <input
-                                  id={`placement-zalo-${pl.id}`}
-                                  type="text"
-                                  maxLength={200}
-                                  placeholder="VD: 0901234567 hoặc https://zalo.me/gocafe"
-                                  value={
-                                    ((block.payload as LinkListBlockPayload).zaloByTel || {})[
-                                      pl.defaultUrl
-                                    ] || ""
-                                  }
-                                  onChange={(e) => {
-                                    const prevMap = {
-                                      ...((block.payload as LinkListBlockPayload).zaloByTel || {}),
-                                    };
-                                    const val = e.target.value;
-                                    if (val.trim()) {
-                                      prevMap[pl.defaultUrl] = val;
+                            {/* Tuỳ chỉnh nâng cao (Màu nút, Zalo riêng, Icon) — thu gọn mặc định cho gọn mắt */}
+                            {isPlExpanded && (
+                              <div className="pt-2.5 border-t border-border/60 space-y-3">
+                                {/* Màu riêng cho từng nút */}
+                                {(() => {
+                                  const colorMap = linkPayload.buttonColors || {};
+                                  const updateBtnColor = (
+                                    patch: { bg?: string; text?: string } | null
+                                  ) => {
+                                    const nextMap = { ...colorMap };
+                                    if (!patch) {
+                                      delete nextMap[pl.defaultUrl];
                                     } else {
-                                      delete prevMap[pl.defaultUrl];
+                                      const merged = { ...btnColor, ...patch };
+                                      if (!merged.bg) delete merged.bg;
+                                      if (!merged.text) delete merged.text;
+                                      if (Object.keys(merged).length === 0) {
+                                        delete nextMap[pl.defaultUrl];
+                                      } else {
+                                        nextMap[pl.defaultUrl] = merged;
+                                      }
                                     }
                                     updatePayload({
-                                      zaloByTel:
-                                        Object.keys(prevMap).length > 0 ? prevMap : undefined,
+                                      buttonColors:
+                                        Object.keys(nextMap).length > 0 ? nextMap : undefined,
                                     });
-                                  }}
-                                  className="w-full px-2.5 py-1.5 rounded-lg border border-input bg-card text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                />
-                              </div>
-                            )}
+                                  };
+                                  return (
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      <span className="text-[11px] text-muted-foreground font-medium mr-0.5">
+                                        Màu nút:
+                                      </span>
+                                      {(
+                                        [
+                                          ["#EE4D2D", "Cam Shopee"],
+                                          ["#111111", "Đen TikTok"],
+                                          ["#0068FF", "Xanh Zalo"],
+                                          ["#1877F2", "Xanh Facebook"],
+                                          ["#16A34A", "Xanh lá"],
+                                          ["#D97706", "Vàng"],
+                                        ] as const
+                                      ).map(([hex, name]) => (
+                                        <button
+                                          key={hex}
+                                          type="button"
+                                          title={name}
+                                          onClick={() => updateBtnColor({ bg: hex })}
+                                          className={`w-5 h-5 rounded-full border cursor-pointer transition-transform hover:scale-110 ${
+                                            btnColor.bg?.toUpperCase() === hex
+                                              ? "ring-2 ring-primary ring-offset-1 border-white"
+                                              : "border-black/20"
+                                          }`}
+                                          style={{ backgroundColor: hex }}
+                                        />
+                                      ))}
+                                      <label
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-input bg-background text-[10px] cursor-pointer"
+                                        title="Chọn màu nền nút tuỳ ý"
+                                      >
+                                        <input
+                                          type="color"
+                                          value={btnColor.bg || "#EE4D2D"}
+                                          onChange={(e) =>
+                                            updateBtnColor({ bg: e.target.value.toUpperCase() })
+                                          }
+                                          className="w-3.5 h-3.5 rounded border-0 bg-transparent cursor-pointer p-0"
+                                        />
+                                        <span>Nền</span>
+                                      </label>
+                                      <label
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-input bg-background text-[10px] cursor-pointer"
+                                        title="Chọn màu chữ trên nút tuỳ ý"
+                                      >
+                                        <input
+                                          type="color"
+                                          value={btnColor.text || "#FFFFFF"}
+                                          onChange={(e) =>
+                                            updateBtnColor({ text: e.target.value.toUpperCase() })
+                                          }
+                                          className="w-3.5 h-3.5 rounded border-0 bg-transparent cursor-pointer p-0"
+                                        />
+                                        <span>Chữ</span>
+                                      </label>
+                                      {(btnColor.bg || btnColor.text) && (
+                                        <button
+                                          type="button"
+                                          onClick={() => updateBtnColor(null)}
+                                          className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground cursor-pointer ml-auto"
+                                          title="Quay về màu chung của trang"
+                                        >
+                                          <RotateCcw className="w-2.5 h-2.5" />
+                                          <span>Mặc định</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
 
-                            {/* Icon override drawer */}
-                            {isPlExpanded && (
-                              <div className="pt-2 border-t border-border/40">
+                                {/* Nếu là link số điện thoại (tel:...), cho nhập số/link Zalo riêng */}
+                                {pl.defaultUrl?.trim().toLowerCase().startsWith("tel:") && (
+                                  <div>
+                                    <label
+                                      htmlFor={`placement-zalo-${pl.id}`}
+                                      className="block text-[11px] text-muted-foreground font-medium mb-1"
+                                    >
+                                      Số hoặc link Zalo riêng (để trống = dùng SĐT gốc)
+                                    </label>
+                                    <input
+                                      id={`placement-zalo-${pl.id}`}
+                                      type="text"
+                                      maxLength={200}
+                                      placeholder="VD: 0901234567 hoặc https://zalo.me/gocafe"
+                                      value={(linkPayload.zaloByTel || {})[pl.defaultUrl] || ""}
+                                      onChange={(e) => {
+                                        const prevMap = { ...(linkPayload.zaloByTel || {}) };
+                                        const val = e.target.value;
+                                        if (val.trim()) {
+                                          prevMap[pl.defaultUrl] = val;
+                                        } else {
+                                          delete prevMap[pl.defaultUrl];
+                                        }
+                                        updatePayload({
+                                          zaloByTel:
+                                            Object.keys(prevMap).length > 0 ? prevMap : undefined,
+                                        });
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg border border-input bg-background text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    />
+                                  </div>
+                                )}
+
+                                {/* Icon override */}
                                 <MediaPickerField
                                   label="Ghi đè icon nút (Tùy chọn)"
                                   mediaId={pl.mediaOverrideId}
@@ -1077,18 +1083,22 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                       Thêm liên kết vào danh sách:
                     </label>
                     <div className="flex items-center gap-2">
-                      <select
+                      <Select
+                        size="sm"
+                        ariaLabel="Chọn liên kết để thêm vào khối"
                         value={selectedLinkToAdd}
-                        onChange={(e) => setSelectedLinkToAdd(e.target.value)}
-                        className="flex-1 min-w-0 w-full px-3 py-2.5 rounded-xl border border-input bg-background cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 truncate"
-                      >
-                        <option value="">-- Chọn liên kết để thêm vào khối --</option>
-                        {availableLinks.map((l) => (
-                          <option key={l.id} value={l.id}>
-                            {l.defaultLabel} ({l.targetUrl})
-                          </option>
-                        ))}
-                      </select>
+                        onChange={setSelectedLinkToAdd}
+                        placeholder="-- Chọn liên kết để thêm vào khối --"
+                        options={[
+                          { value: "", label: "-- Chọn liên kết để thêm vào khối --" },
+                          ...availableLinks.map((l) => ({
+                            value: l.id,
+                            label: l.defaultLabel,
+                            description: l.targetUrl,
+                          })),
+                        ]}
+                        className="flex-1 min-w-0 h-9"
+                      />
                       <button
                         type="button"
                         onClick={handleAddLinkPlacement}
@@ -1174,20 +1184,24 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                       Thêm mạng xã hội vào khối:
                     </label>
                     <div className="flex items-center gap-2">
-                      <select
+                      <Select
+                        size="sm"
+                        ariaLabel="Chọn link mạng xã hội"
                         value={selectedLinkToAdd}
-                        onChange={(e) => setSelectedLinkToAdd(e.target.value)}
-                        className="flex-1 min-w-0 w-full px-3 py-2.5 rounded-xl border border-input bg-background cursor-pointer text-xs focus:outline-none focus:ring-2 focus:ring-primary/30 truncate"
-                      >
-                        <option value="">-- Chọn link mạng xã hội --</option>
-                        {availableLinks
-                          .filter((l) => l.kind === "social")
-                          .map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.defaultLabel}
-                            </option>
-                          ))}
-                      </select>
+                        onChange={setSelectedLinkToAdd}
+                        placeholder="-- Chọn link mạng xã hội --"
+                        options={[
+                          { value: "", label: "-- Chọn link mạng xã hội --" },
+                          ...availableLinks
+                            .filter((l) => l.kind === "social")
+                            .map((l) => ({
+                              value: l.id,
+                              label: l.defaultLabel,
+                              description: l.targetUrl,
+                            })),
+                        ]}
+                        className="flex-1 min-w-0 h-9"
+                      />
                       <button
                         type="button"
                         onClick={handleAddLinkPlacement}

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Building2, Loader2, ShieldCheck } from "lucide-react";
 import { switchWorkspaceAction } from "@/features/workspace/actions";
 import { ROLE_LABELS, type WorkspaceRole } from "@/features/workspace/types";
+import { useToast } from "@/components/ui/toast";
+import { Select } from "@/components/ui/select";
 
 interface WorkspaceSwitcherProps {
   workspaces: { id: string; name: string }[];
@@ -23,23 +25,27 @@ export function WorkspaceSwitcher({
   compact = false,
 }: WorkspaceSwitcherProps) {
   const router = useRouter();
+  const toast = useToast();
   const [isPending, startTransition] = useTransition();
   const current = workspaces.find((w) => w.id === currentId);
 
   const onChange = (id: string) => {
     startTransition(async () => {
       const res = await switchWorkspaceAction(id);
-      if (res.success) router.refresh();
-      else alert(res.error);
+      if (res.success) {
+        router.refresh();
+      } else {
+        toast.error(res.error || "Không thể chuyển workspace");
+      }
     });
   };
 
   const roleBadge = (
     <span
-      className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400"
+      className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
       title={isPlatformAdmin ? "Quản trị hệ thống: toàn quyền mọi workspace" : undefined}
     >
-      {isPlatformAdmin && <ShieldCheck className="w-3 h-3" />}
+      {isPlatformAdmin && <ShieldCheck className="w-3 h-3 text-foreground" />}
       {isPlatformAdmin ? "Quản trị hệ thống" : ROLE_LABELS[role]}
     </span>
   );
@@ -58,19 +64,15 @@ export function WorkspaceSwitcher({
           <Building2 className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
         )}
         {workspaces.length > 1 ? (
-          <select
+          <Select
+            size="sm"
             value={currentId}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={onChange}
             disabled={isPending}
-            aria-label="Chọn workspace"
-            className="min-w-0 flex-1 truncate text-xs font-semibold bg-transparent border border-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
-          >
-            {workspaces.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.name}
-              </option>
-            ))}
-          </select>
+            ariaLabel="Chọn workspace"
+            options={workspaces.map((w) => ({ value: w.id, label: w.name }))}
+            className="min-w-0 flex-1"
+          />
         ) : (
           <span className="text-xs font-semibold truncate">{current?.name}</span>
         )}

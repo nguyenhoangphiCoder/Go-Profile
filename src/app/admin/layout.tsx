@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getWorkspaceContext } from "@/features/workspace/context";
+import { ToastProvider } from "@/components/ui/toast";
 
 export const instant = false;
 
@@ -11,11 +12,13 @@ export default async function AdminRootLayout({ children }: { children: React.Re
   const ctx = await getWorkspaceContext();
   if (!ctx) redirect("/login");
   return (
-    <div
-      className="min-h-full flex-1 flex flex-col font-sans"
-      style={{ fontFamily: "var(--font-be-vietnam-pro), system-ui, -apple-system, sans-serif" }}
-    >
-      {children}
-    </div>
+    <ToastProvider>
+      <div
+        className="min-h-full flex-1 flex flex-col font-sans"
+        style={{ fontFamily: "var(--font-be-vietnam-pro), system-ui, -apple-system, sans-serif" }}
+      >
+        {children}
+      </div>
+    </ToastProvider>
   );
 }

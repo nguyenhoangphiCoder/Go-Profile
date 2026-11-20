@@ -36,11 +36,13 @@ async function queryClickReportDirectly(
     supabase
       .from("pages")
       .select("id, internal_name, page_slugs(slug, is_current)")
-      .eq("workspace_id", workspaceId),
+      .eq("workspace_id", workspaceId)
+      .is("archived_at", null),
     supabase
       .from("links")
       .select("id, default_label, target_url, kind")
-      .eq("workspace_id", workspaceId),
+      .eq("workspace_id", workspaceId)
+      .is("archived_at", null),
     supabase
       .from("revision_link_placements")
       .select("revision_id, page_link_id, position, resolved_label"),
@@ -158,7 +160,11 @@ export async function getClickReport(params: ClickReportParams): Promise<ClickRe
     p_workspace_id: workspace.id,
   };
 
-  const { data, error } = await supabase.rpc("get_click_report", rpcArgs);
+  const [{ data, error }, { data: activePages }, { data: activeLinks }] = await Promise.all([
+    supabase.rpc("get_click_report", rpcArgs),
+    supabase.from("pages").select("id").eq("workspace_id", workspace.id).is("archived_at", null),
+    supabase.from("links").select("id").eq("workspace_id", workspace.id).is("archived_at", null),
+  ]);
 
   if (error) {
     console.warn(
@@ -172,6 +178,8 @@ export async function getClickReport(params: ClickReportParams): Promise<ClickRe
     }
   }
 
+  const activePageIds = activePages ? new Set(activePages.map((p) => p.id)) : null;
+  const activeLinkIds = activeLinks ? new Set(activeLinks.map((l) => l.id)) : null;
   const raw = data as Record<string, unknown> | null;
 
   return {
@@ -186,34 +194,44 @@ export async function getClickReport(params: ClickReportParams): Promise<ClickRe
         }))
       : [],
     by_page: Array.isArray(raw?.by_page)
-      ? raw.by_page.map((item) => ({
-          page_id: String(item.page_id),
-          internal_name: String(item.internal_name ?? "Trang không tên"),
-          slug: item.slug ? String(item.slug) : null,
-          clicks: Number(item.clicks ?? 0),
-        }))
+      ? raw.by_page
+          .map((item) => ({
+            page_id: String(item.page_id),
+            internal_name: String(item.internal_name ?? "Trang không tên"),
+            slug: item.slug ? String(item.slug) : null,
+            clicks: Number(item.clicks ?? 0),
+          }))
+          .filter((item) => !activePageIds || activePageIds.has(item.page_id))
       : [],
     by_link: Array.isArray(raw?.by_link)
-      ? raw.by_link.map((item) => ({
-          link_id: String(item.link_id),
-          label: String(item.label ?? "Liên kết không tên"),
-          target_url: String(item.target_url ?? ""),
-          kind: String(item.kind ?? "custom"),
-          clicks: Number(item.clicks ?? 0),
-        }))
+      ? raw.by_link
+          .map((item) => ({
+            link_id: String(item.link_id),
+            label: String(item.label ?? "Liên kết không tên"),
+            target_url: String(item.target_url ?? ""),
+            kind: String(item.kind ?? "custom"),
+            clicks: Number(item.clicks ?? 0),
+          }))
+          .filter((item) => !activeLinkIds || activeLinkIds.has(item.link_id))
       : [],
     by_placement: Array.isArray(raw?.by_placement)
-      ? raw.by_placement.map((item) => ({
-          page_link_id: String(item.page_link_id),
-          page_id: String(item.page_id),
-          page_name: String(item.page_name ?? "Trang không tên"),
-          link_id: String(item.link_id),
-          label: String(item.label ?? "Liên kết"),
-          target_url: String(item.target_url ?? ""),
-          position:
-            item.position !== null && item.position !== undefined ? Number(item.position) : null,
-          clicks: Number(item.clicks ?? 0),
-        }))
+      ? raw.by_placement
+          .map((item) => ({
+            page_link_id: String(item.page_link_id),
+            page_id: String(item.page_id),
+            page_name: String(item.page_name ?? "Trang không tên"),
+            link_id: String(item.link_id),
+            label: String(item.label ?? "Liên kết"),
+            target_url: String(item.target_url ?? ""),
+            position:
+              item.position !== null && item.position !== undefined ? Number(item.position) : null,
+            clicks: Number(item.clicks ?? 0),
+          }))
+          .filter(
+            (item) =>
+              (!activePageIds || activePageIds.has(item.page_id)) &&
+              (!activeLinkIds || activeLinkIds.has(item.link_id))
+          )
       : [],
   };
 }
@@ -227,11 +245,13 @@ export async function getReportFilterOptions(): Promise<ReportFilterOptions> {
       .from("pages")
       .select("id, internal_name, archived_at, page_slugs(slug, is_current)")
       .eq("workspace_id", workspace.id)
+      .is("archived_at", null)
       .order("internal_name", { ascending: true }),
     supabase
       .from("links")
       .select("id, default_label, target_url, kind, is_active, archived_at")
       .eq("workspace_id", workspace.id)
+      .is("archived_at", null)
       .order("default_label", { ascending: true }),
   ]);
 

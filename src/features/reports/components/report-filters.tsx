@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Calendar, Filter, RotateCcw } from "lucide-react";
 import type { DatePresetKey, ReportFilterOptions } from "../types";
+import { Select } from "@/components/ui/select";
 
 interface ReportFiltersProps {
   currentPreset: DatePresetKey;
@@ -163,19 +164,22 @@ export function ReportFilters({
           >
             Lọc theo trang hồ sơ
           </label>
-          <select
+          <Select
             id="filter-page-select"
+            size="sm"
+            ariaLabel="Lọc theo trang hồ sơ"
             value={pageId}
-            onChange={(e) => setPageId(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-foreground"
-          >
-            <option value="">Tất cả các trang</option>
-            {options.pages.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.internalName} {p.slug ? `(/${p.slug})` : ""} {p.isArchived ? "[Đã lưu trữ]" : ""}
-              </option>
-            ))}
-          </select>
+            onChange={setPageId}
+            options={[
+              { value: "", label: "Tất cả các trang" },
+              ...options.pages.map((p) => ({
+                value: p.id,
+                label: `${p.internalName}${p.isArchived ? " [Đã lưu trữ]" : ""}`,
+                description: p.slug ? `/${p.slug}` : undefined,
+              })),
+            ]}
+            className="w-full h-9"
+          />
         </div>
 
         {/* Lọc theo link */}
@@ -186,19 +190,22 @@ export function ReportFilters({
           >
             Lọc theo liên kết
           </label>
-          <select
+          <Select
             id="filter-link-select"
+            size="sm"
+            ariaLabel="Lọc theo liên kết"
             value={linkId}
-            onChange={(e) => setLinkId(e.target.value)}
-            className="w-full px-3 py-2 text-xs rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-foreground"
-          >
-            <option value="">Tất cả các liên kết</option>
-            {options.links.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.label} ({l.targetUrl.slice(0, 30)}...)
-              </option>
-            ))}
-          </select>
+            onChange={setLinkId}
+            options={[
+              { value: "", label: "Tất cả các liên kết" },
+              ...options.links.map((l) => ({
+                value: l.id,
+                label: l.label,
+                description: l.targetUrl,
+              })),
+            ]}
+            className="w-full h-9"
+          />
         </div>
 
         {/* Nút hành động */}

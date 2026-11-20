@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
+import { Select } from "@/components/ui/select";
 import {
   AlertTriangle,
   Check,
@@ -176,23 +177,20 @@ function SelectField<T extends string | number>({
   onChange: (v: T) => void;
 }) {
   return (
-    <label className="space-y-1.5 block">
+    <div className="space-y-1.5">
       <span className="text-xs font-semibold block">{label}</span>
-      <select
+      <Select
+        size="sm"
+        ariaLabel={label}
         value={String(value)}
-        onChange={(e) => {
-          const picked = options.find((o) => String(o.value) === e.target.value);
+        onChange={(v) => {
+          const picked = options.find((o) => String(o.value) === v);
           if (picked) onChange(picked.value);
         }}
-        className="w-full px-3 py-2 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
-      >
-        {options.map((o) => (
-          <option key={String(o.value)} value={String(o.value)}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        options={options.map((o) => ({ value: String(o.value), label: o.label }))}
+        className="w-full"
+      />
+    </div>
   );
 }
 

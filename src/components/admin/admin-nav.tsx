@@ -6,52 +6,65 @@ import {
   LayoutDashboard,
   FileText,
   Link2,
-  Image,
+  Image as ImageIcon,
   BarChart3,
   Users,
   ShieldCheck,
   Loader2,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function NavPendingSpinner() {
   const { pending } = useLinkStatus();
   if (!pending) return null;
-  return <Loader2 className="w-3.5 h-3.5 animate-spin ml-auto shrink-0 opacity-80" />;
+  return <Loader2 className="w-3.5 h-3.5 animate-spin ml-auto shrink-0 opacity-70" />;
 }
 
-const NAV_ITEMS = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  exact?: boolean;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const BASE_GROUPS: NavGroup[] = [
   {
-    name: "Bảng điều khiển",
-    href: "/admin",
-    icon: LayoutDashboard,
-    exact: true,
+    label: "Tổng quan",
+    items: [
+      {
+        name: "Bảng điều khiển",
+        href: "/admin",
+        icon: LayoutDashboard,
+        exact: true,
+      },
+    ],
   },
   {
-    name: "Quản lý trang",
-    href: "/admin/pages",
-    icon: FileText,
+    label: "Nội dung",
+    items: [
+      { name: "Quản lý trang", href: "/admin/pages", icon: FileText },
+      { name: "Danh mục liên kết", href: "/admin/links", icon: Link2 },
+      { name: "Kho hình ảnh", href: "/admin/media", icon: ImageIcon },
+    ],
   },
   {
-    name: "Danh mục liên kết",
-    href: "/admin/links",
-    icon: Link2,
-  },
-  {
-    name: "Kho hình ảnh",
-    href: "/admin/media",
-    icon: Image,
-  },
-  {
-    name: "Báo cáo thống kê",
-    href: "/admin/reports",
-    icon: BarChart3,
+    label: "Phân tích",
+    items: [{ name: "Báo cáo thống kê", href: "/admin/reports", icon: BarChart3 }],
   },
 ];
 
-/** Mục chỉ hiện theo quyền: Thành viên (owner), Quản trị hệ thống (quản trị hệ thống). */
-const MEMBERS_ITEM = { name: "Thành viên", href: "/admin/members", icon: Users };
-const SYSTEM_ITEM = { name: "Quản trị hệ thống", href: "/admin/system", icon: ShieldCheck };
+const MEMBERS_ITEM: NavItem = { name: "Thành viên", href: "/admin/members", icon: Users };
+const SYSTEM_ITEM: NavItem = {
+  name: "Quản trị hệ thống",
+  href: "/admin/system",
+  icon: ShieldCheck,
+};
 
 export interface AdminNavProps {
   showMembers?: boolean;
@@ -60,37 +73,59 @@ export interface AdminNavProps {
 
 export function AdminNav({ showMembers = false, showSystem = false }: AdminNavProps) {
   const pathname = usePathname();
-  const items: { name: string; href: string; icon: typeof LayoutDashboard; exact?: boolean }[] = [
-    ...NAV_ITEMS,
+
+  const adminItems: NavItem[] = [
     ...(showMembers ? [MEMBERS_ITEM] : []),
     ...(showSystem ? [SYSTEM_ITEM] : []),
   ];
 
-  return (
-    <nav className="space-y-1">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const isActive = item.exact
-          ? pathname === item.href
-          : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const groups: NavGroup[] = [
+    ...BASE_GROUPS,
+    ...(adminItems.length > 0 ? [{ label: "Quản trị", items: adminItems }] : []),
+  ];
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground shadow-xs shadow-blue-500/20"
-                : "text-muted-foreground hover:bg-blue-50 hover:text-blue-700"
-            )}
-          >
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="truncate">{item.name}</span>
-            <NavPendingSpinner />
-          </Link>
-        );
-      })}
+  return (
+    <nav className="space-y-5" aria-label="Điều hướng chính">
+      {groups.map((group) => (
+        <div key={group.label} className="space-y-1">
+          <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/75">
+            {group.label}
+          </p>
+          <div className="space-y-0.5">
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.exact
+                ? pathname === item.href
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors",
+                    isActive
+                      ? "bg-muted text-foreground font-semibold shadow-2xs"
+                      : "text-muted-foreground font-medium hover:bg-muted/60 hover:text-foreground"
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "w-4 h-4 shrink-0 transition-colors",
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground group-hover:text-foreground"
+                    )}
+                  />
+                  <span className="truncate">{item.name}</span>
+                  <NavPendingSpinner />
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 }

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Plus, Trash2, RotateCcw } from "lucide-react";
 import { FONT_IDS, FONT_LABELS, type FontId } from "@/config/theme-tokens";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { Select } from "@/components/ui/select";
 import { isSafeMapsUrl, parseVideoUrl } from "@/features/renderer/embeds";
 import type {
   AccordionBlockPayload,
@@ -203,19 +204,21 @@ export function ButtonBlockEditor({
         label="Liên kết của nút"
         hint="Lượt bấm được ghi nhận vào báo cáo như danh sách liên kết."
       >
-        <select
-          aria-label="Liên kết của nút"
+        <Select
+          ariaLabel="Liên kết của nút"
           value={current?.linkId || ""}
-          onChange={(e) => selectLink(e.target.value)}
-          className={inputClass}
-        >
-          <option value="">-- Chọn liên kết --</option>
-          {availableLinks.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.defaultLabel} ({l.targetUrl})
-            </option>
-          ))}
-        </select>
+          onChange={selectLink}
+          placeholder="-- Chọn liên kết --"
+          options={[
+            { value: "", label: "-- Chọn liên kết --" },
+            ...availableLinks.map((l) => ({
+              value: l.id,
+              label: l.defaultLabel,
+              description: l.targetUrl,
+            })),
+          ]}
+          className="w-full"
+        />
       </Field>
       {current && (
         <Field label="Chữ trên nút (để trống = nhãn gốc)" hint="Nhấn Enter để xuống dòng.">
@@ -769,19 +772,17 @@ function FontPickerSelect({
           </button>
         )}
       </div>
-      <select
+      <Select
+        size="sm"
+        ariaLabel={label}
         value={value ?? ""}
-        onChange={(e) => onChange((e.target.value || undefined) as FontId | undefined)}
-        aria-label={label}
-        className={inputClass}
-      >
-        <option value="">-- Theo font chung của trang --</option>
-        {FONT_IDS.map((id) => (
-          <option key={id} value={id}>
-            {FONT_LABELS[id]}
-          </option>
-        ))}
-      </select>
+        onChange={(v) => onChange((v || undefined) as FontId | undefined)}
+        options={[
+          { value: "", label: "-- Theo font chung của trang --" },
+          ...FONT_IDS.map((id) => ({ value: id, label: FONT_LABELS[id] })),
+        ]}
+        className="w-full"
+      />
     </div>
   );
 }
