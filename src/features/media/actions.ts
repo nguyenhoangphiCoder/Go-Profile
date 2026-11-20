@@ -197,21 +197,26 @@ export async function deleteMediaAction(id: string): Promise<{ success: boolean;
       return { success: false, error: "Hình ảnh không tồn tại." };
     }
 
-    // 3. Xóa file khỏi Storage
-    await adminClient.storage.from(asset.bucket_id).remove([asset.object_path]);
-
-    // 4. Đánh dấu xóa mềm trong database
+    // 3. Đánh dấu xóa mềm trong database trước (tránh xóa file Storage nếu DB lỗi)
     const { error: deleteError } = await adminClient
       .from("media_assets")
       .update({
         archived_at: new Date().toISOString(),
-        status: "deleting",
       })
       .eq("id", id);
 
     if (deleteError) {
       console.error("Delete media asset error:", deleteError);
       return { success: false, error: "Lỗi cập nhật trạng thái xóa tài nguyên." };
+    }
+
+    // 4. Xóa file khỏi Storage
+    const { error: storageRemoveError } = await adminClient.storage
+      .from(asset.bucket_id)
+      .remove([asset.object_path]);
+
+    if (storageRemoveError) {
+      console.error("Remove media from storage error:", storageRemoveError);
     }
 
     revalidatePath("/admin/media");
