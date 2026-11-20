@@ -11,6 +11,7 @@ import type {
   VideoEmbedBlockPayload,
 } from "@/features/pages/types";
 import { resolveMediaUrl } from "../media";
+import { readBlockStyle } from "../block-frame";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { HEADING_STYLE, PageLink, tint } from "../primitives";
 import { isSafeMapsUrl, mapsEmbedUrl, mapsSearchUrl, parseVideoUrl } from "../embeds";
@@ -362,9 +363,20 @@ export function MapBlock({ block, ctx }: BlockRenderProps) {
   if (!address)
     return <PreviewPlaceholder ctx={ctx}>Nhập địa chỉ để hiển thị bản đồ</PreviewPlaceholder>;
 
+  const align = readBlockStyle(block.payload)?.align;
   const href = p.mapsUrl && isSafeMapsUrl(p.mapsUrl) ? p.mapsUrl : mapsSearchUrl(address);
   const linkClass =
-    "flex items-center gap-3 px-4 py-3 transition-colors hover:brightness-110 select-none";
+    align === "center"
+      ? "flex flex-col items-center justify-center text-center gap-2 px-4 py-3.5 transition-colors hover:brightness-110 select-none"
+      : align === "right"
+        ? "flex flex-row-reverse items-center gap-3 px-4 py-3 transition-colors hover:brightness-110 select-none"
+        : "flex items-center gap-3 px-4 py-3 transition-colors hover:brightness-110 select-none";
+  const textWrapClass =
+    align === "center"
+      ? "min-w-0 text-center"
+      : align === "right"
+        ? "min-w-0 flex-1 text-right"
+        : "min-w-0 flex-1 text-left";
 
   const body = (
     <>
@@ -377,10 +389,11 @@ export function MapBlock({ block, ctx }: BlockRenderProps) {
       >
         <MapPin className="w-4 h-4" />
       </span>
-      <span className="min-w-0 flex-1 text-left">
+      <span className={textWrapClass}>
         <span
           className="block font-bold"
           style={{
+            color: "var(--gp-heading-color, inherit)",
             fontFamily: "var(--gp-title-font, var(--gp-font-body))",
             fontSize: "var(--gp-title-size, var(--gp-base-size, 14px))",
           }}
