@@ -42,6 +42,7 @@ import type {
 } from "../../types";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { parsePhoneTarget } from "@/features/renderer/phone-action-sheet";
 import {
   AccordionBlockEditor,
   BlockStyleEditor,
@@ -694,7 +695,7 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                 <div className="space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-border/60">
                     <span className="font-semibold text-muted-foreground">Bố cục hiển thị nút</span>
-                    <div className="grid grid-cols-2 sm:flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => updatePayload({ layout: "stack" })}
@@ -716,6 +717,17 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                         }`}
                       >
                         Lưới 2 cột (Grid)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updatePayload({ layout: "split" })}
+                        className={`min-h-10 sm:min-h-0 px-3 py-1.5 rounded-xl border cursor-pointer transition-all whitespace-nowrap ${
+                          (block.payload as LinkListBlockPayload).layout === "split"
+                            ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
+                            : "border-border text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        Hai bên (Trái – Phải)
                       </button>
                     </div>
                   </div>
@@ -809,7 +821,11 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                                   className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium"
                                 >
                                   <Pencil className="w-3 h-3" />
-                                  <span>Tiêu đề hiển thị trên nút</span>
+                                  <span>
+                                    {(block.payload as LinkListBlockPayload).layout === "split"
+                                      ? "Chữ bên trái (tiêu đề)"
+                                      : "Tiêu đề hiển thị trên nút"}
+                                  </span>
                                 </label>
                                 {hasCustomTitle && (
                                   <button
@@ -849,6 +865,50 @@ export const BlockItemEditor = memo(function BlockItemEditor({
                                 className="w-full px-2.5 py-1.5 rounded-lg border border-input bg-card text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
                               />
                             </div>
+
+                            {/* Chữ bên phải (màu nhấn) khi chọn bố cục Hai bên (Trái – Phải) */}
+                            {(block.payload as LinkListBlockPayload).layout === "split" && (
+                              <div>
+                                <label
+                                  htmlFor={`placement-right-${pl.id}`}
+                                  className="block text-[11px] text-muted-foreground font-medium mb-1"
+                                >
+                                  Chữ bên phải (màu nhấn — tuỳ chọn)
+                                </label>
+                                <input
+                                  id={`placement-right-${pl.id}`}
+                                  type="text"
+                                  maxLength={80}
+                                  placeholder={
+                                    pl.defaultUrl?.trim().toLowerCase().startsWith("tel:")
+                                      ? `Mặc định: ${parsePhoneTarget(pl.defaultUrl).display} (gõ để đổi, VD: 0345.75.0007)`
+                                      : "VD: Xem ngay, Điền form →, 0345.75.0007..."
+                                  }
+                                  value={
+                                    ((block.payload as LinkListBlockPayload).rightTextByUrl || {})[
+                                      pl.defaultUrl
+                                    ] || ""
+                                  }
+                                  onChange={(e) => {
+                                    const prevMap = {
+                                      ...((block.payload as LinkListBlockPayload).rightTextByUrl ||
+                                        {}),
+                                    };
+                                    const val = e.target.value;
+                                    if (val.trim()) {
+                                      prevMap[pl.defaultUrl] = val;
+                                    } else {
+                                      delete prevMap[pl.defaultUrl];
+                                    }
+                                    updatePayload({
+                                      rightTextByUrl:
+                                        Object.keys(prevMap).length > 0 ? prevMap : undefined,
+                                    });
+                                  }}
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-input bg-card text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                              </div>
+                            )}
 
                             {/* Màu riêng cho từng nút (VD: Shopee màu cam, TikTok màu đen...) */}
                             {(() => {

@@ -4,7 +4,8 @@ import { buttonStyle } from "@/config/theme-tokens";
 import { readableOn } from "@/lib/color";
 import type { LinkButtonColorOverride } from "@/features/pages/types";
 import { resolveMediaUrl } from "../media";
-import { MoreDotsIcon, PageLink, splitLabel } from "../primitives";
+import { parsePhoneTarget } from "../phone-action-sheet";
+import { MoreDotsIcon, PageLink, splitLabel, tint } from "../primitives";
 import type { BlockRenderProps } from "../types";
 
 export function LinkListBlock({ block, ctx }: BlockRenderProps) {
@@ -14,9 +15,97 @@ export function LinkListBlock({ block, ctx }: BlockRenderProps) {
     layout?: string;
     zaloByTel?: Record<string, string>;
     buttonColors?: Record<string, LinkButtonColorOverride>;
+    rightTextByUrl?: Record<string, string>;
   };
   const zaloByTel = payload.zaloByTel;
   const buttonColors = payload.buttonColors;
+  const rightTextByUrl = payload.rightTextByUrl;
+
+  // Bố cục 2 bên (Trái – Phải): tiêu đề bên trái, chữ nhấn (SĐT / phụ đề) bên phải
+  if (payload.layout === "split") {
+    const baseSurface: CSSProperties =
+      variant === "standard"
+        ? { backgroundColor: tint(6), borderColor: tint(14) }
+        : { backgroundColor: "#202225", borderColor: "rgba(255,255,255,0.12)" };
+
+    return (
+      <div className="w-full max-w-(--gp-max-w) mx-auto flex flex-col gap-2.5 mt-(--gp-gap)">
+        {links.map((link) => {
+          const iconUrl = resolveMediaUrl(link.mediaUrl);
+          const { title, subtitle } = splitLabel(link.label);
+          const isTel = link.targetUrl?.trim().toLowerCase().startsWith("tel:");
+          const customRight = rightTextByUrl?.[link.targetUrl]?.trim();
+          const rightText =
+            customRight || subtitle || (isTel ? parsePhoneTarget(link.targetUrl).display : "");
+
+          const customColor = buttonColors?.[link.targetUrl];
+          const rowStyle: CSSProperties = {
+            ...baseSurface,
+            ...(customColor?.bg
+              ? {
+                  backgroundColor: customColor.bg,
+                  borderColor: customColor.bg,
+                  color: customColor.text || readableOn(customColor.bg),
+                }
+              : customColor?.text
+                ? { color: customColor.text }
+                : {}),
+          };
+          const rightColor =
+            customColor?.text ||
+            (customColor?.bg ? readableOn(customColor.bg) : "var(--gp-accent)");
+
+          return (
+            <PageLink
+              key={link.id}
+              ctx={ctx}
+              link={link}
+              zaloTarget={zaloByTel?.[link.targetUrl]}
+              className="group relative flex items-center justify-between gap-3 w-full px-4 py-3 rounded-2xl border transition-all duration-150 hover:brightness-110 active:scale-[0.99] select-none text-left"
+              style={rowStyle}
+            >
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                {iconUrl && (
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-black/15">
+                    <Image
+                      src={iconUrl}
+                      alt={title}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover rounded-full"
+                      unoptimized
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <span
+                  className="font-bold leading-snug min-w-0 truncate"
+                  style={{
+                    fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))",
+                    textTransform: "var(--gp-text-case)" as CSSProperties["textTransform"],
+                  }}
+                >
+                  {title}
+                </span>
+              </div>
+
+              {rightText && (
+                <span
+                  className="font-bold shrink-0 text-right tabular-nums leading-snug"
+                  style={{
+                    color: rightColor,
+                    fontSize: "calc(var(--gp-body-size, var(--gp-base-size, 14px)) * 0.93)",
+                  }}
+                >
+                  {rightText}
+                </span>
+              )}
+            </PageLink>
+          );
+        })}
+      </div>
+    );
+  }
 
   // Beacons Portrait: từng nút viên thuốc viền trắng
   if (variant === "beacons-portrait") {

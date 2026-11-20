@@ -222,16 +222,20 @@ export function MenuCardBlock({ block, ctx }: BlockRenderProps) {
                 </span>
               )}
               <div className={`min-w-0 flex-1 ${isGrid ? "p-2.5" : ""}`}>
-                <div className="flex items-baseline justify-between gap-2">
+                <div
+                  className={
+                    isGrid ? "flex flex-col gap-1" : "flex items-baseline justify-between gap-2"
+                  }
+                >
                   <span
-                    className="font-bold leading-snug"
+                    className="font-bold leading-snug min-w-0 break-words"
                     style={{ fontSize: "var(--gp-body-size, var(--gp-base-size, 14px))" }}
                   >
                     {item.name}
                   </span>
                   {item.price && (
                     <span
-                      className="font-bold shrink-0"
+                      className={`font-bold ${isGrid ? "break-words" : "shrink-0"}`}
                       style={{
                         color: accent,
                         fontSize: "calc(var(--gp-body-size, var(--gp-base-size, 14px)) * 0.93)",

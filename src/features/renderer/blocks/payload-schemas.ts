@@ -99,6 +99,7 @@ export const BLOCK_PAYLOAD_SCHEMAS: Record<BlockType, z.ZodType<Record<string, u
     layout: optToken,
     zaloByTel: z.record(z.string().max(120), z.string().max(200)).nullish(),
     buttonColors: z.record(z.string().max(2048), buttonColorOverrideSchema).nullish(),
+    rightTextByUrl: z.record(z.string().max(2048), z.string().max(80)).nullish(),
   }),
   social_icons: styled({ style: optToken }),
   spacer: styled({

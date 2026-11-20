@@ -129,11 +129,13 @@ export interface LinkButtonColorOverride {
 }
 
 export interface LinkListBlockPayload {
-  layout?: "stack" | "grid";
+  layout?: "stack" | "grid" | "split";
   /** Bản đồ targetUrl (`tel:...`) -> số hoặc link zalo.me riêng. */
   zaloByTel?: Record<string, string>;
   /** Bản đồ targetUrl -> màu nền / màu chữ riêng cho từng nút trong khối. */
   buttonColors?: Record<string, LinkButtonColorOverride>;
+  /** Bản đồ targetUrl -> chữ hiển thị bên phải (màu nhấn) khi dùng bố cục "split" (Hai bên). */
+  rightTextByUrl?: Record<string, string>;
 }
 
 export interface SocialIconsBlockPayload {

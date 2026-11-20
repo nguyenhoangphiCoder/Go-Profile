@@ -157,6 +157,49 @@ describe("PageRenderer", () => {
     expect(root.style.getPropertyValue("--gp-radius")).toBe("0.75rem");
   });
 
+  it("hỗ trợ bố cục Hai bên (split) cho link_list: tự hiện SĐT, ghi đè rightTextByUrl và vẫn bấm gọi/Zalo được", () => {
+    const { container } = render(
+      <PageRenderer
+        mode="public"
+        title="Gờ Cafe"
+        theme={{ preset: "go-original" }}
+        blocks={[
+          {
+            id: "b-split",
+            type: "link_list",
+            payload: {
+              layout: "split",
+              rightTextByUrl: {
+                "tel:0345750007": "0345.75.0007",
+                "https://example.com/form": "Điền form →",
+              },
+            },
+            links: [
+              { id: "pl-1", label: "Góp ý, khiếu nại", targetUrl: "tel:0345750007" },
+              { id: "pl-2", label: "Đăng ký ứng tuyển", targetUrl: "tel:0799709246" },
+              { id: "pl-3", label: "Tuyển dụng online", targetUrl: "https://example.com/form" },
+            ],
+          },
+        ]}
+      />
+    );
+
+    // Chữ bên trái
+    expect(screen.getByText("Góp ý, khiếu nại")).toBeInTheDocument();
+    expect(screen.getByText("Đăng ký ứng tuyển")).toBeInTheDocument();
+    expect(screen.getByText("Tuyển dụng online")).toBeInTheDocument();
+
+    // Chữ bên phải: ghi đè custom & tự động format SĐT cho tel: chưa ghi đè
+    expect(screen.getByText("0345.75.0007")).toBeInTheDocument();
+    expect(screen.getByText("0799 709 246")).toBeInTheDocument();
+    expect(screen.getByText("Điền form →")).toBeInTheDocument();
+
+    // 2 link tel: render thành button (mở PhoneActionSheet), 1 link web render thành <a href="/r/pl-3">
+    expect(container.querySelectorAll("button")).toHaveLength(2);
+    const webLinks = Array.from(container.querySelectorAll("a")).map((a) => a.getAttribute("href"));
+    expect(webLinks).toEqual(["/r/pl-3"]);
+  });
+
   it.each(["go-original", "beacons-dark-card", "beacons-portrait-card"])(
     "render được với preset %s",
     (preset) => {
@@ -192,6 +235,19 @@ describe("saveDraftSchema kiểm tra payload theo loại khối", () => {
     const res = saveDraftSchema.safeParse({
       ...base,
       blocks: [block("link_list", { layout: "list", legacyFlag: true })],
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("chấp nhận payload bố cục split kèm rightTextByUrl cho link_list", () => {
+    const res = saveDraftSchema.safeParse({
+      ...base,
+      blocks: [
+        block("link_list", {
+          layout: "split",
+          rightTextByUrl: { "tel:0345750007": "0345.75.0007" },
+        }),
+      ],
     });
     expect(res.success).toBe(true);
   });
