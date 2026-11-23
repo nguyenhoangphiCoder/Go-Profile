@@ -16,6 +16,10 @@ interface PageRendererProps {
   theme: ThemeConfigInput | null | undefined;
   blocks: RenderBlock[];
   mode: RenderMode;
+  /** Hiển thị nhãn chân trang (mặc định true). */
+  showFooterBadge?: boolean;
+  /** Nội dung nhãn chân trang (để trống = mặc định GỜ CAFÉ). */
+  footerBadgeText?: string | null;
   /** Chỉ ở chế độ preview: khối đang được chọn trong editor (được tô viền). */
   selectedBlockId?: string | null;
   /** Chỉ ở chế độ preview: bấm vào khối để mở form chỉnh sửa tương ứng. */
@@ -39,6 +43,8 @@ export function PageRenderer({
   theme,
   blocks,
   mode,
+  showFooterBadge = true,
+  footerBadgeText,
   selectedBlockId,
   onSelectBlock,
 }: PageRendererProps) {
@@ -140,22 +146,23 @@ export function PageRenderer({
             )}
           </main>
 
-          {variant === "beacons-card" ? (
-            <footer className="pt-4 pb-4 text-center text-xs opacity-40 select-none relative z-10">
-              <span className="tracking-widest uppercase font-medium text-[11px]">
-                GỜ CAFÉ © 2026
-              </span>
-            </footer>
-          ) : (
-            <footer className="pt-12 pb-6 text-center text-xs opacity-60">
-              <div
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] tracking-wider font-medium"
-                style={{ backgroundColor: tint(5), borderColor: tint(12) }}
-              >
-                <span>GỜ CAFÉ</span>
-              </div>
-            </footer>
-          )}
+          {showFooterBadge &&
+            (variant === "beacons-card" ? (
+              <footer className="pt-4 pb-4 text-center text-xs opacity-40 select-none relative z-10">
+                <span className="tracking-widest uppercase font-medium text-[11px]">
+                  {footerBadgeText?.trim() || "GỜ CÀFÊ © 2026"}
+                </span>
+              </footer>
+            ) : (
+              <footer className="pt-12 pb-6 text-center text-xs opacity-60">
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] tracking-wider font-medium"
+                  style={{ backgroundColor: tint(5), borderColor: tint(12) }}
+                >
+                  <span>{footerBadgeText?.trim() || "GỜ CÀFÊ"}</span>
+                </div>
+              </footer>
+            ))}
         </div>
       </div>
     </div>

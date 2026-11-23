@@ -10,6 +10,8 @@ interface LivePreviewProps {
   themeConfig: PageThemeConfig;
   title: string;
   blocks: EditorBlockItem[];
+  showFooterBadge?: boolean;
+  footerBadgeText?: string;
   previewMode: "mobile" | "desktop";
   zoomScale?: number;
   selectedBlockId?: string | null;
@@ -20,6 +22,8 @@ export const LivePreview = memo(function LivePreview({
   themeConfig,
   title,
   blocks,
+  showFooterBadge,
+  footerBadgeText,
   previewMode,
   zoomScale = 1,
   selectedBlockId,
@@ -213,6 +217,8 @@ export const LivePreview = memo(function LivePreview({
               title={title}
               theme={themeConfig}
               blocks={renderBlocks}
+              showFooterBadge={showFooterBadge}
+              footerBadgeText={footerBadgeText}
               selectedBlockId={selectedBlockId}
               onSelectBlock={onSelectBlock}
             />

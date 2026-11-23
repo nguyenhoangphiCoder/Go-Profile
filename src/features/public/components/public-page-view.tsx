@@ -13,6 +13,8 @@ export function PublicPageView({ page }: PublicPageViewProps) {
       title={page.title || ""}
       theme={page.theme}
       blocks={fromPublicBlocks(page.blocks)}
+      showFooterBadge={page.seo?.showFooterBadge}
+      footerBadgeText={page.seo?.footerBadgeText}
     />
   );
 }

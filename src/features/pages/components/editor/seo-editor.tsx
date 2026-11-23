@@ -21,9 +21,59 @@ export function SeoEditor({ seo, onChange, availableMedia, onMediaAdded }: SeoEd
 
   const metaTitle = seo.metaTitle || "";
   const metaDescription = seo.metaDescription || "";
+  const showFooterBadge = seo.showFooterBadge !== false;
+  const footerBadgeText = seo.footerBadgeText || "";
 
   return (
     <div className="space-y-6">
+      {/* Nhãn chân trang (Footer Tag) */}
+      <div className="p-4 rounded-2xl border border-border bg-card space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xs font-bold text-foreground">Nhãn chân trang (Footer Tag)</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Bật/tắt hoặc đổi nội dung thẻ thương hiệu hiển thị ở cuối trang hồ sơ.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showFooterBadge}
+            onClick={() => onChange({ ...seo, showFooterBadge: !showFooterBadge })}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
+              showFooterBadge ? "bg-primary" : "bg-muted-foreground/30"
+            }`}
+            title={showFooterBadge ? "Đang bật — bấm để ẩn" : "Đang tắt — bấm để hiện"}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-xs transition-transform ${
+                showFooterBadge ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+
+        {showFooterBadge && (
+          <div className="space-y-1.5 pt-1 border-t border-border/60">
+            <label
+              htmlFor="footer-badge-text"
+              className="text-xs font-semibold text-foreground block"
+            >
+              Nội dung nhãn chân trang
+            </label>
+            <input
+              id="footer-badge-text"
+              type="text"
+              maxLength={60}
+              placeholder="Mặc định: GỜ CÀFÊ"
+              value={footerBadgeText}
+              onChange={(e) => onChange({ ...seo, footerBadgeText: e.target.value })}
+              className="w-full px-3.5 py-2 text-xs rounded-xl border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+        )}
+      </div>
+
       <div>
         <h3 className="text-sm font-bold text-foreground">Cài đặt SEO & Chia sẻ Mạng xã hội</h3>
         <p className="text-xs text-muted-foreground mt-0.5">

@@ -59,13 +59,18 @@ describe("gatePublicSlug", () => {
     expect(res.headers.get("location")).toBe("https://go.example/gocafe?utm=qr");
   });
 
-  it("alias cố định và slug viết hoa: 308 ngay, không truy vấn database", async () => {
-    const a = (await gatePublicSlug(req("/gocafe.official")))!;
-    expect(a.status).toBe(308);
-    expect(a.headers.get("location")).toBe("https://go.example/gocafe");
+  it("slug viết hoa: 308 ngay về chữ thường, không truy vấn database", async () => {
     const b = (await gatePublicSlug(req("/GoCafe")))!;
+    expect(b.status).toBe(308);
     expect(b.headers.get("location")).toBe("https://go.example/gocafe");
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("alias cố định: tra DB trước (tránh vòng lặp), không có trong DB mới 308 sang đích", async () => {
+    rpc.mockResolvedValue({ data: { found: false }, error: null });
+    const a = (await gatePublicSlug(req("/gocafe.official")))!;
+    expect(a.status).toBe(308);
+    expect(a.headers.get("location")).toBe("https://go.example/gocafe-official");
   });
 
   it("slug sai định dạng: 404 ngay, không truy vấn database", async () => {

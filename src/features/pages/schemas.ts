@@ -155,6 +155,8 @@ export const saveDraftSchema = z.object({
       metaTitle: z.string().trim().max(100).optional().nullable(),
       metaDescription: z.string().trim().max(300).optional().nullable(),
       ogImageMediaId: pgUuid().optional().nullable(),
+      showFooterBadge: z.boolean().optional(),
+      footerBadgeText: z.string().trim().max(60).optional().nullable(),
     })
     .default({}),
   blocks: z.array(blockSchema).max(200, "Một trang tối đa 200 khối nội dung"),

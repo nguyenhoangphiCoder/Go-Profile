@@ -3,11 +3,9 @@
  * Dùng chung cho proxy (chuyển hướng 308 trước khi render) và trang /[slug].
  */
 export const SLUG_ALIASES: Record<string, string> = {
-  "gocafe.official": "gocafe",
-  "gocafe-official": "gocafe",
+  "gocafe.official": "gocafe-official",
   "hophuonganh.gocafe": "hophuonganh-gocafe",
   "gogang.official": "gogang",
-  gogang: "gogang",
 };
 
 export function resolveLookupSlug(slug: string): string {

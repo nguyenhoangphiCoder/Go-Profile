@@ -26,11 +26,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Không tìm thấy trang" };
   }
 
-  const lookupSlug = resolveLookupSlug(slug);
-  if (!isLookupableSlug(lookupSlug)) {
-    return { title: "Không tìm thấy trang | Gờ Cafe" };
+  const normalized = slug.trim().toLowerCase();
+  let page = isLookupableSlug(normalized)
+    ? await fetchPublicPage(normalized)
+    : { found: false as const };
+  if (!page.found) {
+    const aliasSlug = resolveLookupSlug(normalized);
+    if (aliasSlug !== normalized && isLookupableSlug(aliasSlug)) {
+      page = await fetchPublicPage(aliasSlug);
+    }
   }
-  const page = await fetchPublicPage(lookupSlug);
 
   if (!page.found || page.is_alias) {
     return { title: "Không tìm thấy trang | Gờ Cafe" };
@@ -75,22 +80,26 @@ export default async function PublicSlugPage({ params }: PageProps) {
     notFound();
   }
 
-  // 2. Tra cứu dữ liệu trang công khai (hỗ trợ alias gocafe.official, hophuonganh.gocafe)
-  const lookupSlug = resolveLookupSlug(slug);
-  if (!isLookupableSlug(lookupSlug)) {
-    notFound();
+  // 2. Ưu tiên tra trực tiếp slug trong DB trước, không có mới fallback sang alias cứng
+  const normalized = slug.trim().toLowerCase();
+  if (isLookupableSlug(normalized)) {
+    const directPage = await fetchPublicPage(normalized);
+    if (directPage.found) {
+      if (
+        directPage.is_alias &&
+        directPage.canonical_slug &&
+        directPage.canonical_slug !== normalized
+      ) {
+        redirect(`/${directPage.canonical_slug}`, RedirectType.replace);
+      }
+      return <PublicPageView page={directPage} />;
+    }
   }
-  const page = await fetchPublicPage(lookupSlug);
 
-  // 3. Nếu là alias cũ, thực hiện chuyển hướng 308 (P07.03)
-  if (page.found && page.is_alias && page.canonical_slug) {
-    redirect(`/${page.canonical_slug}`, RedirectType.replace);
+  const aliasSlug = resolveLookupSlug(normalized);
+  if (aliasSlug !== normalized && isLookupableSlug(aliasSlug)) {
+    redirect(`/${aliasSlug}`, RedirectType.replace);
   }
 
-  // 4. Nếu không tìm thấy hoặc trang chưa xuất bản (P07.03)
-  if (!page.found) {
-    notFound();
-  }
-
-  return <PublicPageView page={page} />;
+  notFound();
 }

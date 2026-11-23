@@ -199,6 +199,10 @@ export interface PageSeoConfig {
   metaDescription?: string;
   ogImageMediaId?: string;
   ogImageUrl?: string;
+  /** Bật/tắt nhãn thương hiệu ở cuối trang (mặc định true). */
+  showFooterBadge?: boolean;
+  /** Nội dung nhãn thương hiệu ở cuối trang (để trống = mặc định "GỜ CAFÉ"). */
+  footerBadgeText?: string;
 }
 
 export interface PageListItem {

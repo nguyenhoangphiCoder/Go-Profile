@@ -107,24 +107,35 @@ export async function gatePublicSlug(request: NextRequest): Promise<NextResponse
   if (raw === null) return null;
 
   const normalized = raw.trim().toLowerCase();
-  const lookupSlug = resolveLookupSlug(normalized);
 
-  // Alias cố định trong code (gocafe.official -> gocafe...) và slug viết hoa: chuyển hướng ngay
-  if (lookupSlug !== raw && SLUG_REGEX.test(lookupSlug)) {
-    return redirectTo(request, lookupSlug);
+  // Nếu URL chứa chữ hoa hoặc khoảng trắng -> chuẩn hoá về chữ thường trước
+  if (normalized !== raw && normalized.length <= 80 && SLUG_REGEX.test(normalized)) {
+    return redirectTo(request, normalized);
   }
-  if (lookupSlug.length > 80 || !SLUG_REGEX.test(lookupSlug)) {
+  if (normalized.length > 80 || !SLUG_REGEX.test(normalized)) {
     return notFoundResponse(request);
   }
 
+  // 1. Ưu tiên tra DB trước: nếu slug đang tồn tại trong DB (VD: gocafe-official) thì dùng trực tiếp,
+  //    tránh vòng lặp redirect với SLUG_ALIASES cứng trong code.
   let result: GateResult | null;
   try {
-    result = await lookup(lookupSlug);
+    result = await lookup(normalized);
   } catch {
     result = null;
   }
   if (!result) return null;
-  if (result.kind === "missing") return notFoundResponse(request);
-  if (result.kind === "alias") return redirectTo(request, result.canonical);
-  return null;
+  if (result.kind === "found") return null;
+  if (result.kind === "alias") {
+    if (result.canonical === normalized) return null;
+    return redirectTo(request, result.canonical);
+  }
+
+  // 2. Không có trong DB -> kiểm tra alias cố định (QR cũ như gocafe.official)
+  const aliasTarget = resolveLookupSlug(normalized);
+  if (aliasTarget !== normalized && SLUG_REGEX.test(aliasTarget)) {
+    return redirectTo(request, aliasTarget);
+  }
+
+  return notFoundResponse(request);
 }
