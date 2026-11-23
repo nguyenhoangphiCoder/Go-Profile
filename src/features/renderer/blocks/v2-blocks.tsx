@@ -11,7 +11,13 @@ import type {
   VideoEmbedBlockPayload,
 } from "@/features/pages/types";
 import { resolveMediaUrl } from "../media";
-import { alignItemsClass, alignTextClass, readBlockStyle, resolveBlockAlign } from "../block-frame";
+import {
+  alignItemsClass,
+  alignJustifyClass,
+  alignTextClass,
+  readBlockStyle,
+  resolveBlockAlign,
+} from "../block-frame";
 import { renderLnkBioFormattedText } from "@/features/public/components/lnkbio-format";
 import { HEADING_STYLE, PageLink, tint } from "../primitives";
 import { isSafeMapsUrl, mapsEmbedUrl, mapsSearchUrl, parseVideoUrl } from "../embeds";
@@ -112,14 +118,23 @@ export function GalleryBlock({ block, ctx }: BlockRenderProps) {
   if (images.length === 0)
     return <PreviewPlaceholder ctx={ctx}>Chưa có ảnh trong thư viện</PreviewPlaceholder>;
 
+  const align = resolveBlockAlign(block.payload, "center");
+
   if (p.layout === "carousel") {
+    // Mỗi slide rộng 78%: đệm 11% hai bên để slide nằm chính giữa (Giữa), hoặc 22% bên trái để sát phải (Phải)
+    const trackPadding =
+      align === "center" ? "px-[11%]" : align === "right" ? "pl-[22%] pr-1" : "px-1";
+    const snapAlign =
+      align === "center" ? "snap-center" : align === "right" ? "snap-end" : "snap-start";
     return (
       <div className="w-full my-2 -mx-1">
-        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-1 pb-2 [scrollbar-width:thin]">
+        <div
+          className={`flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 [scrollbar-width:thin] ${trackPadding}`}
+        >
           {images.map((img, i) => (
             <div
               key={`${img.src}-${i}`}
-              className="relative shrink-0 w-[78%] aspect-4/5 rounded-2xl overflow-hidden snap-center shadow-md"
+              className={`relative shrink-0 w-[78%] aspect-4/5 rounded-2xl overflow-hidden shadow-md ${snapAlign}`}
             >
               <Image
                 src={img.src}
@@ -136,7 +151,32 @@ export function GalleryBlock({ block, ctx }: BlockRenderProps) {
     );
   }
 
-  const cols = p.columns === 3 ? "grid-cols-3" : "grid-cols-2";
+  const colCount = p.columns === 3 ? 3 : 2;
+  // Khi số ảnh ít hơn số cột (VD: 1 ảnh ở lưới 2 cột), dùng flex để căn Trái / Giữa / Phải chuẩn xác
+  if (images.length < colCount) {
+    const itemWidth = colCount === 3 ? "w-[calc(33.333%-0.35rem)]" : "w-[calc(50%-0.25rem)]";
+    return (
+      <div className={`w-full my-2 flex flex-wrap ${alignJustifyClass(align)} gap-2`}>
+        {images.map((img, i) => (
+          <div
+            key={`${img.src}-${i}`}
+            className={`relative ${itemWidth} aspect-square rounded-xl overflow-hidden shadow-sm`}
+          >
+            <Image
+              src={img.src}
+              alt={img.alt || `Ảnh ${i + 1}`}
+              fill
+              className="object-cover"
+              unoptimized
+              loading="lazy"
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const cols = colCount === 3 ? "grid-cols-3" : "grid-cols-2";
   return (
     <div className={`w-full my-2 grid ${cols} gap-2`}>
       {images.map((img, i) => (
@@ -327,10 +367,14 @@ export function VideoEmbedBlock({ block, ctx }: BlockRenderProps) {
     );
 
   const vertical = video.aspect === "9/16";
+  const videoAlign = resolveBlockAlign(block.payload, "center");
+  const videoMargin =
+    videoAlign === "left" ? "mr-auto" : videoAlign === "right" ? "ml-auto" : "mx-auto";
+
   return (
     <div className="w-full my-2">
       <div
-        className={`relative mx-auto overflow-hidden rounded-2xl shadow-lg bg-black ${
+        className={`relative ${videoMargin} overflow-hidden rounded-2xl shadow-lg bg-black ${
           vertical ? "w-full max-w-[340px] aspect-9/16" : "w-full aspect-video"
         }`}
       >

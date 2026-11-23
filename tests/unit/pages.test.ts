@@ -11,21 +11,22 @@ import {
 describe("Pages Schema Validation", () => {
   describe("pageSlugSchema", () => {
     it("chấp nhận slug hợp lệ chỉ chứa chữ thường, số và dấu gạch nối", () => {
-      const validSlugs = [
-        "menu",
-        "menu-chinh",
-        "tuyen-dung-2026",
-        "go-cafe-q1",
-        "hophuonganh.gocafe",
-      ];
+      const validSlugs = ["menu", "menu-chinh", "tuyen-dung-2026", "go-cafe-q1"];
       for (const slug of validSlugs) {
         const result = pageSlugSchema.safeParse(slug);
         expect(result.success).toBe(true);
       }
     });
 
-    it("chặn slug chứa ký tự hoa, ký tự đặc biệt hoặc khoảng trắng", () => {
-      const invalidSlugs = ["Menu", "menu chinh", "menu_chinh", "menu@2026", "menu--chinh"];
+    it("chặn slug chứa ký tự hoa, ký tự đặc biệt, dấu chấm hoặc khoảng trắng", () => {
+      const invalidSlugs = [
+        "Menu",
+        "menu chinh",
+        "menu_chinh",
+        "menu@2026",
+        "menu--chinh",
+        "gocafe.official",
+      ];
       for (const slug of invalidSlugs) {
         const result = pageSlugSchema.safeParse(slug);
         expect(result.success).toBe(false);

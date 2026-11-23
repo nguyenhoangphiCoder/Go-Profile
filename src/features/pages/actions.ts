@@ -175,8 +175,17 @@ export async function saveDraftAction(
   if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
 
   const privileged = createSupabaseAdminClient();
-  const { pageId, draftId, expectedDraftVersion, title, description, theme, seo, blocks } =
-    parsed.data;
+  const {
+    pageId,
+    draftId,
+    expectedDraftVersion,
+    internalName,
+    title,
+    description,
+    theme,
+    seo,
+    blocks,
+  } = parsed.data;
 
   const revisionFields = {
     title,
@@ -188,7 +197,7 @@ export async function saveDraftAction(
   // 0. Trang phải tồn tại, chưa bị lưu trữ và thuộc workspace hiện tại (service role bỏ qua RLS)
   const { data: pageRow } = await privileged
     .from("pages")
-    .select("id")
+    .select("id, internal_name")
     .eq("id", pageId)
     .eq("workspace_id", ctx.workspace.id)
     .is("archived_at", null)
@@ -196,6 +205,17 @@ export async function saveDraftAction(
 
   if (!pageRow) {
     return { success: false, error: "Trang không tồn tại hoặc đã bị lưu trữ" };
+  }
+
+  // Cập nhật tên nội bộ trang nếu có thay đổi (không tăng lock_version để tránh xung đột với đổi slug/xuất bản)
+  if (internalName && internalName !== pageRow.internal_name) {
+    const { error: nameErr } = await privileged
+      .from("pages")
+      .update({ internal_name: internalName, updated_at: new Date().toISOString() })
+      .eq("id", pageId);
+    if (nameErr) {
+      console.error("Lỗi cập nhật tên nội bộ trang:", nameErr);
+    }
   }
 
   // 1. Xác định bản nháp đích

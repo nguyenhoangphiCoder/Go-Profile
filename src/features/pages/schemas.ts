@@ -12,8 +12,8 @@ import {
   themeOverridesSchema,
 } from "@/config/theme-tokens";
 
-// Regex kiểm tra slug: chỉ gồm chữ thường a-z, 0-9, dấu chấm (.) và dấu gạch nối (-), không có ký tự phân cách liên tiếp hoặc ở đầu/cuối
-export const SLUG_REGEX = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
+// Regex kiểm tra slug: chỉ gồm chữ thường a-z, 0-9 và dấu gạch nối (-), khớp ràng buộc page_slugs_slug_check trên DB
+export const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 export const pageSlugSchema = z
   .string()
@@ -22,7 +22,7 @@ export const pageSlugSchema = z
   .max(64, "Đường dẫn (slug) không được vượt quá 64 ký tự")
   .regex(
     SLUG_REGEX,
-    "Đường dẫn chỉ được chứa chữ thường (a-z), chữ số (0-9), dấu chấm (.) và dấu gạch nối (-) phân cách"
+    "Đường dẫn chỉ được chứa chữ thường không dấu (a-z), chữ số (0-9) và dấu gạch nối (-) — không dùng dấu chấm hoặc khoảng trắng"
   )
   .refine((slug) => !isReservedSlug(slug), {
     message: "Đường dẫn này nằm trong danh mục từ khóa hệ thống được bảo lưu",
@@ -132,6 +132,12 @@ export const saveDraftSchema = z.object({
   pageId: pgUuid("ID trang không hợp lệ"),
   draftId: pgUuid("ID bản nháp không hợp lệ").optional(),
   expectedDraftVersion: z.number().int().min(1, "Phiên bản nháp không hợp lệ"),
+  internalName: z
+    .string()
+    .trim()
+    .min(1, "Tên nội bộ trang không được để trống")
+    .max(100, "Tên nội bộ tối đa 100 ký tự")
+    .optional(),
   title: z
     .string()
     .trim()

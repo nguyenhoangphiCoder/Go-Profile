@@ -120,6 +120,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const [draftRev, setDraftRev] = useState(initialData.draftRevision);
   const [internalName, setInternalName] = useState(initialData.page.internalName);
   const [slug, setSlug] = useState(initialData.primarySlug);
+  const [savedPrimarySlug, setSavedPrimarySlug] = useState(initialData.primarySlug);
   const [title, setTitle] = useState(initialData.draftRevision.title);
   const [description, setDescription] = useState(initialData.draftRevision.description || "");
   const [themeConfig, setThemeConfig] = useState<PageThemeConfig>(
@@ -448,8 +449,8 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
 
   // Hoàn tác / làm lại & Tự động lưu nháp: theo dõi toàn bộ nội dung có thể chỉnh sửa của trang
   const editorSnapshot = useMemo(
-    () => ({ title, description, themeConfig, seo, blocks }),
-    [title, description, themeConfig, seo, blocks]
+    () => ({ internalName, title, description, themeConfig, seo, blocks }),
+    [internalName, title, description, themeConfig, seo, blocks]
   );
 
   // Ref đồng bộ mới nhất để auto-save / save thủ công / publish không bị lệch lockVersion
@@ -463,11 +464,13 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const performAutoSave = useCallback(async () => {
     const snap = editorSnapshotRef.current;
     const rev = draftRevRef.current;
+    const cleanInternalName = snap.internalName.trim() || undefined;
     const res = await saveDraftAction(
       {
         pageId: page.id,
         draftId: rev.id,
         expectedDraftVersion: rev.lockVersion,
+        internalName: cleanInternalName,
         title: snap.title,
         description: snap.description,
         theme: snap.themeConfig,
@@ -486,6 +489,13 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
       };
       draftRevRef.current = nextRev;
       setDraftRev(nextRev);
+      if (cleanInternalName) {
+        setPage((prev) =>
+          prev.internalName === cleanInternalName
+            ? prev
+            : { ...prev, internalName: cleanInternalName }
+        );
+      }
       return { ok: true };
     }
     return { ok: false, error: res.error || "Không thể tự động lưu nháp" };
@@ -562,19 +572,25 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
       await autoSave.waitForIdle();
 
       // 2. Trường hợp trang đã tồn tại - kiểm tra đổi slug nếu có
-      if (slug && slug !== initialData.primarySlug) {
+      if (slug && slug !== savedPrimarySlug) {
         const renameRes = await renameSlugAction(page.id, slug, page.lockVersion);
         if (!renameRes.success) {
           showToast(renameRes.error || "Không thể đổi slug", "error");
           return;
         }
+        const appliedSlug = renameRes.newSlug || slug;
+        setSavedPrimarySlug(appliedSlug);
+        setSlug(appliedSlug);
+        setPage((prev) => ({ ...prev, lockVersion: prev.lockVersion + 1 }));
       }
 
       const rev = draftRevRef.current;
+      const cleanInternalName = internalName.trim() || undefined;
       const res = await saveDraftAction({
         pageId: page.id,
         draftId: rev.id,
         expectedDraftVersion: rev.lockVersion,
+        internalName: cleanInternalName,
         title,
         description,
         theme: themeConfig,
@@ -591,6 +607,9 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
         };
         draftRevRef.current = nextRev;
         setDraftRev(nextRev);
+        if (cleanInternalName) {
+          setPage((prev) => ({ ...prev, internalName: cleanInternalName }));
+        }
         setIsDirty(false);
         autoSave.markSaved();
         showToast("Đã lưu bản nháp thành công!", "success");
@@ -609,7 +628,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     blocks,
     page.id,
     page.lockVersion,
-    initialData.primarySlug,
+    savedPrimarySlug,
     router,
     showToast,
     canEdit,
@@ -617,6 +636,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   ]);
 
   const applySnapshot = useCallback((snap: typeof editorSnapshot) => {
+    setInternalName(snap.internalName);
     setTitle(snap.title);
     setDescription(snap.description);
     setThemeConfig(snap.themeConfig);
@@ -702,20 +722,26 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             targetPageId = createRes.pageId;
             targetPageLockVersion = 1;
             targetDraftLockVersion = 1;
-          } else if (slug && slug !== initialData.primarySlug) {
+          } else if (slug && slug !== savedPrimarySlug) {
             const renameRes = await renameSlugAction(targetPageId, slug, targetPageLockVersion);
             if (!renameRes.success) {
               showToast(renameRes.error || "Không thể đổi slug", "error");
               return;
             }
             targetPageLockVersion += 1;
+            const appliedSlug = renameRes.newSlug || slug;
+            setSavedPrimarySlug(appliedSlug);
+            setSlug(appliedSlug);
+            setPage((prev) => ({ ...prev, lockVersion: targetPageLockVersion }));
           }
 
           // Lưu nháp trước
+          const cleanInternalName = internalName.trim() || undefined;
           const saveRes = await saveDraftAction({
             pageId: targetPageId,
             draftId: isCreatingNew ? undefined : targetDraftId,
             expectedDraftVersion: targetDraftLockVersion,
+            internalName: cleanInternalName,
             title,
             description,
             theme: themeConfig,
@@ -748,7 +774,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
               setPage((prev) => ({
                 ...prev,
                 status: "published",
-                lockVersion: prev.lockVersion + 1,
+                lockVersion: targetPageLockVersion + 1,
                 publishedRevisionId: draftIdToPublish,
               }));
               const sealedRev = {
