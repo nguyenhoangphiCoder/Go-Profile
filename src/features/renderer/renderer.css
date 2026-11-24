@@ -1,8 +1,39 @@
-/* Hiệu ứng xuất hiện cho khối có blockStyle.animation = "fade-up" */
+/* Hiệu ứng xuất hiện cho khối (Block Design System v3) */
 @keyframes gp-fade-up {
   from {
     opacity: 0;
     transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes gp-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes gp-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes gp-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
   }
   to {
     opacity: 1;
@@ -15,8 +46,26 @@
   animation-delay: var(--gp-anim-delay, 0ms);
 }
 
+.gp-anim-fade-in {
+  animation: gp-fade-in 0.5s ease-out both;
+  animation-delay: var(--gp-anim-delay, 0ms);
+}
+
+.gp-anim-zoom-in {
+  animation: gp-zoom-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--gp-anim-delay, 0ms);
+}
+
+.gp-anim-slide-left {
+  animation: gp-slide-left 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--gp-anim-delay, 0ms);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .gp-anim-fade-up {
+  .gp-anim-fade-up,
+  .gp-anim-fade-in,
+  .gp-anim-zoom-in,
+  .gp-anim-slide-left {
     animation: none;
   }
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import { serverEnv } from "@/lib/env.server";
 
 export interface HealthCheckResponse {
@@ -21,7 +21,7 @@ export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
   let startTime = 0;
 
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = createSupabaseAdminClient();
     startTime = Date.now();
 
     // 1. Verify environment configuration is loaded

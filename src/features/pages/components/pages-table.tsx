@@ -13,8 +13,10 @@ import {
   FileEdit,
   Clock,
   FileText,
+  Smartphone,
+  LayoutTemplate,
 } from "lucide-react";
-import type { PageListItem } from "../types";
+import type { PageKind, PageListItem } from "../types";
 import { duplicatePageAction, archivePageAction } from "../actions";
 import { TablePagination } from "@/components/admin/table-pagination";
 import { TableActionMenu } from "@/components/admin/table-action-menu";
@@ -39,6 +41,7 @@ type PendingAction =
 export function PagesTable({ initialPages, canEdit = true }: PagesTableProps) {
   const toast = useToast();
   const [search, setSearch] = useState("");
+  const [kindFilter, setKindFilter] = useState<"all" | PageKind>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -46,16 +49,20 @@ export function PagesTable({ initialPages, canEdit = true }: PagesTableProps) {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isPending, startTransition] = useTransition();
 
+  const profileCount = initialPages.filter((p) => p.pageKind !== "landing").length;
+  const landingCount = initialPages.filter((p) => p.pageKind === "landing").length;
+
   const filteredPages = initialPages.filter((p) => {
     const matchesSearch =
       p.internalName.toLowerCase().includes(search.toLowerCase()) ||
       p.primarySlug.toLowerCase().includes(search.toLowerCase()) ||
       p.aliases.some((a) => a.toLowerCase().includes(search.toLowerCase()));
+    const matchesKind = kindFilter === "all" || p.pageKind === kindFilter;
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "published" && p.status === "published") ||
       (statusFilter === "draft" && p.status !== "published");
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesKind && matchesStatus;
   });
 
   const paginatedPages = filteredPages.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -86,6 +93,44 @@ export function PagesTable({ initialPages, canEdit = true }: PagesTableProps) {
 
   return (
     <div className="space-y-4">
+      {/* Kind filter tabs: Tất cả | Profile | Landing Page */}
+      <div className="flex items-center gap-1 border-b border-border/70">
+        {(
+          [
+            { key: "all", label: "Tất cả", count: initialPages.length, Icon: null },
+            { key: "profile", label: "Profile", count: profileCount, Icon: Smartphone },
+            { key: "landing", label: "Landing Page", count: landingCount, Icon: LayoutTemplate },
+          ] as const
+        ).map(({ key, label, count, Icon }) => {
+          const active = kindFilter === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => {
+                setKindFilter(key);
+                setCurrentPage(1);
+              }}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+                active
+                  ? "border-foreground text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {Icon && <Icon className="w-3.5 h-3.5" />}
+              <span>{label}</span>
+              <span
+                className={`px-1.5 py-0.5 rounded-md text-[10px] tabular-nums ${
+                  active ? "bg-foreground/10 text-foreground" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
@@ -173,12 +218,23 @@ export function PagesTable({ initialPages, canEdit = true }: PagesTableProps) {
                     {/* Trang & Slug */}
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col gap-1 min-w-0 max-w-[calc(100vw-9.5rem)] sm:max-w-xs">
-                        <Link
-                          href={`/admin/pages/${page.id}`}
-                          className="font-semibold text-foreground hover:underline truncate"
-                        >
-                          {page.internalName}
-                        </Link>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Link
+                            href={`/admin/pages/${page.id}`}
+                            className="font-semibold text-foreground hover:underline truncate"
+                          >
+                            {page.internalName}
+                          </Link>
+                          <span
+                            className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold ${
+                              page.pageKind === "landing"
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {page.pageKind === "landing" ? "Landing" : "Profile"}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-mono text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md break-all">
                             /{page.primarySlug}

@@ -1,4 +1,4 @@
-import type { BlockType, PageThemeConfig, PageSeoConfig } from "@/features/pages/types";
+import type { BlockType, PageKind, PageThemeConfig, PageSeoConfig } from "@/features/pages/types";
 
 export interface PublicLinkItem {
   page_link_id: string;
@@ -17,17 +17,43 @@ export interface PublicBlockItem {
   links: PublicLinkItem[];
 }
 
+export interface PublicNavItem {
+  id: string;
+  parent_id: string | null;
+  label: string;
+  target_type: "page" | "anchor" | "url";
+  target_slug?: string | null;
+  target_value?: string | null;
+  position: number;
+}
+
+export interface PublicSiteSettings {
+  site_name?: string | null;
+  logo_url?: string | null;
+  header_config?: Record<string, unknown>;
+  footer_columns?: unknown[];
+  floating_contact?: Record<string, unknown>;
+}
+
+export interface PublicSiteShell {
+  settings: PublicSiteSettings;
+  nav_items: PublicNavItem[];
+}
+
 export interface PublicPageDTO {
   found: boolean;
   is_alias?: boolean;
   canonical_slug?: string;
   reason?: "SLUG_NOT_FOUND" | "PAGE_UNPUBLISHED" | "REVISION_NOT_SEALED" | string;
+  workspace_id?: string;
+  page_kind?: PageKind;
   slug?: string;
   title?: string;
   description?: string | null;
   theme?: PageThemeConfig;
   seo?: PageSeoConfig;
   blocks?: PublicBlockItem[];
+  site_shell?: PublicSiteShell | null;
 }
 
 export interface ResolveLinkResult {

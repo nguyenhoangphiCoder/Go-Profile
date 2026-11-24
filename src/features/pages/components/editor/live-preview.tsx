@@ -2,23 +2,36 @@
 
 import { memo, useMemo, useState, useRef } from "react";
 import { PageRenderer } from "@/features/renderer/page-renderer";
+import { LandingShell } from "@/features/renderer/landing-shell";
 import { fromEditorBlocks } from "@/features/renderer/adapters";
-import type { EditorBlockItem, PageThemeConfig } from "../../types";
+import type { PublicSiteShell } from "@/features/public/types";
+import type { PublicBranchItem } from "@/features/branches/types";
+import type { EditorBlockItem, PageKind, PageThemeConfig } from "../../types";
 import { GripVertical, RotateCcw } from "lucide-react";
 
 interface LivePreviewProps {
+  pageKind?: PageKind;
+  siteShell?: PublicSiteShell | null;
+  showSiteShell?: boolean;
+  currentSlug?: string;
+  branches?: PublicBranchItem[];
   themeConfig: PageThemeConfig;
   title: string;
   blocks: EditorBlockItem[];
   showFooterBadge?: boolean;
   footerBadgeText?: string;
-  previewMode: "mobile" | "desktop";
+  previewMode: "mobile" | "tablet" | "desktop";
   zoomScale?: number;
   selectedBlockId?: string | null;
   onSelectBlock?: (blockId: string) => void;
 }
 
 export const LivePreview = memo(function LivePreview({
+  pageKind = "profile",
+  siteShell,
+  showSiteShell = true,
+  currentSlug,
+  branches,
   themeConfig,
   title,
   blocks,
@@ -29,13 +42,20 @@ export const LivePreview = memo(function LivePreview({
   selectedBlockId,
   onSelectBlock,
 }: LivePreviewProps) {
-  const [frameWidth, setFrameWidth] = useState<number>(previewMode === "mobile" ? 375 : 620);
+  const isLanding = pageKind === "landing";
+  const defaultWidth =
+    previewMode === "mobile" ? 375 : previewMode === "tablet" ? 768 : isLanding ? 1280 : 620;
+  const [frameWidth, setFrameWidth] = useState<number>(defaultWidth);
   const [isDragging, setIsDragging] = useState<"left" | "right" | null>(null);
   const dragStartXRef = useRef(0);
   const startWidthRef = useRef(frameWidth);
   const renderBlocks = useMemo(() => fromEditorBlocks(blocks), [blocks]);
-  // Khi đổi Mobile / Desktop ở thanh tiêu đề, PageEditor truyền key={previewMode} để component
+  // Khi đổi Mobile / Tablet / Desktop ở thanh tiêu đề, PageEditor truyền key={previewMode} để component
   // khởi tạo lại với độ rộng mặc định (thay cho useEffect + setState gây render lặp).
+
+  const maxFrameWidth = isLanding ? 1280 : 960;
+  const effectiveZoom =
+    isLanding && frameWidth > 860 ? Number((zoomScale * (760 / frameWidth)).toFixed(3)) : zoomScale;
 
   const onPointerDownHandle = (e: React.PointerEvent, side: "left" | "right") => {
     e.preventDefault();
@@ -51,7 +71,7 @@ export const LivePreview = memo(function LivePreview({
     const multiplier = isDragging === "right" ? 2 : -2;
     const nextWidth = Math.max(
       320,
-      Math.min(960, Math.round(startWidthRef.current + deltaX * multiplier))
+      Math.min(maxFrameWidth, Math.round(startWidthRef.current + deltaX * multiplier))
     );
     setFrameWidth(nextWidth);
   };
@@ -79,74 +99,29 @@ export const LivePreview = memo(function LivePreview({
         <div className="h-3 w-px bg-border/80 mx-1" />
 
         {/* Quick Presets */}
-        <button
-          type="button"
-          onClick={() => setFrameWidth(360)}
-          className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-            frameWidth === 360
-              ? "bg-primary text-primary-foreground font-bold shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-          title="360px - Điện thoại nhỏ (Android / Galaxy)"
-        >
-          360
-        </button>
-        <button
-          type="button"
-          onClick={() => setFrameWidth(375)}
-          className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-            frameWidth === 375
-              ? "bg-primary text-primary-foreground font-bold shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-          title="375px - iPhone chuẩn (SE / 12/13/14 mini)"
-        >
-          375
-        </button>
-        <button
-          type="button"
-          onClick={() => setFrameWidth(430)}
-          className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-            frameWidth === 430
-              ? "bg-primary text-primary-foreground font-bold shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-          title="430px - iPhone Pro Max / Màn hình lớn"
-        >
-          430
-        </button>
-        <button
-          type="button"
-          onClick={() => setFrameWidth(620)}
-          className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-            frameWidth === 620
-              ? "bg-primary text-primary-foreground font-bold shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-          title="620px - Phablet / Mini Tablet"
-        >
-          620
-        </button>
-        <button
-          type="button"
-          onClick={() => setFrameWidth(768)}
-          className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
-            frameWidth === 768
-              ? "bg-primary text-primary-foreground font-bold shadow-xs"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-          title="768px - iPad / Tablet"
-        >
-          768
-        </button>
+        {(isLanding ? [375, 768, 1024, 1280] : [360, 375, 430, 620, 768]).map((w) => (
+          <button
+            key={w}
+            type="button"
+            onClick={() => setFrameWidth(w)}
+            className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
+              frameWidth === w
+                ? "bg-primary text-primary-foreground font-bold shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
+            title={`${w}px`}
+          >
+            {w}
+          </button>
+        ))}
 
         <div className="h-3 w-px bg-border/80 mx-1" />
 
         <button
           type="button"
-          onClick={() => setFrameWidth(375)}
+          onClick={() => setFrameWidth(defaultWidth)}
           className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-          title="Đặt lại kích thước mặc định (375px)"
+          title={`Đặt lại kích thước mặc định (${defaultWidth}px)`}
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
@@ -155,7 +130,7 @@ export const LivePreview = memo(function LivePreview({
       {/* Device frame container with zoom scaling and DevTools Drag Handles */}
       <div
         className="transition-transform duration-200 ease-out origin-center flex items-center justify-center relative group w-full h-full lg:w-auto lg:h-auto lg:[transform:var(--preview-zoom)]"
-        style={{ ["--preview-zoom" as string]: `scale(${zoomScale})` }}
+        style={{ ["--preview-zoom" as string]: `scale(${effectiveZoom})` }}
       >
         {/* Left Drag Handle */}
         <div
@@ -212,16 +187,31 @@ export const LivePreview = memo(function LivePreview({
             } relative select-none scrollbar-thin scrollbar-thumb-slate-400/20`}
             suppressHydrationWarning
           >
-            <PageRenderer
-              mode="preview"
-              title={title}
-              theme={themeConfig}
-              blocks={renderBlocks}
-              showFooterBadge={showFooterBadge}
-              footerBadgeText={footerBadgeText}
-              selectedBlockId={selectedBlockId}
-              onSelectBlock={onSelectBlock}
-            />
+            {(() => {
+              const useShell = isLanding && showSiteShell && Boolean(siteShell);
+              const rendered = (
+                <PageRenderer
+                  mode="preview"
+                  pageKind={pageKind}
+                  currentSlug={currentSlug}
+                  branches={branches}
+                  title={title}
+                  theme={themeConfig}
+                  blocks={renderBlocks}
+                  showFooterBadge={useShell ? false : showFooterBadge}
+                  footerBadgeText={footerBadgeText}
+                  selectedBlockId={selectedBlockId}
+                  onSelectBlock={onSelectBlock}
+                />
+              );
+              return useShell && siteShell ? (
+                <LandingShell mode="preview" siteShell={siteShell} currentSlug={currentSlug}>
+                  {rendered}
+                </LandingShell>
+              ) : (
+                rendered
+              );
+            })()}
           </div>
         </div>
 

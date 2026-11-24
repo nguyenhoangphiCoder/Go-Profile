@@ -1,6 +1,11 @@
 import "server-only";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
-import type { WorkspaceRole } from "./types";
+import {
+  normalizeWorkspaceFeatures,
+  type WorkspaceFeatures,
+  type WorkspacePlan,
+  type WorkspaceRole,
+} from "./types";
 
 export interface MemberItem {
   userId: string;
@@ -21,12 +26,19 @@ export interface InvitationItem {
 export interface WorkspaceOverview {
   id: string;
   name: string;
+  plan: WorkspacePlan;
+  features: WorkspaceFeatures;
   maxPages: number;
   maxMediaBytes: number;
+  maxBranches: number;
+  maxShells: number;
   archivedAt: string | null;
   memberCount: number;
   ownerEmails: string[];
   pageCount: number;
+  branchCount: number;
+  leadCount: number;
+  shellCount: number;
   mediaBytes: number;
   pendingInvitations: number;
 }
@@ -94,13 +106,16 @@ export async function getWorkspaceMembers(
 /** Tổng quan mọi workspace cho quản trị hệ thống. Gọi SAU khi đã kiểm tra isPlatformAdmin. */
 export async function getWorkspacesOverview(): Promise<WorkspaceOverview[]> {
   const db = createSupabaseAdminClient();
-  const [ws, members, pages, media, invites] = await Promise.all([
+  const [ws, members, pages, branches, leads, shells, media, invites] = await Promise.all([
     db
       .from("workspaces")
-      .select("id, name, max_pages, max_media_bytes, archived_at")
+      .select("id, name, plan, features, max_pages, max_media_bytes, max_branches, max_shells, archived_at")
       .order("created_at"),
     db.from("workspace_members").select("workspace_id, user_id, role"),
     db.from("pages").select("workspace_id").is("archived_at", null),
+    db.from("branches").select("workspace_id").is("archived_at", null),
+    db.from("leads").select("workspace_id"),
+    db.from("site_shells").select("workspace_id"),
     db.from("media_assets").select("workspace_id, size_bytes").is("archived_at", null),
     db
       .from("workspace_invitations")
@@ -120,6 +135,9 @@ export async function getWorkspacesOverview(): Promise<WorkspaceOverview[]> {
   };
   const memberCount = countBy(members.data);
   const pageCount = countBy(pages.data);
+  const branchCount = countBy(branches.data);
+  const leadCount = countBy(leads.data);
+  const shellCount = countBy(shells.data);
   const inviteCount = countBy(invites.data);
   const mediaBytes = new Map<string, number>();
   for (const m of media.data ?? []) {
@@ -132,14 +150,21 @@ export async function getWorkspacesOverview(): Promise<WorkspaceOverview[]> {
   return (ws.data ?? []).map((w) => ({
     id: w.id,
     name: w.name,
+    plan: (w.plan as WorkspacePlan) ?? "pro",
+    features: normalizeWorkspaceFeatures(w.features),
     maxPages: w.max_pages,
     maxMediaBytes: Number(w.max_media_bytes),
+    maxBranches: w.max_branches ?? 100,
+    maxShells: w.max_shells ?? 10,
     archivedAt: w.archived_at,
     memberCount: memberCount.get(w.id) ?? 0,
     ownerEmails: (members.data ?? [])
       .filter((m) => m.workspace_id === w.id && m.role === "owner")
       .map((m) => emails.get(m.user_id) ?? "(không rõ email)"),
     pageCount: pageCount.get(w.id) ?? 0,
+    branchCount: branchCount.get(w.id) ?? 0,
+    leadCount: leadCount.get(w.id) ?? 0,
+    shellCount: shellCount.get(w.id) ?? 0,
     mediaBytes: mediaBytes.get(w.id) ?? 0,
     pendingInvitations: inviteCount.get(w.id) ?? 0,
   }));

@@ -3,6 +3,7 @@ import { notFound, redirect, RedirectType } from "next/navigation";
 import { isReservedSlug } from "@/config/reserved-slugs";
 import { resolveLookupSlug } from "@/config/slug-aliases";
 import { fetchPublicPage } from "@/features/public/queries";
+import { fetchPublicBranches } from "@/features/branches/queries";
 import { SLUG_REGEX } from "@/features/pages/schemas";
 import { PublicPageView } from "@/features/public/components/public-page-view";
 
@@ -48,16 +49,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     "Hệ thống thông tin liên kết và hồ sơ chính thức của Gờ Cafe";
 
   const ogImageUrl = page.seo?.ogImageUrl || (page.seo?.ogImageMediaId ? undefined : undefined);
+  const siteBrandName = page.site_shell?.settings?.site_name?.trim() || "Gờ Cafe";
+  const faviconUrl = (
+    page.site_shell?.settings?.header_config as { faviconUrl?: string } | undefined
+  )?.faviconUrl?.trim();
 
   return {
     title,
     description,
+    icons: faviconUrl ? { icon: faviconUrl } : undefined,
     openGraph: {
       title,
       description,
       type: "website",
       url: `/${page.slug || slug}`,
-      siteName: "Gờ Cafe",
+      siteName: siteBrandName,
       images: ogImageUrl ? [{ url: ogImageUrl }] : undefined,
     },
     twitter: {
@@ -92,7 +98,12 @@ export default async function PublicSlugPage({ params }: PageProps) {
       ) {
         redirect(`/${directPage.canonical_slug}`, RedirectType.replace);
       }
-      return <PublicPageView page={directPage} />;
+      const hasStoreLocator = (directPage.blocks || []).some((b) => b.type === "store_locator");
+      const branches =
+        hasStoreLocator && directPage.workspace_id
+          ? await fetchPublicBranches(directPage.workspace_id)
+          : undefined;
+      return <PublicPageView page={directPage} branches={branches} />;
     }
   }
 

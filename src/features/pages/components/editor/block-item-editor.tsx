@@ -27,12 +27,23 @@ import {
   Pencil,
   RotateCcw,
   SlidersHorizontal,
+  Sparkles,
+  ListOrdered,
+  BarChart2,
+  Columns2,
+  LayoutGrid,
+  Table2,
+  ShoppingBag,
+  Inbox,
+  MessageSquareQuote,
+  Megaphone,
 } from "lucide-react";
 import type {
   EditorBlockItem,
   LinkPlacementItem,
   BlockType,
   HeaderBlockPayload,
+  HeroSectionBlockPayload,
   HeadingBlockPayload,
   TextBlockPayload,
   ImageBlockPayload,
@@ -54,6 +65,19 @@ import {
   MenuCardBlockEditor,
   VideoBlockEditor,
 } from "./block-editors-v2";
+import {
+  BannerSliderEditor,
+  CtaBannerEditor,
+  InfoCardsEditor,
+  LeadFormEditor,
+  PricingTableEditor,
+  ProductGridEditor,
+  SplitContentEditor,
+  StatsStripEditor,
+  StoreLocatorEditor,
+  TestimonialsEditor,
+  TocBarEditor,
+} from "./landing-block-editors";
 
 interface BlockItemEditorProps {
   block: EditorBlockItem;
@@ -173,6 +197,30 @@ export const BlockItemEditor = memo(function BlockItemEditor({
         return <PlaySquare className="w-4 h-4 text-red-600 dark:text-red-400" />;
       case "map":
         return <MapPin className="w-4 h-4 text-green-600 dark:text-green-400" />;
+      case "hero_section":
+        return <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "toc_bar":
+        return <ListOrdered className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "stats_strip":
+        return <BarChart2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "split_content":
+        return <Columns2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "info_cards":
+        return <LayoutGrid className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "pricing_table":
+        return <Table2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "product_grid":
+        return <ShoppingBag className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "store_locator":
+        return <MapPin className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "lead_form":
+        return <Inbox className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "banner_slider":
+        return <Images className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "testimonials":
+        return <MessageSquareQuote className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+      case "cta_banner":
+        return <Megaphone className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
     }
   };
 
@@ -206,6 +254,30 @@ export const BlockItemEditor = memo(function BlockItemEditor({
         return "Video YouTube / TikTok";
       case "map":
         return "Bản đồ / Địa chỉ (Map)";
+      case "hero_section":
+        return "Banner mở đầu (Hero)";
+      case "toc_bar":
+        return "Mục lục nhảy mục (TOC)";
+      case "stats_strip":
+        return "Dải chỉ số uy tín (Stats)";
+      case "split_content":
+        return "Khối 2 cột Ảnh – Chữ";
+      case "info_cards":
+        return "Thẻ thông số / Quy trình";
+      case "pricing_table":
+        return "Bảng báo giá đa cột";
+      case "product_grid":
+        return "Lưới sản phẩm / Menu";
+      case "store_locator":
+        return "Bản đồ hệ thống chi nhánh";
+      case "lead_form":
+        return "Form đăng ký / Nhận báo giá";
+      case "banner_slider":
+        return "Banner trượt nhiều ảnh (Slider)";
+      case "testimonials":
+        return "Đánh giá khách hàng / Đối tác";
+      case "cta_banner":
+        return "Dải kêu gọi hành động (CTA)";
     }
   };
 
@@ -1286,6 +1358,309 @@ export const BlockItemEditor = memo(function BlockItemEditor({
               {block.type === "accordion" && <AccordionBlockEditor {...v2Props} />}
               {block.type === "video_embed" && <VideoBlockEditor {...v2Props} />}
               {block.type === "map" && <MapBlockEditor {...v2Props} />}
+
+              {/* 10. Khối Landing Page — Hero Section */}
+              {block.type === "hero_section" &&
+                (() => {
+                  const hp = block.payload as HeroSectionBlockPayload;
+                  return (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block font-semibold text-muted-foreground mb-1.5">
+                          Bố cục Banner
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(
+                            [
+                              { key: "split", label: "2 cột Ảnh–Chữ" },
+                              { key: "centered", label: "Căn giữa" },
+                              { key: "full-bg", label: "Ảnh nền tối" },
+                            ] as const
+                          ).map((opt) => (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => updatePayload({ layout: opt.key })}
+                              className={`py-2 px-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                                (hp.layout || "split") === opt.key
+                                  ? "border-primary bg-primary/10 text-primary font-bold ring-1 ring-primary/30"
+                                  : "border-border hover:bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-muted-foreground mb-1">
+                          Nhãn nhỏ phía trên (Eyebrow)
+                        </label>
+                        <input
+                          type="text"
+                          value={hp.eyebrow || ""}
+                          onChange={(e) => updatePayload({ eyebrow: e.target.value })}
+                          placeholder="VD: GỜ CAFÉ • TỪ 2013"
+                          className="w-full px-3 py-1.5 rounded-lg border border-input bg-background"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-muted-foreground mb-1">
+                          Tiêu đề chính (H1)
+                        </label>
+                        <input
+                          type="text"
+                          value={hp.title || ""}
+                          onChange={(e) => updatePayload({ title: e.target.value })}
+                          placeholder="VD: Cà phê nguyên chất — Chuẩn gu mỗi ngày"
+                          className="w-full px-3 py-1.5 rounded-lg border border-input bg-background"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-muted-foreground mb-1">
+                          Mô tả ngắn
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={hp.subtitle || ""}
+                          onChange={(e) => updatePayload({ subtitle: e.target.value })}
+                          placeholder="Giới thiệu ngắn gọn về thương hiệu hoặc ưu đãi..."
+                          className="w-full px-3 py-1.5 rounded-lg border border-input bg-background resize-y"
+                        />
+                      </div>
+
+                      <MediaPickerField
+                        label="Hình ảnh Banner (hoặc ảnh bìa Video)"
+                        mediaId={hp.mediaId}
+                        mediaUrl={hp.imageUrl}
+                        availableMedia={availableMedia}
+                        onMediaAdded={onMediaAdded}
+                        onChange={(mId, mUrl) =>
+                          updatePayload({
+                            mediaId: mId || undefined,
+                            imageUrl: mUrl || undefined,
+                          })
+                        }
+                      />
+
+                      {hp.layout === "full-bg" && (
+                        <div className="p-3 rounded-xl border border-border/70 bg-muted/20 space-y-2.5">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Link Video nền MP4 (tuỳ chọn — tự phát lặp không tiếng)
+                            </label>
+                            <input
+                              type="text"
+                              value={hp.videoUrl || ""}
+                              onChange={(e) => updatePayload({ videoUrl: e.target.value })}
+                              placeholder="https://.../hero-video.mp4"
+                              className="w-full px-3 py-1.5 text-xs rounded-lg border border-input bg-background"
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                              <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                Độ tối lớp phủ ({hp.overlayOpacity ?? 55}%)
+                              </label>
+                              <input
+                                type="range"
+                                min={0}
+                                max={85}
+                                step={5}
+                                value={hp.overlayOpacity ?? 55}
+                                onChange={(e) =>
+                                  updatePayload({ overlayOpacity: Number(e.target.value) })
+                                }
+                                className="w-full accent-primary"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                Chiều cao Banner
+                              </label>
+                              <Select
+                                value={hp.height || "default"}
+                                onChange={(v) => updatePayload({ height: v })}
+                                options={[
+                                  { value: "compact", label: "Gọn" },
+                                  { value: "default", label: "Chuẩn" },
+                                  { value: "tall", label: "Lớn (Nổi bật)" },
+                                ]}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                        <div>
+                          <label className="block font-semibold text-muted-foreground mb-1">
+                            Nút chính (Label)
+                          </label>
+                          <input
+                            type="text"
+                            value={hp.primaryCtaLabel || ""}
+                            onChange={(e) => updatePayload({ primaryCtaLabel: e.target.value })}
+                            placeholder="VD: Nhận tư vấn ngay"
+                            className="w-full px-3 py-1.5 rounded-lg border border-input bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-muted-foreground mb-1">
+                            Đường dẫn nút chính
+                          </label>
+                          <input
+                            type="text"
+                            value={hp.primaryCtaHref || ""}
+                            onChange={(e) => updatePayload({ primaryCtaHref: e.target.value })}
+                            placeholder="VD: #lien-he hoặc https://..."
+                            className="w-full px-3 py-1.5 rounded-lg border border-input bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block font-semibold text-muted-foreground mb-1">
+                            Nút phụ (Label)
+                          </label>
+                          <input
+                            type="text"
+                            value={hp.secondaryCtaLabel || ""}
+                            onChange={(e) => updatePayload({ secondaryCtaLabel: e.target.value })}
+                            placeholder="VD: Xem bảng giá"
+                            className="w-full px-3 py-1.5 rounded-lg border border-input bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold text-muted-foreground mb-1">
+                            Đường dẫn nút phụ
+                          </label>
+                          <input
+                            type="text"
+                            value={hp.secondaryCtaHref || ""}
+                            onChange={(e) => updatePayload({ secondaryCtaHref: e.target.value })}
+                            placeholder="VD: /xuong-rang-ca-phe"
+                            className="w-full px-3 py-1.5 rounded-lg border border-input bg-background"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-border/50">
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Mã neo mục lục (Anchor ID — tuỳ chọn)
+                        </label>
+                        <input
+                          type="text"
+                          value={hp.anchorId || ""}
+                          onChange={(e) =>
+                            updatePayload({
+                              anchorId: e.target.value
+                                .toLowerCase()
+                                .replace(/[^a-z0-9-_]/g, "")
+                                .slice(0, 64),
+                            })
+                          }
+                          placeholder="VD: dau-trang"
+                          className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-input bg-background"
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+
+              {/* 11. Các Section Landing Page (Phase 3) */}
+              {block.type === "toc_bar" && (
+                <TocBarEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "stats_strip" && (
+                <StatsStripEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "split_content" && (
+                <SplitContentEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "info_cards" && (
+                <InfoCardsEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "pricing_table" && (
+                <PricingTableEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "product_grid" && (
+                <ProductGridEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "store_locator" && (
+                <StoreLocatorEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "lead_form" && (
+                <LeadFormEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "banner_slider" && (
+                <BannerSliderEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "testimonials" && (
+                <TestimonialsEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
+              {block.type === "cta_banner" && (
+                <CtaBannerEditor
+                  payload={block.payload as Record<string, unknown>}
+                  updatePayload={updatePayload}
+                  availableMedia={availableMedia}
+                  onMediaAdded={onMediaAdded}
+                />
+              )}
             </div>
           )}
         </div>

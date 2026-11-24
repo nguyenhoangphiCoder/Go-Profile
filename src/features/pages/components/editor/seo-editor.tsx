@@ -2,12 +2,18 @@
 
 import Image from "next/image";
 import { Globe, Share2, Sparkles } from "lucide-react";
-import type { PageSeoConfig } from "../../types";
+import type { PageKind, PageSeoConfig } from "../../types";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
+import { Select } from "@/components/ui/select";
 
 interface SeoEditorProps {
+  pageKind?: PageKind;
   seo: PageSeoConfig;
   onChange: (seo: PageSeoConfig) => void;
+  siteShellId?: string | null;
+  availableShells?: { id: string; name: string; isDefault: boolean }[];
+  onChangeSiteShell?: (shellId: string | null) => void;
+  canEdit?: boolean;
   availableMedia: { id: string; originalFilename: string | null; publicUrl: string | null }[];
   onMediaAdded?: (newMedia: {
     id: string;
@@ -16,16 +22,88 @@ interface SeoEditorProps {
   }) => void;
 }
 
-export function SeoEditor({ seo, onChange, availableMedia, onMediaAdded }: SeoEditorProps) {
+export function SeoEditor({
+  pageKind = "profile",
+  seo,
+  onChange,
+  siteShellId,
+  availableShells = [],
+  onChangeSiteShell,
+  canEdit = true,
+  availableMedia,
+  onMediaAdded,
+}: SeoEditorProps) {
   const selectedMedia = availableMedia.find((m) => m.id === seo.ogImageMediaId);
 
   const metaTitle = seo.metaTitle || "";
   const metaDescription = seo.metaDescription || "";
   const showFooterBadge = seo.showFooterBadge !== false;
   const footerBadgeText = seo.footerBadgeText || "";
+  const showSiteShell = seo.showSiteShell !== false;
 
   return (
     <div className="space-y-6">
+      {/* Riêng Landing Page: bật/tắt & chọn Bộ Menu / Site Shell */}
+      {pageKind === "landing" && (
+        <div className="p-4 rounded-2xl border border-border bg-card space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xs font-bold text-foreground">
+                Thanh Menu &amp; Footer (Site Shell)
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Hiển thị Navbar 2 cấp, Footer và nút liên hệ nổi cấu hình tại Cấu hình Website. Tắt
+                nếu đây là trang chiến dịch độc lập.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showSiteShell}
+              onClick={() => onChange({ ...seo, showSiteShell: !showSiteShell })}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
+                showSiteShell ? "bg-primary" : "bg-muted-foreground/30"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-xs transition-transform ${
+                  showSiteShell ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          {showSiteShell && availableShells.length > 0 && onChangeSiteShell && (
+            <div className="pt-2.5 border-t border-border/60 space-y-1.5">
+              <label className="block text-xs font-semibold text-foreground">
+                Bộ Menu / Website áp dụng cho trang này
+              </label>
+              <Select
+                value={siteShellId || ""}
+                disabled={!canEdit}
+                onChange={(val) => onChangeSiteShell(val || null)}
+                className="w-full"
+                options={[
+                  {
+                    value: "",
+                    label: `Theo mặc định (${
+                      availableShells.find((s) => s.isDefault)?.name || availableShells[0]?.name
+                    })`,
+                  },
+                  ...availableShells.map((s) => ({
+                    value: s.id,
+                    label: s.isDefault ? `${s.name} (Mặc định)` : s.name,
+                  })),
+                ]}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Chọn bộ Menu riêng giúp 2 dự án / thương hiệu trong cùng Workspace hiển thị thanh
+                Menu &amp; Footer hoàn toàn độc lập.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
       {/* Nhãn chân trang (Footer Tag) */}
       <div className="p-4 rounded-2xl border border-border bg-card space-y-3">
         <div className="flex items-center justify-between gap-3">

@@ -18,9 +18,20 @@ import {
   MapPin,
   Maximize2,
   Minus,
+  Sparkles,
+  ListOrdered,
+  BarChart2,
+  Columns2,
+  LayoutGrid,
+  Table2,
+  ShoppingBag,
+  Inbox,
+  MessageSquareQuote,
+  Megaphone,
   type LucideIcon,
 } from "lucide-react";
-import type { BlockType } from "../../types";
+import type { BlockType, PageKind } from "../../types";
+import { BLOCK_REGISTRY } from "@/features/renderer/blocks/registry";
 
 interface BlockCatalogItem {
   type: BlockType;
@@ -36,6 +47,95 @@ interface BlockCatalogGroup {
 }
 
 const BLOCK_GROUPS: BlockCatalogGroup[] = [
+  {
+    title: "Section Landing Page",
+    items: [
+      {
+        type: "hero_section",
+        label: "Banner mở đầu (Hero)",
+        description: "Tiêu đề H1 lớn, mô tả, ảnh nổi bật & 2 nút kêu gọi hành động",
+        Icon: Sparkles,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "toc_bar",
+        label: "Mục lục nhảy mục (TOC)",
+        description: "Thanh mục lục dính giúp nhảy nhanh tới các phần trong trang dài",
+        Icon: ListOrdered,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "stats_strip",
+        label: "Dải chỉ số uy tín",
+        description: "Nổi bật các con số ấn tượng (TOP 1 Shopee, 55+ cửa hàng, 72H...)",
+        Icon: BarChart2,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "split_content",
+        label: "Khối 2 cột Ảnh – Chữ",
+        description: "Giới thiệu triết lý, câu chuyện thương hiệu kèm ảnh trái/phải",
+        Icon: Columns2,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "info_cards",
+        label: "Thẻ thông số / Quy trình",
+        description: "Trình bày thông số quán, cam kết hoặc các bước hợp tác",
+        Icon: LayoutGrid,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "pricing_table",
+        label: "Bảng báo giá đa cột",
+        description: "Bảng giá sỉ nhiều mức (20KG / 10KG / 5KG) có highlight bán chạy",
+        Icon: Table2,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "product_grid",
+        label: "Lưới sản phẩm / Menu",
+        description: "Trưng bày sản phẩm, đồ uống có nút lọc theo danh mục",
+        Icon: ShoppingBag,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "store_locator",
+        label: "Bản đồ hệ thống chi nhánh",
+        description: "Bản đồ 55+ quán tương tác 2 chiều Map ⇄ List, tìm tên đường/quận không dấu",
+        Icon: MapPin,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "lead_form",
+        label: "Form đăng ký / Nhận báo giá",
+        description: "Thu thập thông tin khách hàng nhượng quyền, báo giá sỉ (hỗ trợ tự mở Popup)",
+        Icon: Inbox,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "banner_slider",
+        label: "Banner trượt nhiều ảnh (Slider)",
+        description: "Chạy slide nhiều chương trình ưu đãi, ảnh không gian hoặc sản phẩm mới",
+        Icon: Images,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "testimonials",
+        label: "Đánh giá khách hàng / Đối tác",
+        description: "Trích dẫn nhận xét 5 sao từ khách hàng Shopee hoặc chủ quán nhượng quyền",
+        Icon: MessageSquareQuote,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+      {
+        type: "cta_banner",
+        label: "Dải kêu gọi hành động (CTA)",
+        description: "Dải màu nổi bật (Đen / Vàng đồng / Kem) chốt hành động cuối trang",
+        Icon: Megaphone,
+        toneClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+      },
+    ],
+  },
   {
     title: "Cơ bản",
     items: [
@@ -158,11 +258,17 @@ const BLOCK_GROUPS: BlockCatalogGroup[] = [
 
 export interface BlockPickerModalProps {
   isOpen: boolean;
+  pageKind?: PageKind;
   onClose: () => void;
   onSelect: (type: BlockType) => void;
 }
 
-export function BlockPickerModal({ isOpen, onClose, onSelect }: BlockPickerModalProps) {
+export function BlockPickerModal({
+  isOpen,
+  pageKind = "profile",
+  onClose,
+  onSelect,
+}: BlockPickerModalProps) {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -179,13 +285,16 @@ export function BlockPickerModal({ isOpen, onClose, onSelect }: BlockPickerModal
   const q = query.trim().toLowerCase();
   const filteredGroups = BLOCK_GROUPS.map((g) => ({
     ...g,
-    items: g.items.filter(
-      (it) =>
+    items: g.items.filter((it) => {
+      const def = BLOCK_REGISTRY[it.type];
+      if (def && !def.scopes.includes(pageKind)) return false;
+      return (
         !q ||
         it.label.toLowerCase().includes(q) ||
         it.description.toLowerCase().includes(q) ||
         it.type.includes(q)
-    ),
+      );
+    }),
   })).filter((g) => g.items.length > 0);
 
   return (

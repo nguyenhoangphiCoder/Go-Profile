@@ -9,6 +9,8 @@ import { getBlockDefinition } from "./blocks/registry";
 import { BlockFrame, readBlockStyle } from "./block-frame";
 import "./renderer.css";
 import { tint } from "./primitives";
+import type { PageKind } from "@/features/pages/types";
+import type { PublicBranchItem } from "@/features/branches/types";
 import type { RenderBlock, RenderContext, RenderMode } from "./types";
 
 interface PageRendererProps {
@@ -16,6 +18,12 @@ interface PageRendererProps {
   theme: ThemeConfigInput | null | undefined;
   blocks: RenderBlock[];
   mode: RenderMode;
+  /** Loại trang: "profile" (1 cột dọc 420-620px) hoặc "landing" (full-width responsive 1200px). */
+  pageKind?: PageKind;
+  /** Slug hiện tại của trang (dùng cho form đăng ký lead_form gửi về API). */
+  currentSlug?: string;
+  /** Danh sách chi nhánh cho khối store_locator (nếu trang có sử dụng). */
+  branches?: PublicBranchItem[];
   /** Hiển thị nhãn chân trang (mặc định true). */
   showFooterBadge?: boolean;
   /** Nội dung nhãn chân trang (để trống = mặc định GỜ CAFÉ). */
@@ -43,16 +51,20 @@ export function PageRenderer({
   theme,
   blocks,
   mode,
+  pageKind = "profile",
+  currentSlug,
+  branches,
   showFooterBadge = true,
   footerBadgeText,
   selectedBlockId,
   onSelectBlock,
 }: PageRendererProps) {
+  const isLanding = pageKind === "landing";
   const selectable = mode === "preview" && Boolean(onSelectBlock);
   const tokens = resolveThemeTokens(theme);
-  const variant = tokens.layout;
+  const variant = isLanding ? "standard" : tokens.layout;
   const isAnyBeacons = variant !== "standard";
-  const ctx: RenderContext = { mode, tokens, variant, pageTitle: title };
+  const ctx: RenderContext = { mode, tokens, variant, pageTitle: title, currentSlug, branches };
   const layerPosition = mode === "public" ? "fixed" : "absolute";
 
   const rootStyle: CSSProperties = {
@@ -64,7 +76,7 @@ export function PageRenderer({
           ? "#101010"
           : "var(--gp-bg)",
     color: "var(--gp-text)",
-    letterSpacing: "0.5px",
+    letterSpacing: isLanding ? "normal" : "0.5px",
     fontFamily: "var(--gp-font-body)",
   };
 
@@ -97,16 +109,20 @@ export function PageRenderer({
       <div className="@container relative z-10 w-full">
         <div
           className={`w-full flex flex-col items-center justify-start ${
-            isAnyBeacons
-              ? "py-4 @min-[40rem]:py-10 px-3 @min-[40rem]:px-4"
-              : "py-8 @min-[40rem]:py-14 px-4 @min-[40rem]:px-6"
+            isLanding
+              ? "py-6 @min-[48rem]:py-12 px-4 @min-[48rem]:px-8"
+              : isAnyBeacons
+                ? "py-4 @min-[40rem]:py-10 px-3 @min-[40rem]:px-4"
+                : "py-8 @min-[40rem]:py-14 px-4 @min-[40rem]:px-6"
           }`}
         >
           <main
             className={
-              isAnyBeacons
-                ? "w-full max-w-[680px] @min-[40rem]:max-w-[720px] mx-auto bg-[#101010] text-white rounded-[28px] @min-[40rem]:rounded-[36px] p-4 @min-[40rem]:p-7 pb-10 @min-[40rem]:pb-12 border border-white/10 my-4 @min-[40rem]:my-8 relative z-10 flex flex-col gap-6"
-                : "w-full max-w-(--gp-max-w) mx-auto flex flex-col"
+              isLanding
+                ? "w-full max-w-[1200px] mx-auto flex flex-col gap-6 @min-[48rem]:gap-10"
+                : isAnyBeacons
+                  ? "w-full max-w-[680px] @min-[40rem]:max-w-[720px] mx-auto bg-[#101010] text-white rounded-[28px] @min-[40rem]:rounded-[36px] p-4 @min-[40rem]:p-7 pb-10 @min-[40rem]:pb-12 border border-white/10 my-4 @min-[40rem]:my-8 relative z-10 flex flex-col gap-6"
+                  : "w-full max-w-(--gp-max-w) mx-auto flex flex-col"
             }
             style={
               isAnyBeacons

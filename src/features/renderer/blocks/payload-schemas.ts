@@ -29,20 +29,51 @@ const buttonColorOverrideSchema = z
   })
   .strict();
 
+const optSafeImageUrl = z
+  .string()
+  .trim()
+  .max(2048)
+  .refine(
+    (v) => v === "" || /^https?:\/\/[^\s"'<>]+$/i.test(v) || /^\/[^\s"'<>]*$/.test(v),
+    "URL ảnh nền không hợp lệ"
+  )
+  .optional();
+
+const optAnchorId = z
+  .string()
+  .trim()
+  .max(60)
+  .refine((v) => v === "" || /^[a-z0-9-]+$/.test(v), "ID neo chỉ gồm chữ thường, số và dấu gạch ngang")
+  .optional();
+
 export const blockStyleSchema = z
   .object({
     align: z.enum(["left", "center", "right"]).optional(),
     paddingY: z.enum(["none", "sm", "md", "lg"]).optional(),
-    surface: z.enum(["none", "card"]).optional(),
-    animation: z.enum(["none", "fade-up"]).optional(),
+    paddingTop: z.enum(["none", "sm", "md", "lg", "xl"]).optional(),
+    paddingBottom: z.enum(["none", "sm", "md", "lg", "xl"]).optional(),
+    maxWidth: z.enum(["sm", "md", "lg", "full"]).optional(),
+    surface: z.enum(["none", "card", "cream", "dark"]).optional(),
+    bgColor: optColor,
+    bgGradientFrom: optColor,
+    bgGradientTo: optColor,
+    bgGradientDir: z.enum(["to-r", "to-br", "to-b"]).optional(),
+    bgImageUrl: optSafeImageUrl,
+    bgOverlayOpacity: z.number().int().min(0).max(90).optional(),
+    radius: z.enum(["none", "md", "xl", "2xl", "3xl"]).optional(),
+    borderWidth: z.union([z.literal(0), z.literal(1), z.literal(2)]).optional(),
+    borderColor: optColor,
+    shadow: z.enum(["none", "sm", "md", "lg"]).optional(),
+    animation: z.enum(["none", "fade-up", "fade-in", "zoom-in", "slide-left"]).optional(),
     fontSize: z.enum(["sm", "md", "lg", "xl"]).optional(),
-    titleFontSize: z.number().int().min(10).max(36).optional(),
+    titleFontSize: z.number().int().min(10).max(72).optional(),
     bodyFontSize: z.number().int().min(10).max(28).optional(),
     titleFont: z.enum(FONT_IDS).optional(),
     bodyFont: z.enum(FONT_IDS).optional(),
     titleColor: optColor,
     bodyColor: optColor,
     buttonHeight: z.number().int().min(36).max(80).optional(),
+    anchorId: optAnchorId,
     hideOn: z
       .array(z.enum(["mobile", "desktop"]))
       .max(2)
@@ -150,6 +181,225 @@ export const BLOCK_PAYLOAD_SCHEMAS: Record<BlockType, z.ZodType<Record<string, u
       })
       .nullish(),
     showMap: z.boolean().nullish(),
+  }),
+
+  // ---- Khối Landing Page (Platform CMS) ----
+  hero_section: styled({
+    layout: z.enum(["split", "centered", "full-bg"]).nullish(),
+    eyebrow: optText(100),
+    title: optText(200),
+    subtitle: optText(600),
+    mediaId: optId,
+    imageUrl: optUrl,
+    videoUrl: optUrl,
+    overlayOpacity: z.number().int().min(0).max(85).nullish(),
+    height: z.enum(["compact", "default", "tall"]).nullish(),
+    primaryCtaLabel: optText(60),
+    primaryCtaHref: optUrl,
+    secondaryCtaLabel: optText(60),
+    secondaryCtaHref: optUrl,
+    anchorId: optId,
+  }),
+  toc_bar: styled({
+    title: optText(100),
+    sticky: z.boolean().nullish(),
+    items: z
+      .array(
+        z
+          .object({
+            label: z.string().max(80),
+            anchorId: z.string().max(64),
+          })
+          .strict()
+      )
+      .max(15)
+      .nullish(),
+  }),
+  stats_strip: styled({
+    anchorId: optId,
+    columns: z.union([z.literal(3), z.literal(4)]).nullish(),
+    items: z
+      .array(
+        z
+          .object({
+            value: z.string().max(40),
+            label: z.string().max(100),
+            sublabel: optText(120),
+          })
+          .strict()
+      )
+      .max(8)
+      .nullish(),
+  }),
+  split_content: styled({
+    anchorId: optId,
+    imagePosition: z.enum(["left", "right"]).nullish(),
+    eyebrow: optText(100),
+    title: optText(200),
+    content: optText(25000),
+    mediaId: optId,
+    imageUrl: optUrl,
+    ctaLabel: optText(60),
+    ctaHref: optUrl,
+  }),
+  info_cards: styled({
+    anchorId: optId,
+    title: optText(200),
+    subtitle: optText(400),
+    columns: z.union([z.literal(2), z.literal(3), z.literal(4)]).nullish(),
+    variant: z.enum(["card", "steps"]).nullish(),
+    items: z
+      .array(
+        z
+          .object({
+            badge: optText(40),
+            title: z.string().max(140),
+            description: optText(600),
+          })
+          .strict()
+      )
+      .max(16)
+      .nullish(),
+  }),
+  pricing_table: styled({
+    anchorId: optId,
+    title: optText(200),
+    effectiveNote: optText(200),
+    columns: z.array(z.string().max(60)).max(6).nullish(),
+    rows: z
+      .array(
+        z
+          .object({
+            name: z.string().max(140),
+            subtitle: optText(140),
+            description: optText(300),
+            prices: z.array(z.string().max(60)).max(6),
+            highlight: z.boolean().nullish(),
+          })
+          .strict()
+      )
+      .max(30)
+      .nullish(),
+  }),
+  product_grid: styled({
+    anchorId: optId,
+    title: optText(200),
+    subtitle: optText(400),
+    categories: z.array(z.string().max(60)).max(12).nullish(),
+    items: z
+      .array(
+        z
+          .object({
+            name: z.string().max(140),
+            category: optText(60),
+            price: optText(40),
+            description: optText(300),
+            badge: optText(40),
+            mediaId: optId,
+            imageUrl: optUrl,
+            buyUrl: optUrl,
+          })
+          .strict()
+      )
+      .max(40)
+      .nullish(),
+  }),
+  store_locator: styled({
+    anchorId: optId,
+    title: optText(200),
+    subtitle: optText(400),
+    showSearch: z.boolean().nullish(),
+    showDistrictFilter: z.boolean().nullish(),
+    defaultZoom: z.number().int().min(8).max(18).nullish(),
+    pinIconUrl: optSafeImageUrl.nullish(),
+    mapStyle: z.enum(["standard", "satellite", "hybrid"]).nullish(),
+  }),
+  lead_form: styled({
+    anchorId: optId,
+    formName: optText(120),
+    eyebrow: optText(80),
+    title: optText(200),
+    subtitle: optText(400),
+    submitLabel: optText(80),
+    successMessage: optText(400),
+    redirectUrl: optSafeImageUrl.nullish(),
+    fullNameLabel: optText(80),
+    fullNamePlaceholder: optText(120),
+    phoneLabel: optText(80),
+    phonePlaceholder: optText(120),
+    emailLabel: optText(80),
+    emailPlaceholder: optText(120),
+    noteLabel: optText(80),
+    showEmail: z.boolean().nullish(),
+    showNote: z.boolean().nullish(),
+    notePlaceholder: optText(200),
+    popupDelaySec: z.number().int().min(0).max(120).nullish(),
+    customFields: z
+      .array(
+        z
+          .object({
+            id: z.string().min(1).max(64),
+            label: z.string().max(120),
+            type: z.enum(["text", "select", "checkbox"]),
+            required: z.boolean().optional(),
+            placeholder: optText(160),
+            options: z.array(z.string().max(100)).max(20).optional(),
+          })
+          .strict()
+      )
+      .max(8)
+      .nullish(),
+  }),
+  banner_slider: styled({
+    anchorId: optId,
+    autoPlaySec: z.number().int().min(0).max(30).nullish(),
+    slides: z
+      .array(
+        z
+          .object({
+            mediaId: optId,
+            imageUrl: optUrl,
+            title: optText(160),
+            subtitle: optText(300),
+            ctaLabel: optText(60),
+            ctaHref: optUrl,
+          })
+          .strict()
+      )
+      .max(10)
+      .nullish(),
+  }),
+  testimonials: styled({
+    anchorId: optId,
+    title: optText(200),
+    subtitle: optText(400),
+    columns: z.union([z.literal(2), z.literal(3)]).nullish(),
+    items: z
+      .array(
+        z
+          .object({
+            author: z.string().max(100),
+            role: optText(100),
+            quote: z.string().max(600),
+            rating: z.number().int().min(1).max(5).nullish(),
+            mediaId: optId,
+            avatarUrl: optUrl,
+          })
+          .strict()
+      )
+      .max(12)
+      .nullish(),
+  }),
+  cta_banner: styled({
+    anchorId: optId,
+    tone: z.enum(["dark", "gold", "cream"]).nullish(),
+    eyebrow: optText(100),
+    title: optText(200),
+    subtitle: optText(400),
+    primaryCtaLabel: optText(60),
+    primaryCtaHref: optUrl,
+    secondaryCtaLabel: optText(60),
+    secondaryCtaHref: optUrl,
   }),
 };
 

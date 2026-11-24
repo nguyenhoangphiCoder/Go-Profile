@@ -381,7 +381,45 @@ export function legacyThemeToTokens(theme: ThemePreset, fallback?: ThemeTokens):
 
 /** Token của các preset có sẵn (sinh từ THEME_PRESETS để chỉ có một nguồn định nghĩa). */
 export const PRESET_TOKENS: Record<string, ThemeTokens> = Object.fromEntries(
-  Object.entries(THEME_PRESETS).map(([key, preset]) => [key, legacyThemeToTokens(preset)])
+  Object.entries(THEME_PRESETS).map(([key, preset]) => {
+    const base = legacyThemeToTokens(preset);
+    if (key === "go-minimal-luxury") {
+      return [
+        key,
+        {
+          ...base,
+          colors: {
+            ...base.colors,
+            background: "#FFFFFF",
+            text: "#111111",
+            headingText: "#111111",
+            accent: "#B88A44",
+            surface: "#111111",
+            surfaceText: "#FFFFFF",
+            surfaceBorder: "#E4E4E7",
+          },
+          typography: {
+            ...base.typography,
+            bodyFont: "lexend-deca",
+            headingFont: "lexend-deca",
+            baseSize: 15,
+            headingWeight: 700,
+          },
+          shape: {
+            ...base.shape,
+            radius: "md",
+            borderWidth: 1,
+            shadow: "sm",
+          },
+          button: {
+            variant: "filled",
+            height: 48,
+          },
+        },
+      ];
+    }
+    return [key, base];
+  })
 );
 
 export function mergeTokens(base: ThemeTokens, o: ThemeOverrides): ThemeTokens {

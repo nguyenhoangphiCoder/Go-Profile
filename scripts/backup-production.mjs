@@ -15,6 +15,10 @@ const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 const tables = [
   "admin_users",
+  "workspaces",
+  "workspace_members",
+  "workspace_invitations",
+  "theme_presets",
   "media_assets",
   "links",
   "pages",
@@ -23,6 +27,7 @@ const tables = [
   "page_blocks",
   "page_links",
   "revision_link_placements",
+  "revision_media_assets",
   "click_events",
 ];
 
@@ -35,7 +40,7 @@ async function backup() {
   const fullBackup = {};
 
   for (const table of tables) {
-    const { data, error, count } = await supabase.from(table).select("*", { count: "exact" });
+    const { data, error } = await supabase.from(table).select("*", { count: "exact" });
     if (error) {
       console.error(`Error backing up ${table}:`, error.message);
       fullBackup[table] = { error: error.message };

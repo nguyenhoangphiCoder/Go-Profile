@@ -4,7 +4,11 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  BookOpen,
   FileText,
+  Globe,
+  MapPin,
+  Inbox,
   Link2,
   Image as ImageIcon,
   BarChart3,
@@ -14,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { WorkspaceFeatures } from "@/features/workspace/types";
 
 function NavPendingSpinner() {
   const { pending } = useLinkStatus();
@@ -26,6 +31,7 @@ interface NavItem {
   href: string;
   icon: LucideIcon;
   exact?: boolean;
+  feature?: keyof WorkspaceFeatures;
 }
 
 interface NavGroup {
@@ -43,12 +49,20 @@ const BASE_GROUPS: NavGroup[] = [
         icon: LayoutDashboard,
         exact: true,
       },
+      {
+        name: "Hướng dẫn sử dụng",
+        href: "/admin/guide",
+        icon: BookOpen,
+      },
     ],
   },
   {
     label: "Nội dung",
     items: [
       { name: "Quản lý trang", href: "/admin/pages", icon: FileText },
+      { name: "Cấu hình Website", href: "/admin/site", icon: Globe, feature: "landing" },
+      { name: "Hệ thống chi nhánh", href: "/admin/branches", icon: MapPin, feature: "branches" },
+      { name: "Khách hàng (Leads)", href: "/admin/leads", icon: Inbox, feature: "leads" },
       { name: "Danh mục liên kết", href: "/admin/links", icon: Link2 },
       { name: "Kho hình ảnh", href: "/admin/media", icon: ImageIcon },
     ],
@@ -69,9 +83,16 @@ const SYSTEM_ITEM: NavItem = {
 export interface AdminNavProps {
   showMembers?: boolean;
   showSystem?: boolean;
+  features?: WorkspaceFeatures;
+  isPlatformAdmin?: boolean;
 }
 
-export function AdminNav({ showMembers = false, showSystem = false }: AdminNavProps) {
+export function AdminNav({
+  showMembers = false,
+  showSystem = false,
+  features,
+  isPlatformAdmin = false,
+}: AdminNavProps) {
   const pathname = usePathname();
 
   const adminItems: NavItem[] = [
@@ -79,8 +100,16 @@ export function AdminNav({ showMembers = false, showSystem = false }: AdminNavPr
     ...(showSystem ? [SYSTEM_ITEM] : []),
   ];
 
+  const filteredBaseGroups: NavGroup[] = BASE_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (!item.feature || isPlatformAdmin || !features) return true;
+      return Boolean(features[item.feature]);
+    }),
+  })).filter((group) => group.items.length > 0);
+
   const groups: NavGroup[] = [
-    ...BASE_GROUPS,
+    ...filteredBaseGroups,
     ...(adminItems.length > 0 ? [{ label: "Quản trị", items: adminItems }] : []),
   ];
 

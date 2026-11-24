@@ -5,6 +5,9 @@
 
 DO $$
 DECLARE
+  -- Workspace mặc định (Gờ Cafe — khớp migration 20261116000005_workspaces.sql)
+  v_workspace_id uuid := '00000000-0000-4000-8000-000000000001';
+
   -- Link IDs
   v_link_shopee uuid := '11111111-1111-1111-1111-111111111111';
   v_link_grab uuid   := '22222222-2222-2222-2222-222222222222';
@@ -73,33 +76,33 @@ DECLARE
   i integer;
 BEGIN
   -- 1. Danh mục Media & Links chung
-  INSERT INTO public.media_assets (id, bucket_id, object_path, visibility, status, mime_type)
+  INSERT INTO public.media_assets (id, workspace_id, bucket_id, object_path, visibility, status, mime_type)
   VALUES
-    (v_media_hpa_avatar, 'public_media', '/hophuonganh-avatar.jpg', 'public', 'ready', 'image/jpeg'),
-    (v_media_hpa_gocafe, 'public_media', '/thumb-gocafe-circle.jpg', 'public', 'ready', 'image/jpeg'),
-    (v_media_hpa_shopee, 'public_media', '/thumb-shopee-circle.png', 'public', 'ready', 'image/png'),
-    (v_media_hpa_tiktok, 'public_media', '/thumb-tiktok-circle.jpg', 'public', 'ready', 'image/jpeg')
+    (v_media_hpa_avatar, v_workspace_id, 'public_media', '/hophuonganh-avatar.jpg', 'public', 'ready', 'image/jpeg'),
+    (v_media_hpa_gocafe, v_workspace_id, 'public_media', '/thumb-gocafe-circle.jpg', 'public', 'ready', 'image/jpeg'),
+    (v_media_hpa_shopee, v_workspace_id, 'public_media', '/thumb-shopee-circle.png', 'public', 'ready', 'image/png'),
+    (v_media_hpa_tiktok, v_workspace_id, 'public_media', '/thumb-tiktok-circle.jpg', 'public', 'ready', 'image/jpeg')
   ON CONFLICT (bucket_id, object_path) DO NOTHING;
 
-  INSERT INTO public.links (id, default_label, target_url, kind, description, default_media_id)
+  INSERT INTO public.links (id, workspace_id, default_label, target_url, kind, description, default_media_id)
   VALUES
-    (v_link_shopee, 'Đặt món qua ShopeeFood', 'https://shopeefood.vn/thuong-hieu/go-cafe', 'http', 'Giao hàng tận nơi', NULL),
-    (v_link_grab, 'Đặt món qua GrabFood', 'https://grab.onelink.me/2695613898?pid=gocafe', 'http', 'Ưu đãi GrabFood', NULL),
-    (v_link_menu, 'Xem thực đơn chi tiết (Menu)', 'https://gocafe.vn/menu.pdf', 'http', 'Menu đầy đủ các loại đồ uống', NULL),
-    (v_link_maps, 'Tìm cửa hàng gần nhất', 'https://maps.google.com/?q=Go+Cafe+Saigon', 'http', 'Hệ thống chi nhánh TP.HCM', NULL),
-    (v_link_tel, 'Hotline CSKH & Đặt hàng', 'tel:1900123456', 'tel', 'Tổng đài chăm sóc khách hàng', NULL),
-    (v_link_email, 'Gửi email phòng nhân sự', 'mailto:hr@gocafe.vn', 'mailto', 'Tiếp nhận CV và hồ sơ ứng tuyển', NULL),
-    (v_link_apply, 'Đăng ký ứng tuyển Barista', 'https://forms.gle/sampleGocafeBarista', 'http', 'Form ứng tuyển nhanh', NULL),
-    (v_link_franchise, 'Tải hồ sơ nhượng quyền Gờ Cafe', 'https://gocafe.vn/franchise-brochure.pdf', 'http', 'Chính sách đầu tư và hợp tác', NULL),
-    (v_link_hpa_chinhanh, 'DANH SÁCH CHI NHÁNH GỜ', 'https://go-cafe.com/danh-sach-chi-nhanh/', 'http', 'Danh sách chi nhánh chuỗi cà phê Gờ', NULL),
-    (v_link_hpa_ipos, 'ĐẶT THỨC UỐNG GIAO TẬN NƠI', 'https://order.ipos.vn/?pos_parent=GIOCF&source=DEFAULT', 'http', 'Đặt món online giao tận nơi qua iPOS', v_media_hpa_gocafe),
-    (v_link_hpa_shopee, 'CAFE BỘT TRÊN SHOPEE', 'https://shope.ee/9zXyfhSXgX?share_channel_code=5', 'http', 'Gian hàng Shopee chính hãng Gờ Cafe', v_media_hpa_shopee),
-    (v_link_hpa_tiktok, 'CAFE BỘT TRÊN TIKTOKSHOP', 'https://shop.tiktok.com/view/product/1729453798159190795?region=VN&locale=vi-VN', 'http', 'Gian hàng TikTok Shop chính hãng Gờ Cafe', v_media_hpa_tiktok)
+    (v_link_shopee, v_workspace_id, 'Đặt món qua ShopeeFood', 'https://shopeefood.vn/thuong-hieu/go-cafe', 'http', 'Giao hàng tận nơi', NULL),
+    (v_link_grab, v_workspace_id, 'Đặt món qua GrabFood', 'https://grab.onelink.me/2695613898?pid=gocafe', 'http', 'Ưu đãi GrabFood', NULL),
+    (v_link_menu, v_workspace_id, 'Xem thực đơn chi tiết (Menu)', 'https://gocafe.vn/menu.pdf', 'http', 'Menu đầy đủ các loại đồ uống', NULL),
+    (v_link_maps, v_workspace_id, 'Tìm cửa hàng gần nhất', 'https://maps.google.com/?q=Go+Cafe+Saigon', 'http', 'Hệ thống chi nhánh TP.HCM', NULL),
+    (v_link_tel, v_workspace_id, 'Hotline CSKH & Đặt hàng', 'tel:1900123456', 'tel', 'Tổng đài chăm sóc khách hàng', NULL),
+    (v_link_email, v_workspace_id, 'Gửi email phòng nhân sự', 'mailto:hr@gocafe.vn', 'mailto', 'Tiếp nhận CV và hồ sơ ứng tuyển', NULL),
+    (v_link_apply, v_workspace_id, 'Đăng ký ứng tuyển Barista', 'https://forms.gle/sampleGocafeBarista', 'http', 'Form ứng tuyển nhanh', NULL),
+    (v_link_franchise, v_workspace_id, 'Tải hồ sơ nhượng quyền Gờ Cafe', 'https://gocafe.vn/franchise-brochure.pdf', 'http', 'Chính sách đầu tư và hợp tác', NULL),
+    (v_link_hpa_chinhanh, v_workspace_id, 'DANH SÁCH CHI NHÁNH GỜ', 'https://go-cafe.com/danh-sach-chi-nhanh/', 'http', 'Danh sách chi nhánh chuỗi cà phê Gờ', NULL),
+    (v_link_hpa_ipos, v_workspace_id, 'ĐẶT THỨC UỐNG GIAO TẬN NƠI', 'https://order.ipos.vn/?pos_parent=GIOCF&source=DEFAULT', 'http', 'Đặt món online giao tận nơi qua iPOS', v_media_hpa_gocafe),
+    (v_link_hpa_shopee, v_workspace_id, 'CAFE BỘT TRÊN SHOPEE', 'https://shope.ee/9zXyfhSXgX?share_channel_code=5', 'http', 'Gian hàng Shopee chính hãng Gờ Cafe', v_media_hpa_shopee),
+    (v_link_hpa_tiktok, v_workspace_id, 'CAFE BỘT TRÊN TIKTOKSHOP', 'https://shop.tiktok.com/view/product/1729453798159190795?region=VN&locale=vi-VN', 'http', 'Gian hàng TikTok Shop chính hãng Gờ Cafe', v_media_hpa_tiktok)
   ON CONFLICT (id) DO NOTHING;
 
   -- 2. Trang 1: /gocafe (Thương hiệu chính gocafe.official)
-  INSERT INTO public.pages (id, internal_name, status, lock_version)
-  VALUES (v_page_brand, 'Gờ Cafe Official (@gocafe.official)', 'published', 2)
+  INSERT INTO public.pages (id, workspace_id, internal_name, status, lock_version)
+  VALUES (v_page_brand, v_workspace_id, 'Gờ Cafe Official (@gocafe.official)', 'published', 2)
   ON CONFLICT (id) DO UPDATE SET status = 'published';
 
   INSERT INTO public.page_slugs (slug, page_id, is_current)
@@ -111,17 +114,14 @@ BEGIN
     v_rev_brand,
     v_page_brand,
     1,
-    'sealed',
+    'draft',
     1,
     'Gờ Cafe (@gocafe.official) | Beacons Profile',
     'Hơn 40 quán cà phê nguyên chất tại TP.HCM & Xưởng rang cung cấp sỉ & lẻ. Zalo: 0779.20.00.20.',
     '{"preset": "go-original", "borderRadius": "full"}'::jsonb,
-    now()
+    NULL
   )
   ON CONFLICT (id) DO NOTHING;
-
-  -- Gán con trỏ công khai
-  UPDATE public.pages SET published_revision_id = v_rev_brand WHERE id = v_page_brand;
 
   -- Khối của Trang 1
   INSERT INTO public.page_blocks (id, page_id, revision_id, type, position, payload)
@@ -149,9 +149,13 @@ BEGIN
     (v_page_brand, v_rev_brand, v_block_brand_list, v_plk_brand_tel, 4, 'Hotline CSKH: 1900 9246 / Zalo: 0779.20.00.20')
   ON CONFLICT (revision_id, page_link_id) DO NOTHING;
 
+  -- Niêm phong revision & gán con trỏ công khai
+  UPDATE public.page_revisions SET state = 'sealed', sealed_at = now() WHERE id = v_rev_brand AND state = 'draft';
+  UPDATE public.pages SET published_revision_id = v_rev_brand WHERE id = v_page_brand;
+
   -- 3. Trang 2: /tuyendung (Tuyển dụng)
-  INSERT INTO public.pages (id, internal_name, status, lock_version)
-  VALUES (v_page_careers, 'Trang tuyển dụng nhân sự', 'published', 2)
+  INSERT INTO public.pages (id, workspace_id, internal_name, status, lock_version)
+  VALUES (v_page_careers, v_workspace_id, 'Trang tuyển dụng nhân sự', 'published', 2)
   ON CONFLICT (id) DO UPDATE SET status = 'published';
 
   INSERT INTO public.page_slugs (slug, page_id, is_current)
@@ -163,16 +167,14 @@ BEGIN
     v_rev_careers,
     v_page_careers,
     1,
-    'sealed',
+    'draft',
     1,
     'Gia đình Gờ Cafe Tuyển Dụng',
     'Cơ hội phát triển nghề nghiệp cùng đội ngũ trẻ trung, năng động tại Gờ Cafe.',
     '{"preset": "go-original"}'::jsonb,
-    now()
+    NULL
   )
   ON CONFLICT (id) DO NOTHING;
-
-  UPDATE public.pages SET published_revision_id = v_rev_careers WHERE id = v_page_careers;
 
   INSERT INTO public.page_blocks (id, page_id, revision_id, type, position, payload)
   VALUES
@@ -194,9 +196,12 @@ BEGIN
     (v_page_careers, v_rev_careers, v_block_careers_list, v_plk_careers_menu, 2, 'Tìm hiểu sản phẩm qua Menu')
   ON CONFLICT (revision_id, page_link_id) DO NOTHING;
 
+  UPDATE public.page_revisions SET state = 'sealed', sealed_at = now() WHERE id = v_rev_careers AND state = 'draft';
+  UPDATE public.pages SET published_revision_id = v_rev_careers WHERE id = v_page_careers;
+
   -- 4. Trang 3: /nhuongquyen (Hợp tác nhượng quyền)
-  INSERT INTO public.pages (id, internal_name, status, lock_version)
-  VALUES (v_page_franchise, 'Trang hợp tác nhượng quyền', 'published', 2)
+  INSERT INTO public.pages (id, workspace_id, internal_name, status, lock_version)
+  VALUES (v_page_franchise, v_workspace_id, 'Trang hợp tác nhượng quyền', 'published', 2)
   ON CONFLICT (id) DO UPDATE SET status = 'published';
 
   INSERT INTO public.page_slugs (slug, page_id, is_current)
@@ -208,16 +213,14 @@ BEGIN
     v_rev_franchise,
     v_page_franchise,
     1,
-    'sealed',
+    'draft',
     1,
     'Hợp tác Nhượng quyền Thương hiệu Gờ Cafe',
     'Mô hình tinh gọn, chi phí tối ưu, thu hồi vốn nhanh.',
     '{"preset": "go-original"}'::jsonb,
-    now()
+    NULL
   )
   ON CONFLICT (id) DO NOTHING;
-
-  UPDATE public.pages SET published_revision_id = v_rev_franchise WHERE id = v_page_franchise;
 
   INSERT INTO public.page_blocks (id, page_id, revision_id, type, position, payload)
   VALUES
@@ -237,9 +240,12 @@ BEGIN
     (v_page_franchise, v_rev_franchise, v_block_fran_list, v_plk_fran_tel, 1, 'Hotline tư vấn nhượng quyền 24/7')
   ON CONFLICT (revision_id, page_link_id) DO NOTHING;
 
+  UPDATE public.page_revisions SET state = 'sealed', sealed_at = now() WHERE id = v_rev_franchise AND state = 'draft';
+  UPDATE public.pages SET published_revision_id = v_rev_franchise WHERE id = v_page_franchise;
+
   -- 5. Trang 4: /hophuonganh.gocafe (Chuẩn phong cách Lnk.Bio Hồ Phượng Ánh)
-  INSERT INTO public.pages (id, internal_name, status, lock_version)
-  VALUES (v_page_hpa, 'Hồ Phượng Ánh - Co-founder Gờ Cafe', 'published', 2)
+  INSERT INTO public.pages (id, workspace_id, internal_name, status, lock_version)
+  VALUES (v_page_hpa, v_workspace_id, 'Hồ Phượng Ánh - Co-founder Gờ Cafe', 'published', 2)
   ON CONFLICT (id) DO UPDATE SET status = 'published';
 
   INSERT INTO public.page_slugs (slug, page_id, is_current)
@@ -251,16 +257,14 @@ BEGIN
     v_rev_hpa,
     v_page_hpa,
     1,
-    'sealed',
+    'draft',
     1,
     'HỒ PHƯỢNG ÁNH',
     '*9x- Là Co-founder Gờ càfê- chuỗi cà phê truyền thống đã mở đến chi nhánh thứ 50 tại Sài Gòn.* Gờ không có không gian sang chảnh, vị trí đắc địa hay những thức uống bắt kịp xu hướng. Gờ café chú trọng vào chất lượng cà phê mộc, những trải nghiệm thoải mái, không gian thân thuộc, giá cả phù hợp đủ để khách hàng có thể đến hàng ngày.',
     '{"preset": "go-original"}'::jsonb,
-    now()
+    NULL
   )
   ON CONFLICT (id) DO NOTHING;
-
-  UPDATE public.pages SET published_revision_id = v_rev_hpa WHERE id = v_page_hpa;
 
   INSERT INTO public.page_blocks (id, page_id, revision_id, type, position, payload)
   VALUES
@@ -297,6 +301,9 @@ BEGIN
     (v_page_hpa, v_rev_hpa, v_block_hpa_btn3, v_plk_hpa_shopee, 1, 'CAFE BỘT TRÊN SHOPEE', v_media_hpa_shopee),
     (v_page_hpa, v_rev_hpa, v_block_hpa_btn3, v_plk_hpa_tiktok, 2, 'CAFE BỘT TRÊN TIKTOKSHOP', v_media_hpa_tiktok)
   ON CONFLICT (revision_id, page_link_id) DO NOTHING;
+
+  UPDATE public.page_revisions SET state = 'sealed', sealed_at = now() WHERE id = v_rev_hpa AND state = 'draft';
+  UPDATE public.pages SET published_revision_id = v_rev_hpa WHERE id = v_page_hpa;
 
   -- 6. Fixture kiểm chứng Thống kê (Mục 11 tình huống 1 trong phân tích database):
   -- 12 clicks cho link_menu trên Trang A (v_page_brand, v_plk_brand_menu)

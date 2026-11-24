@@ -12,7 +12,6 @@ async function run() {
 
   const v_page_hpa = "a4444444-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
   const v_rev_hpa2 = "b5555555-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-  const v_media_hpa_avatar = "e1111111-eeee-eeee-eeee-eeeeeeeeeeee";
   const v_media_hpa_gocafe = "e2222222-eeee-eeee-eeee-eeeeeeeeeeee";
   const v_media_hpa_shopee = "e3333333-eeee-eeee-eeee-eeeeeeeeeeee";
   const v_media_hpa_tiktok = "e4444444-eeee-eeee-eeee-eeeeeeeeeeee";

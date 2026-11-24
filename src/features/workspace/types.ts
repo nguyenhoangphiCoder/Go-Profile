@@ -1,4 +1,92 @@
 export type WorkspaceRole = "owner" | "editor" | "viewer";
+export type WorkspacePlan = "free" | "pro" | "enterprise";
+
+export interface WorkspaceFeatures {
+  landing: boolean;
+  branches: boolean;
+  leads: boolean;
+  tracking: boolean;
+  customDomains: boolean;
+}
+
+export const DEFAULT_WORKSPACE_FEATURES: WorkspaceFeatures = {
+  landing: true,
+  branches: true,
+  leads: true,
+  tracking: true,
+  customDomains: false,
+};
+
+export const PLAN_LABELS: Record<WorkspacePlan, string> = {
+  free: "Cơ bản (Free)",
+  pro: "Chuyên nghiệp (Pro)",
+  enterprise: "Doanh nghiệp (Enterprise)",
+};
+
+export const PLAN_PRESETS: Record<
+  WorkspacePlan,
+  {
+    maxPages: number;
+    maxMediaMb: number;
+    maxBranches: number;
+    maxShells: number;
+    features: WorkspaceFeatures;
+  }
+> = {
+  free: {
+    maxPages: 5,
+    maxMediaMb: 100,
+    maxBranches: 0,
+    maxShells: 1,
+    features: {
+      landing: true,
+      branches: false,
+      leads: false,
+      tracking: false,
+      customDomains: false,
+    },
+  },
+  pro: {
+    maxPages: 30,
+    maxMediaMb: 500,
+    maxBranches: 100,
+    maxShells: 10,
+    features: {
+      landing: true,
+      branches: true,
+      leads: true,
+      tracking: true,
+      customDomains: false,
+    },
+  },
+  enterprise: {
+    maxPages: 200,
+    maxMediaMb: 2048,
+    maxBranches: 500,
+    maxShells: 50,
+    features: {
+      landing: true,
+      branches: true,
+      leads: true,
+      tracking: true,
+      customDomains: true,
+    },
+  },
+};
+
+export function normalizeWorkspaceFeatures(raw: unknown): WorkspaceFeatures {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ...DEFAULT_WORKSPACE_FEATURES };
+  }
+  const obj = raw as Record<string, unknown>;
+  return {
+    landing: typeof obj.landing === "boolean" ? obj.landing : true,
+    branches: typeof obj.branches === "boolean" ? obj.branches : true,
+    leads: typeof obj.leads === "boolean" ? obj.leads : true,
+    tracking: typeof obj.tracking === "boolean" ? obj.tracking : true,
+    customDomains: typeof obj.customDomains === "boolean" ? obj.customDomains : false,
+  };
+}
 
 /** Workspace Gờ Cafe tạo bởi migration 20261116000005 (chứa toàn bộ dữ liệu cũ). */
 export const GO_CAFE_WORKSPACE_ID = "00000000-0000-4000-8000-000000000001";
@@ -22,10 +110,14 @@ export function hasRole(role: WorkspaceRole, minRole: WorkspaceRole): boolean {
 export interface WorkspaceSummary {
   id: string;
   name: string;
+  plan: WorkspacePlan;
+  features: WorkspaceFeatures;
   /** Vai trò thành viên thật; null nếu người dùng chỉ vào được nhờ quyền quản trị hệ thống. */
   role: WorkspaceRole | null;
   maxPages: number;
   maxMediaBytes: number;
+  maxBranches: number;
+  maxShells: number;
 }
 
 export interface WorkspaceContext {

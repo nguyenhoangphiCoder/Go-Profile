@@ -1,5 +1,3 @@
-import fs from "node:fs";
-
 async function fetchCss() {
   const cssUrls = [
     "https://beacons.ai/_next/static/chunks/0ojtxhfzb-rw3.css",

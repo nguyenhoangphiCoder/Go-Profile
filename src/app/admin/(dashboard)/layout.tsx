@@ -8,21 +8,65 @@ import { getPrimaryPublicSlug } from "@/features/dashboard/queries";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { LogoutButton } from "@/components/admin/logout-button";
 import { MobileSidebar } from "@/components/admin/mobile-sidebar";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveMediaUrl } from "@/features/renderer/media";
 
 export const instant = false;
 
+async function getWorkspaceBranding(workspaceId: string, fallbackName: string) {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: shell } = await supabase
+      .from("site_shells")
+      .select("site_name, logo_media_id")
+      .eq("workspace_id", workspaceId)
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    let logoUrl: string | null = null;
+    if (shell?.logo_media_id) {
+      const { data: media } = await supabase
+        .from("media_assets")
+        .select("bucket_id, object_path")
+        .eq("id", shell.logo_media_id)
+        .maybeSingle();
+      if (media?.bucket_id && media?.object_path) {
+        logoUrl = resolveMediaUrl(`${media.bucket_id}/${media.object_path}`);
+      }
+    }
+
+    return {
+      brandName: shell?.site_name?.trim() || fallbackName,
+      logoUrl,
+    };
+  } catch {
+    return { brandName: fallbackName, logoUrl: null };
+  }
+}
+
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireWorkspace();
-  const primarySlug = await getPrimaryPublicSlug(ctx.workspace.id);
+  const [primarySlug, branding] = await Promise.all([
+    getPrimaryPublicSlug(ctx.workspace.id),
+    getWorkspaceBranding(ctx.workspace.id, ctx.workspace.name),
+  ]);
   const admin = {
     userId: ctx.user.userId,
     email: ctx.user.email,
     displayName: ctx.user.displayName,
   };
-  const nav = { showMembers: ctx.role === "owner", showSystem: ctx.isPlatformAdmin };
+  const nav = {
+    showMembers: ctx.role === "owner",
+    showSystem: ctx.isPlatformAdmin,
+    features: ctx.workspace.features,
+    isPlatformAdmin: ctx.isPlatformAdmin,
+  };
   const switcher = {
-    workspaces: ctx.workspaces.map((w) => ({ id: w.id, name: w.name })),
+    workspaces: ctx.workspaces.map((w) => ({ id: w.id, name: w.name, plan: w.plan })),
     currentId: ctx.workspace.id,
+    currentPlan: ctx.workspace.plan,
     role: ctx.role,
     isPlatformAdmin: ctx.isPlatformAdmin,
   };
@@ -33,21 +77,30 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
     <div className="h-screen h-dvh flex bg-background text-foreground overflow-hidden">
       {/* Sidebar Desktop */}
       <aside className="w-60 border-r border-border/80 bg-card flex-col shrink-0 hidden md:flex h-full select-none">
-        {/* Brand Header */}
+        {/* Brand Header (White-Label theo Workspace đang chọn) */}
         <div className="h-14 flex items-center px-4 border-b border-border/70 gap-2.5 shrink-0">
           <div className="w-8 h-8 rounded-full overflow-hidden ring-1 ring-border shrink-0 bg-black flex items-center justify-center">
-            <Image
-              src="/logo-gocafe.png"
-              alt="Gờ Cafe"
-              width={32}
-              height={32}
-              className="w-full h-full object-cover"
-              priority
-            />
+            {branding.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={branding.logoUrl}
+                alt={branding.brandName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Image
+                src="/logo-gocafe.png"
+                alt={branding.brandName}
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+                priority
+              />
+            )}
           </div>
           <div className="min-w-0">
             <span className="font-bold text-[13px] leading-none block text-foreground truncate">
-              Gờ Cafe Profile
+              {branding.brandName}
             </span>
             <span className="text-[11px] text-muted-foreground leading-none block mt-1">
               Quản trị nội dung

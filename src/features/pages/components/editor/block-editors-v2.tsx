@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2, RotateCcw } from "lucide-react";
+import { useSyncExternalStore, type ReactNode } from "react";
+import { ChevronDown, ChevronUp, ClipboardCopy, ClipboardPaste, Plus, Trash2, RotateCcw } from "lucide-react";
 import { FONT_IDS, FONT_LABELS, type FontId } from "@/config/theme-tokens";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
@@ -669,6 +669,19 @@ function fontSizeSpecForBlock(type: EditorBlockItem["type"]): FontSizeSpec {
       return {
         body: { label: "Cỡ chữ chú thích", min: 10, max: 24, fallback: 12 },
       };
+    case "hero_section":
+    case "split_content":
+    case "info_cards":
+    case "pricing_table":
+    case "product_grid":
+    case "store_locator":
+    case "lead_form":
+    case "testimonials":
+    case "cta_banner":
+      return {
+        title: { label: "Cỡ chữ tiêu đề khối", min: 14, max: 72, fallback: 34 },
+        body: { label: "Cỡ chữ nội dung khối", min: 12, max: 28, fallback: 15 },
+      };
     default:
       return {};
   }
@@ -838,17 +851,42 @@ function InlineColorPicker({
   );
 }
 
+// Bộ nhớ tạm trong phiên làm việc để Sao chép / Dán kiểu (Copy/Paste Style) giữa các khối
+let copiedBlockStyleSnapshot: BlockStyle | null = null;
+const copiedStyleListeners = new Set<() => void>();
+
+function setCopiedBlockStyle(next: BlockStyle | null) {
+  copiedBlockStyleSnapshot = next ? structuredClone(next) : null;
+  copiedStyleListeners.forEach((fn) => fn());
+}
+
+function subscribeCopiedBlockStyle(cb: () => void) {
+  copiedStyleListeners.add(cb);
+  return () => {
+    copiedStyleListeners.delete(cb);
+  };
+}
+
+function getCopiedBlockStyle() {
+  return copiedBlockStyleSnapshot;
+}
+
 export function BlockStyleEditor({
   block,
   updatePayload,
   embedded = false,
 }: Pick<V2EditorProps, "block" | "updatePayload"> & { embedded?: boolean }) {
   const style = ((block.payload as { blockStyle?: BlockStyle }).blockStyle ?? {}) as BlockStyle;
+  const copiedStyle = useSyncExternalStore(
+    subscribeCopiedBlockStyle,
+    getCopiedBlockStyle,
+    () => null
+  );
   const set = (patch: Partial<BlockStyle>) => {
     const next: BlockStyle = { ...style, ...patch };
     for (const key of Object.keys(next) as (keyof BlockStyle)[]) {
       const v = next[key];
-      if (v === undefined || (Array.isArray(v) && v.length === 0)) delete next[key];
+      if (v === undefined || v === "" || (Array.isArray(v) && v.length === 0)) delete next[key];
     }
     updatePayload({ blockStyle: Object.keys(next).length > 0 ? next : undefined });
   };
@@ -860,6 +898,50 @@ export function BlockStyleEditor({
 
   const controls = (
     <div className={embedded ? "space-y-3.5" : "px-3 pb-3 space-y-3"}>
+      {/* Thanh thao tác nhanh: Sao chép / Dán / Đặt lại kiểu */}
+      <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-border/60">
+        <button
+          type="button"
+          disabled={!active}
+          onClick={() => {
+            const toCopy = { ...style };
+            delete toCopy.anchorId;
+            setCopiedBlockStyle(toCopy);
+          }}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-background text-[11px] font-medium hover:bg-muted cursor-pointer disabled:opacity-40"
+          title="Sao chép toàn bộ kiểu của khối này để dán sang khối khác"
+        >
+          <ClipboardCopy className="w-3 h-3" />
+          Sao chép kiểu
+        </button>
+        <button
+          type="button"
+          disabled={!copiedStyle}
+          onClick={() => {
+            if (!copiedStyle) return;
+            updatePayload({
+              blockStyle: { ...copiedStyle, ...(style.anchorId ? { anchorId: style.anchorId } : {}) },
+            });
+          }}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-background text-[11px] font-medium hover:bg-muted cursor-pointer disabled:opacity-40"
+          title="Dán kiểu đã sao chép vào khối này"
+        >
+          <ClipboardPaste className="w-3 h-3" />
+          Dán kiểu
+        </button>
+        {active && (
+          <button
+            type="button"
+            onClick={() => updatePayload({ blockStyle: undefined })}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-red-600 hover:bg-red-500/10 cursor-pointer ml-auto"
+            title="Xóa toàn bộ tùy chỉnh kiểu của khối này"
+          >
+            <RotateCcw className="w-3 h-3" />
+            Đặt lại
+          </button>
+        )}
+      </div>
+
       {fontSpec.title && (
         <div className="space-y-2.5">
           <FontPickerSelect
@@ -928,35 +1010,221 @@ export function BlockStyleEditor({
         ]}
         onChange={(align) => set({ align: style.align === align ? undefined : align })}
       />
+
+      {/* Nền khối: Preset nhanh + Nền tự do (Màu đơn / Gradient / Ảnh nền) */}
       <Choice
-        label="Khoảng đệm trên/dưới"
-        value={style.paddingY ?? "none"}
-        options={[
-          { value: "none", label: "Không" },
-          { value: "sm", label: "Nhỏ" },
-          { value: "md", label: "Vừa" },
-          { value: "lg", label: "Lớn" },
-        ]}
-        onChange={(paddingY) => set({ paddingY: paddingY === "none" ? undefined : paddingY })}
-      />
-      <Choice
-        label="Nền khối"
+        label="Nền khối / Section (mẫu nhanh)"
         value={style.surface ?? "none"}
         options={[
           { value: "none", label: "Trong suốt" },
           { value: "card", label: "Thẻ nổi" },
+          { value: "cream", label: "Kem nhạt" },
+          { value: "dark", label: "Đen sang trọng" },
         ]}
         onChange={(surface) => set({ surface: surface === "none" ? undefined : surface })}
       />
+
+      <div className="p-2.5 rounded-xl border border-border/70 bg-background/60 space-y-2.5">
+        <span className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          Nền tự do (Màu / Gradient / Ảnh)
+        </span>
+        <InlineColorPicker
+          label="Màu nền đơn"
+          value={style.bgColor}
+          fallback="#F8F7F4"
+          onChange={(bgColor) =>
+            set({ bgColor, bgGradientFrom: undefined, bgGradientTo: undefined })
+          }
+        />
+        <div className="space-y-2 pt-1 border-t border-border/50">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <InlineColorPicker
+              label="Gradient từ"
+              value={style.bgGradientFrom}
+              fallback="#111111"
+              onChange={(bgGradientFrom) =>
+                set({
+                  bgGradientFrom,
+                  bgGradientTo: bgGradientFrom ? (style.bgGradientTo ?? "#B88A44") : undefined,
+                  bgColor: undefined,
+                })
+              }
+            />
+            <InlineColorPicker
+              label="Gradient đến"
+              value={style.bgGradientTo}
+              fallback="#B88A44"
+              onChange={(bgGradientTo) =>
+                set({
+                  bgGradientTo,
+                  bgGradientFrom: bgGradientTo ? (style.bgGradientFrom ?? "#111111") : undefined,
+                  bgColor: undefined,
+                })
+              }
+            />
+          </div>
+          {(style.bgGradientFrom || style.bgGradientTo) && (
+            <Choice
+              label="Hướng chuyển màu"
+              value={style.bgGradientDir ?? "to-br"}
+              options={[
+                { value: "to-r", label: "Ngang →" },
+                { value: "to-br", label: "Chéo ↘" },
+                { value: "to-b", label: "Dọc ↓" },
+              ]}
+              onChange={(bgGradientDir) => set({ bgGradientDir })}
+            />
+          )}
+        </div>
+        <div className="space-y-1.5 pt-1 border-t border-border/50">
+          <Field
+            label="URL Ảnh nền khối (tùy chọn)"
+            hint="Dán link ảnh https://... hoặc đường dẫn ảnh từ Kho hình ảnh"
+          >
+            <input
+              type="text"
+              value={style.bgImageUrl ?? ""}
+              onChange={(e) => set({ bgImageUrl: e.target.value.trim() || undefined })}
+              placeholder="https://..."
+              className={inputClass}
+            />
+          </Field>
+          {style.bgImageUrl && (
+            <FontSizeSlider
+              label="Độ tối lớp phủ ảnh nền (%)"
+              value={style.bgOverlayOpacity}
+              min={0}
+              max={90}
+              fallback={35}
+              onChange={(bgOverlayOpacity) => set({ bgOverlayOpacity })}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Khung, Độ rộng, Bo góc, Viền & Đổ bóng */}
+      <div className="p-2.5 rounded-xl border border-border/70 bg-background/60 space-y-2.5">
+        <span className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+          Khung, Khoảng đệm &amp; Bo góc
+        </span>
+        <Choice
+          label="Độ rộng khung"
+          value={style.maxWidth ?? "full"}
+          options={[
+            { value: "sm", label: "Hẹp" },
+            { value: "md", label: "Vừa" },
+            { value: "lg", label: "Rộng" },
+            { value: "full", label: "Mặc định" },
+          ]}
+          onChange={(maxWidth) => set({ maxWidth: maxWidth === "full" ? undefined : maxWidth })}
+        />
+        <Choice
+          label="Bo góc"
+          value={style.radius ?? "none"}
+          options={[
+            { value: "none", label: "Mặc định" },
+            { value: "md", label: "Nhỏ" },
+            { value: "xl", label: "Vừa" },
+            { value: "2xl", label: "Lớn" },
+            { value: "3xl", label: "Tròn sâu" },
+          ]}
+          onChange={(radius) => set({ radius: radius === "none" ? undefined : radius })}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <Choice
+            label="Độ dày viền"
+            value={style.borderWidth ?? 0}
+            options={[
+              { value: 0, label: "Không" },
+              { value: 1, label: "1px" },
+              { value: 2, label: "2px" },
+            ]}
+            onChange={(borderWidth) => set({ borderWidth: borderWidth === 0 ? undefined : borderWidth })}
+          />
+          <Choice
+            label="Đổ bóng"
+            value={style.shadow ?? "none"}
+            options={[
+              { value: "none", label: "Không" },
+              { value: "sm", label: "Nhẹ" },
+              { value: "md", label: "Vừa" },
+              { value: "lg", label: "Đậm" },
+            ]}
+            onChange={(shadow) => set({ shadow: shadow === "none" ? undefined : shadow })}
+          />
+        </div>
+        {(style.borderWidth === 1 || style.borderWidth === 2 || style.borderColor) && (
+          <InlineColorPicker
+            label="Màu viền"
+            value={style.borderColor}
+            fallback="#E4E4E7"
+            onChange={(borderColor) => set({ borderColor })}
+          />
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-border/50">
+          <Choice
+            label="Đệm trên (Padding Top)"
+            value={style.paddingTop ?? "none"}
+            options={[
+              { value: "none", label: "0" },
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+              { value: "xl", label: "XL" },
+            ]}
+            onChange={(paddingTop) =>
+              set({ paddingTop: paddingTop === "none" ? undefined : paddingTop })
+            }
+          />
+          <Choice
+            label="Đệm dưới (Padding Bottom)"
+            value={style.paddingBottom ?? "none"}
+            options={[
+              { value: "none", label: "0" },
+              { value: "sm", label: "S" },
+              { value: "md", label: "M" },
+              { value: "lg", label: "L" },
+              { value: "xl", label: "XL" },
+            ]}
+            onChange={(paddingBottom) =>
+              set({ paddingBottom: paddingBottom === "none" ? undefined : paddingBottom })
+            }
+          />
+        </div>
+      </div>
+
       <Choice
         label="Hiệu ứng xuất hiện"
         value={style.animation ?? "none"}
         options={[
           { value: "none", label: "Không" },
           { value: "fade-up", label: "Trượt lên" },
+          { value: "fade-in", label: "Mờ dần" },
+          { value: "zoom-in", label: "Phóng nhẹ" },
+          { value: "slide-left", label: "Trượt ngang" },
         ]}
         onChange={(animation) => set({ animation: animation === "none" ? undefined : animation })}
       />
+
+      <Field
+        label="ID Neo (Anchor ID)"
+        hint="VD: bang-gia → dùng #bang-gia ở Navbar hoặc nút CTA để cuộn mượt thẳng tới khối này."
+      >
+        <input
+          type="text"
+          value={style.anchorId ?? ""}
+          onChange={(e) => {
+            const clean = e.target.value
+              .toLowerCase()
+              .replace(/[^a-z0-9-]/g, "")
+              .slice(0, 60);
+            set({ anchorId: clean || undefined });
+          }}
+          placeholder="vd: bang-gia, lien-he, menu..."
+          className={inputClass}
+        />
+      </Field>
+
       <div className="space-y-1.5">
         <span className="block font-semibold text-muted-foreground">Ẩn trên thiết bị</span>
         <div className="flex gap-3">

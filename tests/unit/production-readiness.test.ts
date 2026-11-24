@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-// Mock Supabase server client for health check tests
+// Mock Supabase privileged client for health check tests
 const mockSelect = vi.fn();
-vi.mock("@/lib/supabase/server", () => ({
-  createSupabaseServerClient: vi.fn(async () => ({
+vi.mock("@/lib/supabase/privileged", () => ({
+  createSupabaseAdminClient: vi.fn(() => ({
     from: () => ({
       select: () => ({
         limit: mockSelect,

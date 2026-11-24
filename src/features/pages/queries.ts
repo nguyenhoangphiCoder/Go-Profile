@@ -3,6 +3,7 @@ import { getPublicMediaUrl } from "@/features/media/queries";
 import { requireWorkspace } from "@/features/workspace/context";
 import { hasRole } from "@/features/workspace/types";
 import type {
+  PageKind,
   PageListItem,
   PageEditorData,
   EditorBlockItem,
@@ -11,17 +12,19 @@ import type {
   PageThemeConfig,
   PageSeoConfig,
 } from "./types";
+import type { PublicSiteShell } from "@/features/public/types";
+import type { PublicBranchItem } from "@/features/branches/types";
 
 interface PageListQueryRow {
   id: string;
   internal_name: string;
+  page_kind: string;
   status: string;
   lock_version: number;
   published_revision_id: string | null;
   created_at: string;
   updated_at: string;
   page_slugs: {
-    id: string;
     slug: string;
     is_current: boolean;
   }[];
@@ -75,7 +78,6 @@ interface LinkQueryRow {
 }
 
 interface SlugQueryRow {
-  id: string;
   slug: string;
   is_current: boolean;
 }
@@ -115,13 +117,13 @@ export async function getPagesList(): Promise<PageListItem[]> {
       `
       id,
       internal_name,
+      page_kind,
       status,
       lock_version,
       published_revision_id,
       created_at,
       updated_at,
       page_slugs (
-        id,
         slug,
         is_current
       ),
@@ -161,6 +163,7 @@ export async function getPagesList(): Promise<PageListItem[]> {
     return {
       id: p.id,
       internalName: p.internal_name,
+      pageKind: (p.page_kind === "landing" ? "landing" : "profile") as PageKind,
       status: p.status as "published" | "unpublished",
       lockVersion: Number(p.lock_version),
       primarySlug: currentSlug,
@@ -189,12 +192,14 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
   ] = await Promise.all([
     supabase
       .from("pages")
-      .select("id, internal_name, status, lock_version, published_revision_id, updated_at")
+      .select(
+        "id, internal_name, page_kind, site_shell_id, status, lock_version, published_revision_id, updated_at"
+      )
       .eq("id", pageId)
       .eq("workspace_id", workspace.id)
       .is("archived_at", null)
       .single(),
-    supabase.from("page_slugs").select("id, slug, is_current").eq("page_id", pageId),
+    supabase.from("page_slugs").select("slug, is_current").eq("page_id", pageId),
     supabase
       .from("page_revisions")
       .select("id, revision_no, state, lock_version, title, description, theme, seo")
@@ -236,8 +241,16 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     return null;
   }
 
-  // Đợt 2 (chạy song song 2 truy vấn phụ thuộc targetRev.id): page_blocks & placements
-  const [{ data: blocksData }, { data: placementsData }] = await Promise.all([
+  // Đợt 2 (chạy song song): page_blocks, placements, và (nếu là landing) Site Shell để mô phỏng Navbar/Footer
+  const isLanding = page.page_kind === "landing";
+  const [
+    { data: blocksData },
+    { data: placementsData },
+    siteSettingsRes,
+    siteNavRes,
+    wsPagesRes,
+    wsBranchesRes,
+  ] = await Promise.all([
     supabase
       .from("page_blocks")
       .select("id, type, position, is_visible, payload")
@@ -274,7 +287,116 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
       )
       .eq("revision_id", targetRev.id)
       .order("position", { ascending: true }),
+    isLanding
+      ? supabase
+          .from("site_shells")
+          .select(
+            "id, name, is_default, site_name, header_config, footer_columns, floating_contact, media_assets(object_path)"
+          )
+          .eq("workspace_id", workspace.id)
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: true })
+      : Promise.resolve({ data: null }),
+    isLanding
+      ? supabase
+          .from("site_nav_items")
+          .select(
+            "id, shell_id, parent_id, label, target_type, target_page_id, target_value, position"
+          )
+          .eq("workspace_id", workspace.id)
+          .eq("is_visible", true)
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: true })
+      : Promise.resolve({ data: null }),
+    isLanding
+      ? supabase
+          .from("pages")
+          .select("id, page_slugs(slug, is_current)")
+          .eq("workspace_id", workspace.id)
+          .is("archived_at", null)
+      : Promise.resolve({ data: null }),
+    isLanding
+      ? supabase
+          .from("branches")
+          .select(
+            "id, code, name, address, district, city, phone, hours, lat, lng, maps_url, position"
+          )
+          .eq("workspace_id", workspace.id)
+          .eq("is_active", true)
+          .is("archived_at", null)
+          .order("position", { ascending: true })
+          .order("name", { ascending: true })
+      : Promise.resolve({ data: null }),
   ]);
+
+  let siteShell: PublicSiteShell | null = null;
+  let availableShells: { id: string; name: string; isDefault: boolean }[] | undefined;
+  if (isLanding) {
+    const slugByPageId = new Map<string, string>();
+    const rawWsPages = (wsPagesRes.data || []) as unknown as {
+      id: string;
+      page_slugs: { slug: string; is_current: boolean }[];
+    }[];
+    for (const wp of rawWsPages) {
+      const cur = (wp.page_slugs || []).find((s) => s.is_current)?.slug;
+      if (cur) slugByPageId.set(wp.id, cur);
+    }
+
+    const rawShellList = (siteSettingsRes.data || []) as unknown as {
+      id: string;
+      name: string;
+      is_default: boolean;
+      site_name: string | null;
+      header_config: Record<string, unknown> | null;
+      footer_columns: unknown[] | null;
+      floating_contact: Record<string, unknown> | null;
+      media_assets: { object_path: string } | null;
+    }[];
+
+    availableShells = rawShellList.map((s) => ({
+      id: s.id,
+      name: s.name,
+      isDefault: s.is_default,
+    }));
+
+    const resolvedShell =
+      (page.site_shell_id ? rawShellList.find((s) => s.id === page.site_shell_id) : undefined) ||
+      rawShellList.find((s) => s.is_default) ||
+      rawShellList[0] ||
+      null;
+
+    const rawNav = (
+      (siteNavRes.data || []) as unknown as {
+        id: string;
+        shell_id: string | null;
+        parent_id: string | null;
+        label: string;
+        target_type: "page" | "anchor" | "url";
+        target_page_id: string | null;
+        target_value: string | null;
+        position: number;
+      }[]
+    ).filter((n) => !resolvedShell || n.shell_id === resolvedShell.id);
+
+    siteShell = {
+      settings: {
+        site_name: resolvedShell?.site_name || workspace.name,
+        logo_url: resolvedShell?.media_assets?.object_path || null,
+        header_config: resolvedShell?.header_config || {},
+        footer_columns: resolvedShell?.footer_columns || [],
+        floating_contact: resolvedShell?.floating_contact || {},
+      },
+      nav_items: rawNav.map((n) => ({
+        id: n.id,
+        parent_id: n.parent_id,
+        label: n.label,
+        target_type: n.target_type,
+        target_slug: n.target_page_id ? slugByPageId.get(n.target_page_id) || null : null,
+        target_value: n.target_value,
+        position: n.position,
+      })),
+    };
+  }
 
   const rawBlocks = (blocksData || []) as unknown as BlockQueryRow[];
 
@@ -345,6 +467,8 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     page: {
       id: page.id,
       internalName: page.internal_name,
+      pageKind: (page.page_kind === "landing" ? "landing" : "profile") as PageKind,
+      siteShellId: page.site_shell_id ?? null,
       status: page.status as "published" | "unpublished",
       lockVersion: Number(page.lock_version),
       publishedRevisionId: page.published_revision_id,
@@ -366,10 +490,15 @@ export async function getPageEditorData(pageId: string): Promise<PageEditorData 
     availableLinks,
     availableMedia,
     canEdit: hasRole(role, "editor"),
+    siteShell,
+    availableShells,
+    branches: isLanding ? ((wsBranchesRes.data || []) as unknown as PublicBranchItem[]) : undefined,
   };
 }
 
-export async function getNewPageEditorData(): Promise<PageEditorData> {
+export async function getNewPageEditorData(
+  pageKind: PageKind = "profile"
+): Promise<PageEditorData> {
   const { workspace } = await requireWorkspace("editor");
   const supabase = await createSupabaseServerClient();
 
@@ -462,7 +591,8 @@ export async function getNewPageEditorData(): Promise<PageEditorData> {
   return {
     page: {
       id: "new",
-      internalName: "Trang hồ sơ mới",
+      internalName: pageKind === "landing" ? "Landing Page mới" : "Trang hồ sơ mới",
+      pageKind,
       status: "unpublished",
       lockVersion: 1,
       publishedRevisionId: null,
@@ -477,7 +607,7 @@ export async function getNewPageEditorData(): Promise<PageEditorData> {
       lockVersion: 1,
       title: "GỜ CAFÉ",
       description: "Trang hồ sơ liên kết của Gờ Cafe",
-      theme: { preset: "go-original" },
+      theme: { preset: pageKind === "landing" ? "go-minimal-luxury" : "go-original" },
       seo: {
         metaTitle: "Gờ Cafe - Cà phê chuẩn gu",
         metaDescription: "Hệ thống liên kết và thông tin chính thức của Gờ Cafe.",

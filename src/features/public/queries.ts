@@ -10,7 +10,7 @@ export const PUBLIC_PAGES_TAG = "public-pages";
 
 let publicAnonClient: ReturnType<typeof createClient<Database>> | null = null;
 
-function getPublicAnonClient() {
+export function getPublicAnonClient() {
   if (!publicAnonClient) {
     publicAnonClient = createClient<Database>(
       clientEnv.NEXT_PUBLIC_SUPABASE_URL,
@@ -48,7 +48,14 @@ export async function fetchPublicPage(slug: string): Promise<PublicPageDTO> {
     return { found: false, reason: "SLUG_NOT_FOUND" };
   }
 
-  return data as unknown as PublicPageDTO;
+  const dto = data as unknown as PublicPageDTO;
+  // Bảo mật: không bao giờ gửi token Telegram / Webhook riêng của Tenant ra HTML công khai
+  if (dto?.site_shell?.settings?.header_config && "leadNotifications" in dto.site_shell.settings.header_config) {
+    const safeHeader = { ...dto.site_shell.settings.header_config };
+    delete safeHeader.leadNotifications;
+    dto.site_shell.settings.header_config = safeHeader;
+  }
+  return dto;
 }
 
 export async function resolveAndRecordClick(

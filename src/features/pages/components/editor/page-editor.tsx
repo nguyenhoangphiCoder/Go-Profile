@@ -17,6 +17,7 @@ import {
   Save,
   Globe,
   Smartphone,
+  Tablet,
   Monitor,
   Check,
   Loader2,
@@ -35,6 +36,8 @@ import {
   Sparkles,
   Undo2,
   Redo2,
+  History,
+  BookmarkPlus,
   GripVertical,
   Plus,
   MoreVertical,
@@ -54,6 +57,8 @@ import { useAutoSave } from "./use-auto-save";
 import { reorderByInsertion } from "./reorder";
 import { BLOCK_REGISTRY } from "@/features/renderer/blocks/registry";
 import { BlockPickerModal } from "./block-picker-modal";
+import { CustomTemplatesModal } from "./custom-templates-modal";
+import { RevisionHistoryModal } from "./revision-history-modal";
 
 const V2_BLOCK_TYPES = new Set<BlockType>([
   "button",
@@ -72,6 +77,7 @@ import {
   unpublishPageAction,
   createPageAction,
   renameSlugAction,
+  updatePageSiteShellAction,
 } from "../../actions";
 
 interface PageEditorProps {
@@ -129,6 +135,11 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   const [seo, setSeo] = useState<PageSeoConfig>(initialData.draftRevision.seo || {});
   const [blocks, setBlocks] = useState<EditorBlockItem[]>(initialData.blocks);
   const [mediaList, setMediaList] = useState(initialData.availableMedia);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [siteShellId, setSiteShellId] = useState<string | null>(
+    initialData.page.siteShellId ?? null
+  );
 
   // Tách ưu tiên render: ưu tiên gõ phím / kéo thanh trượt ở cột trái mượt 60fps,
   // để khung LivePreview cập nhật ngay sau đó 1 frame mà không gây khựng.
@@ -144,7 +155,9 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
   );
 
   const [activeTab, setActiveTab] = useState<"blocks" | "theme" | "seo">("blocks");
-  const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile");
+  const [previewMode, setPreviewMode] = useState<"mobile" | "tablet" | "desktop">(
+    initialData.page.pageKind === "landing" ? "desktop" : "mobile"
+  );
   const [zoomScale, setZoomScale] = useState<number>(1);
   const [mobileViewMode, setMobileViewMode] = useState<"edit" | "preview">("edit");
   const [isDirty, setIsDirty] = useState(false);
@@ -536,6 +549,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
           internalName: internalName || "Trang hồ sơ mới",
           slug: slug || `trang-${Date.now().toString().slice(-4)}`,
           title: title || internalName || "GỜ CAFÉ",
+          pageKind: page.pageKind,
         });
 
         if (!createRes.success || !createRes.pageId) {
@@ -627,6 +641,7 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
     seo,
     blocks,
     page.id,
+    page.pageKind,
     page.lockVersion,
     savedPrimarySlug,
     router,
@@ -1041,6 +1056,30 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                 <Redo2 className="w-4 h-4" />
               </button>
             </div>
+
+            {!isCreatingNew && (
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                className="hidden md:flex h-9 w-9 items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+                title="Lịch sử phiên bản đã xuất bản"
+                aria-label="Lịch sử phiên bản"
+              >
+                <History className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Custom Templates (Mẫu thiết kế của tôi) */}
+            <button
+              type="button"
+              onClick={() => setTemplatesOpen(true)}
+              className="hidden md:flex h-9 items-center gap-1.5 px-2.5 rounded-xl border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
+              title="Lưu trang hiện tại làm mẫu hoặc áp dụng mẫu thiết kế đã lưu"
+              aria-label="Mẫu thiết kế của tôi"
+            >
+              <BookmarkPlus className="w-4 h-4" />
+              <span className="hidden xl:inline">Mẫu</span>
+            </button>
 
             {/* Save Draft */}
             <button
@@ -1545,10 +1584,26 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                 </div>
 
                 <SeoEditor
+                  pageKind={page.pageKind}
                   seo={seo}
                   onChange={(newSeo) => {
                     setSeo(newSeo);
                     setIsDirty(true);
+                  }}
+                  siteShellId={siteShellId}
+                  availableShells={initialData.availableShells}
+                  canEdit={canEdit && !isCreatingNew}
+                  onChangeSiteShell={(nextShellId) => {
+                    setSiteShellId(nextShellId);
+                    startTransition(async () => {
+                      const res = await updatePageSiteShellAction(page.id, nextShellId);
+                      if (res.success) {
+                        showToast("Đã đổi bộ Menu / Website cho trang này", "success");
+                        router.refresh();
+                      } else {
+                        showToast(res.error || "Không thể đổi bộ Menu", "error");
+                      }
+                    });
                   }}
                   availableMedia={mediaList}
                   onMediaAdded={handleMediaAdded}
@@ -1625,6 +1680,18 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setPreviewMode("tablet")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
+                    previewMode === "tablet"
+                      ? "bg-primary text-primary-foreground shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Tablet className="w-3.5 h-3.5" />
+                  <span>Tablet</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setPreviewMode("desktop")}
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
                     previewMode === "desktop"
@@ -1658,7 +1725,12 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
           </div>
 
           <LivePreview
-            key={previewMode}
+            key={`${page.pageKind}-${previewMode}`}
+            pageKind={page.pageKind}
+            siteShell={initialData.siteShell}
+            showSiteShell={seo.showSiteShell !== false}
+            currentSlug={slug}
+            branches={initialData.branches}
             themeConfig={deferredThemeConfig}
             title={deferredTitle}
             blocks={deferredBlocks}
@@ -1675,8 +1747,36 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
       {/* 2.5 BLOCK PICKER MODAL */}
       <BlockPickerModal
         isOpen={isBlockPickerOpen}
+        pageKind={page.pageKind}
         onClose={() => setIsBlockPickerOpen(false)}
         onSelect={handleAddBlock}
+      />
+
+      {/* 2.6 CUSTOM TEMPLATES MODAL */}
+      <CustomTemplatesModal
+        open={templatesOpen}
+        onClose={() => setTemplatesOpen(false)}
+        currentPageKind={page.pageKind}
+        currentBlocks={blocks}
+        currentTheme={themeConfig}
+        canEdit={canEdit}
+        onApplyTemplate={(incomingBlocks, mode, incomingTheme) => {
+          if (mode === "replace") {
+            setBlocks(incomingBlocks);
+            if (incomingTheme) setThemeConfig(incomingTheme);
+            setToast({
+              message: `Đã thay thế bằng mẫu (${incomingBlocks.length} khối). Nhấn Ctrl+Z nếu muốn hoàn tác.`,
+              type: "success",
+            });
+          } else {
+            setBlocks((prev) => [...prev, ...incomingBlocks]);
+            setToast({
+              message: `Đã chèn thêm ${incomingBlocks.length} khối từ mẫu.`,
+              type: "success",
+            });
+          }
+          setIsDirty(true);
+        }}
       />
 
       {/* 3. CONFIRMATION MODAL */}
@@ -1719,6 +1819,19 @@ export function PageEditor({ initialData, isNew = false }: PageEditorProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {!isCreatingNew && (
+        <RevisionHistoryModal
+          open={historyOpen}
+          pageId={page.id}
+          canEdit={canEdit}
+          onClose={() => setHistoryOpen(false)}
+          onRestored={() => {
+            setHistoryOpen(false);
+            window.location.reload();
+          }}
+        />
       )}
 
       {/* 4. FLOATING TOAST NOTIFICATION */}

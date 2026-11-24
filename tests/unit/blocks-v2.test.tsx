@@ -53,8 +53,8 @@ describe("bản đồ", () => {
 });
 
 describe("schema khối mới", () => {
-  it("14 loại khối đều có renderer, schema và payload mặc định hợp lệ", () => {
-    expect(BLOCK_TYPES).toHaveLength(14);
+  it("26 loại khối đều có renderer, schema và payload mặc định hợp lệ", () => {
+    expect(BLOCK_TYPES).toHaveLength(26);
     for (const type of BLOCK_TYPES) {
       const def = BLOCK_REGISTRY[type];
       expect(def).toBeDefined();

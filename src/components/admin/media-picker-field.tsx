@@ -8,6 +8,7 @@ import type { MediaOption } from "./media-picker-modal";
 import type { CropImageSource } from "./image-crop-modal";
 import { uploadMediaDirectAction } from "@/features/media/actions";
 import { isCroppableMimeType, isCroppableUrl, type CropAspectKey } from "@/lib/image-crop";
+import { compressImageToWebp } from "@/lib/image-compress";
 
 const MediaPickerModal = dynamic(
   () => import("./media-picker-modal").then((m) => m.MediaPickerModal),
@@ -60,8 +61,9 @@ export function MediaPickerField({
     setCropError(null);
     startTransition(async () => {
       try {
+        const optimizedFile = await compressImageToWebp(file);
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", optimizedFile);
         const res = await uploadMediaDirectAction(formData);
 
         if (res.success && res.asset) {

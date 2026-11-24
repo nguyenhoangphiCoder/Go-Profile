@@ -164,6 +164,8 @@ export type Database = {
           updated_at: string;
           archived_at: string | null;
           workspace_id: string;
+          page_kind: "profile" | "landing";
+          site_shell_id: string | null;
         };
         Insert: {
           id?: string;
@@ -176,6 +178,8 @@ export type Database = {
           updated_at?: string;
           archived_at?: string | null;
           workspace_id?: string;
+          page_kind?: "profile" | "landing";
+          site_shell_id?: string | null;
         };
         Update: {
           id?: string;
@@ -188,6 +192,8 @@ export type Database = {
           updated_at?: string;
           archived_at?: string | null;
           workspace_id?: string;
+          page_kind?: "profile" | "landing";
+          site_shell_id?: string | null;
         };
         Relationships: [
           {
@@ -306,7 +312,19 @@ export type Database = {
             | "menu_card"
             | "accordion"
             | "video_embed"
-            | "map";
+            | "map"
+            | "hero_section"
+            | "toc_bar"
+            | "stats_strip"
+            | "split_content"
+            | "info_cards"
+            | "pricing_table"
+            | "product_grid"
+            | "store_locator"
+            | "lead_form"
+            | "banner_slider"
+            | "testimonials"
+            | "cta_banner";
           position: number;
           is_visible: boolean;
           payload: Json;
@@ -331,7 +349,19 @@ export type Database = {
             | "menu_card"
             | "accordion"
             | "video_embed"
-            | "map";
+            | "map"
+            | "hero_section"
+            | "toc_bar"
+            | "stats_strip"
+            | "split_content"
+            | "info_cards"
+            | "pricing_table"
+            | "product_grid"
+            | "store_locator"
+            | "lead_form"
+            | "banner_slider"
+            | "testimonials"
+            | "cta_banner";
           position: number;
           is_visible?: boolean;
           payload?: Json;
@@ -356,7 +386,19 @@ export type Database = {
             | "menu_card"
             | "accordion"
             | "video_embed"
-            | "map";
+            | "map"
+            | "hero_section"
+            | "toc_bar"
+            | "stats_strip"
+            | "split_content"
+            | "info_cards"
+            | "pricing_table"
+            | "product_grid"
+            | "store_locator"
+            | "lead_form"
+            | "banner_slider"
+            | "testimonials"
+            | "cta_banner";
           position?: number;
           is_visible?: boolean;
           payload?: Json;
@@ -502,6 +544,321 @@ export type Database = {
           },
         ];
       };
+      site_shells: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          name: string;
+          is_default: boolean;
+          site_name: string | null;
+          logo_media_id: string | null;
+          header_config: Json;
+          footer_columns: Json;
+          floating_contact: Json;
+          default_theme: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          name: string;
+          is_default?: boolean;
+          site_name?: string | null;
+          logo_media_id?: string | null;
+          header_config?: Json;
+          footer_columns?: Json;
+          floating_contact?: Json;
+          default_theme?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          name?: string;
+          is_default?: boolean;
+          site_name?: string | null;
+          logo_media_id?: string | null;
+          header_config?: Json;
+          footer_columns?: Json;
+          floating_contact?: Json;
+          default_theme?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "site_shells_logo_media_id_fkey";
+            columns: ["logo_media_id"];
+            isOneToOne: false;
+            referencedRelation: "media_assets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "site_shells_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      workspace_site_settings: {
+        Row: {
+          workspace_id: string;
+          site_name: string | null;
+          logo_media_id: string | null;
+          header_config: Json;
+          footer_columns: Json;
+          floating_contact: Json;
+          default_theme: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          workspace_id: string;
+          site_name?: string | null;
+          logo_media_id?: string | null;
+          header_config?: Json;
+          footer_columns?: Json;
+          floating_contact?: Json;
+          default_theme?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          workspace_id?: string;
+          site_name?: string | null;
+          logo_media_id?: string | null;
+          header_config?: Json;
+          footer_columns?: Json;
+          floating_contact?: Json;
+          default_theme?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workspace_site_settings_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: true;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workspace_site_settings_logo_media_id_fkey";
+            columns: ["logo_media_id"];
+            isOneToOne: false;
+            referencedRelation: "media_assets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      site_nav_items: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          shell_id: string | null;
+          parent_id: string | null;
+          label: string;
+          target_type: "page" | "anchor" | "url";
+          target_page_id: string | null;
+          target_value: string | null;
+          position: number;
+          is_visible: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          shell_id?: string | null;
+          parent_id?: string | null;
+          label: string;
+          target_type: "page" | "anchor" | "url";
+          target_page_id?: string | null;
+          target_value?: string | null;
+          position?: number;
+          is_visible?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          shell_id?: string | null;
+          parent_id?: string | null;
+          label?: string;
+          target_type?: "page" | "anchor" | "url";
+          target_page_id?: string | null;
+          target_value?: string | null;
+          position?: number;
+          is_visible?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "site_nav_items_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "site_nav_items_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "site_nav_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "site_nav_items_target_page_id_fkey";
+            columns: ["target_page_id"];
+            isOneToOne: false;
+            referencedRelation: "pages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      branches: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          code: string | null;
+          name: string;
+          address: string;
+          district: string;
+          city: string;
+          phone: string | null;
+          hours: string | null;
+          lat: number | null;
+          lng: number | null;
+          maps_url: string | null;
+          position: number;
+          is_active: boolean;
+          archived_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          code?: string | null;
+          name: string;
+          address: string;
+          district?: string;
+          city?: string;
+          phone?: string | null;
+          hours?: string | null;
+          lat?: number | null;
+          lng?: number | null;
+          maps_url?: string | null;
+          position?: number;
+          is_active?: boolean;
+          archived_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          code?: string | null;
+          name?: string;
+          address?: string;
+          district?: string;
+          city?: string;
+          phone?: string | null;
+          hours?: string | null;
+          lat?: number | null;
+          lng?: number | null;
+          maps_url?: string | null;
+          position?: number;
+          is_active?: boolean;
+          archived_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "branches_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      leads: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          page_id: string | null;
+          form_name: string;
+          full_name: string;
+          phone: string;
+          email: string | null;
+          note: string | null;
+          status: "new" | "contacted" | "converted" | "spam";
+          utm_source: string | null;
+          utm_medium: string | null;
+          utm_campaign: string | null;
+          ip_hash: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          page_id?: string | null;
+          form_name: string;
+          full_name: string;
+          phone: string;
+          email?: string | null;
+          note?: string | null;
+          status?: "new" | "contacted" | "converted" | "spam";
+          utm_source?: string | null;
+          utm_medium?: string | null;
+          utm_campaign?: string | null;
+          ip_hash?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          page_id?: string | null;
+          form_name?: string;
+          full_name?: string;
+          phone?: string;
+          email?: string | null;
+          note?: string | null;
+          status?: "new" | "contacted" | "converted" | "spam";
+          utm_source?: string | null;
+          utm_medium?: string | null;
+          utm_campaign?: string | null;
+          ip_hash?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leads_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "leads_page_id_fkey";
+            columns: ["page_id"];
+            isOneToOne: false;
+            referencedRelation: "pages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       click_events: {
         Row: {
           id: string;
@@ -584,8 +941,12 @@ export type Database = {
         Row: {
           id: string;
           name: string;
+          plan: "free" | "pro" | "enterprise";
+          features: Json;
           max_pages: number;
           max_media_bytes: number;
+          max_branches: number;
+          max_shells: number;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -594,8 +955,12 @@ export type Database = {
         Insert: {
           id?: string;
           name: string;
+          plan?: "free" | "pro" | "enterprise";
+          features?: Json;
           max_pages?: number;
           max_media_bytes?: number;
+          max_branches?: number;
+          max_shells?: number;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -604,12 +969,94 @@ export type Database = {
         Update: {
           id?: string;
           name?: string;
+          plan?: "free" | "pro" | "enterprise";
+          features?: Json;
           max_pages?: number;
           max_media_bytes?: number;
+          max_branches?: number;
+          max_shells?: number;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
           archived_at?: string | null;
+        };
+        Relationships: [];
+      };
+      workspace_domains: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          domain: string;
+          home_page_id: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          domain: string;
+          home_page_id?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          domain?: string;
+          home_page_id?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workspace_domains_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "workspace_domains_home_page_id_fkey";
+            columns: ["home_page_id"];
+            isOneToOne: false;
+            referencedRelation: "pages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_audit_logs: {
+        Row: {
+          id: string;
+          actor_user_id: string | null;
+          actor_email: string | null;
+          action: string;
+          target_type: string;
+          target_id: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          actor_user_id?: string | null;
+          actor_email?: string | null;
+          action: string;
+          target_type: string;
+          target_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          actor_user_id?: string | null;
+          actor_email?: string | null;
+          action?: string;
+          target_type?: string;
+          target_id?: string | null;
+          metadata?: Json;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -685,6 +1132,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      get_public_branches: {
+        Args: {
+          p_workspace_id: string;
+        };
+        Returns: Json;
+      };
       resolve_public_link: {
         Args: {
           p_page_link_id: string;
@@ -714,6 +1167,7 @@ export type Database = {
               p_internal_name: string;
               p_slug: string;
               p_title: string;
+              p_page_kind?: "profile" | "landing";
             };
             Returns: Json;
           };

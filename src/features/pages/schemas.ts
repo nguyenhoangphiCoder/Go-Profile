@@ -28,6 +28,15 @@ export const pageSlugSchema = z
     message: "Đường dẫn này nằm trong danh mục từ khóa hệ thống được bảo lưu",
   });
 
+export const pageKindSchema = z.enum(["profile", "landing"]);
+export const landingTemplateIdSchema = z.enum([
+  "brand-home",
+  "franchise-guide",
+  "roastery-wholesale",
+  "store-system",
+  "blank",
+]);
+
 export const createPageSchema = z.object({
   internalName: z
     .string()
@@ -40,9 +49,11 @@ export const createPageSchema = z.object({
     .trim()
     .min(1, "Tiêu đề hiển thị không được để trống")
     .max(100, "Tiêu đề hiển thị tối đa 100 ký tự"),
+  pageKind: pageKindSchema.optional().default("profile"),
+  templateId: landingTemplateIdSchema.optional(),
 });
 
-export type CreatePageInput = z.infer<typeof createPageSchema>;
+export type CreatePageInput = z.input<typeof createPageSchema>;
 
 // Regex kiểm tra UUID chuẩn PostgreSQL (hỗ trợ cả UUID v4 lẫn UUID seed như a1111111-aaaa-aaaa-aaaa-aaaaaaaaaaaa)
 const PG_UUID_REGEX =
@@ -123,7 +134,7 @@ const legacyThemeCustomSchema = z
     ),
     cardBackdropBlur: dropInvalid(z.boolean()),
     borderRadius: dropInvalid(z.enum(["none", "sm", "md", "full"])),
-    fontFamily: dropInvalid(z.enum(["inter", "be-vietnam-pro", "montserrat"])),
+    fontFamily: dropInvalid(z.enum(["inter", "be-vietnam-pro", "montserrat", "lexend-deca"])),
   })
   .strip()
   .transform((obj) => Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)));
@@ -157,6 +168,7 @@ export const saveDraftSchema = z.object({
       ogImageMediaId: pgUuid().optional().nullable(),
       showFooterBadge: z.boolean().optional(),
       footerBadgeText: z.string().trim().max(60).optional().nullable(),
+      showSiteShell: z.boolean().optional(),
     })
     .default({}),
   blocks: z.array(blockSchema).max(200, "Một trang tối đa 200 khối nội dung"),

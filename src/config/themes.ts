@@ -13,7 +13,7 @@ export interface ThemePreset {
   cardBorderColor?: string;
   cardBackdropBlur?: boolean;
   borderRadius: "none" | "sm" | "md" | "full";
-  fontFamily: "inter" | "be-vietnam-pro" | "montserrat";
+  fontFamily: "inter" | "be-vietnam-pro" | "montserrat" | "lexend-deca";
 }
 
 export interface ColorSwatchItem {
@@ -79,6 +79,18 @@ export const THEME_PRESETS: Record<string, ThemePreset> = {
     cardBorderColor: "#fefefe",
     borderRadius: "full",
     fontFamily: "be-vietnam-pro",
+  },
+  "go-minimal-luxury": {
+    id: "go-minimal-luxury",
+    name: "Gờ Minimal Luxury (Trắng – Đen – Vàng đồng)",
+    accentColor: "#B88A44",
+    backgroundColor: "#FFFFFF",
+    textColor: "#111111",
+    cardBackground: "#111111",
+    cardTextColor: "#FFFFFF",
+    cardBorderColor: "#E4E4E7",
+    borderRadius: "md",
+    fontFamily: "lexend-deca",
   },
   "minimal-light": {
     id: "minimal-light",

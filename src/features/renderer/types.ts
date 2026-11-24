@@ -1,5 +1,6 @@
 import type { ThemeTokens } from "@/config/theme-tokens";
 import type { BlockType } from "@/features/pages/types";
+import type { PublicBranchItem } from "@/features/branches/types";
 
 /**
  * Dữ liệu chuẩn hoá mà bộ render dùng chung (PageRenderer) nhận vào.
@@ -32,6 +33,8 @@ export interface RenderContext {
   tokens: ThemeTokens;
   variant: LayoutVariant;
   pageTitle: string;
+  currentSlug?: string;
+  branches?: PublicBranchItem[];
 }
 
 export interface BlockRenderProps {

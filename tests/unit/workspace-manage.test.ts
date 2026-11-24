@@ -230,7 +230,12 @@ describe("quản lý thành viên & workspace", () => {
       op: "insert",
       values: { name: "Chi nhánh Q7", max_pages: 10, max_media_bytes: 100 * 1024 * 1024 },
     });
-    expect(h.state.writes[1]).toMatchObject({
+    expect(h.state.writes.find((w) => w.table === "site_shells")).toMatchObject({
+      table: "site_shells",
+      op: "insert",
+      values: { workspace_id: "new-ws-id", is_default: true },
+    });
+    expect(h.state.writes.find((w) => w.table === "workspace_invitations")).toMatchObject({
       table: "workspace_invitations",
       values: { workspace_id: "new-ws-id", email: "q7@go.vn", role: "owner" },
     });

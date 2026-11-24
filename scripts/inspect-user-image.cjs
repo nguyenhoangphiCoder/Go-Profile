@@ -60,7 +60,7 @@ function decodePng(filePath) {
 
 const file =
   "C:/Users/ACER/.gemini/antigravity/brain/e0784f15-eb4c-457c-b057-5cc05e0c61d7/.user_uploaded/media_1794214921089_5d178983.png";
-const { width, height, pixels, bpp } = decodePng(file);
+const { width, pixels, bpp } = decodePng(file);
 
 function rgbAt(x, y) {
   const idx = (y * width + x) * bpp;

@@ -1,7 +1,10 @@
 import type { ThemePreset } from "@/config/themes";
 import type { FontId, ThemeOverrides } from "@/config/theme-tokens";
+import type { PublicSiteShell } from "@/features/public/types";
+import type { PublicBranchItem } from "@/features/branches/types";
 
 export type PageStatus = "published" | "unpublished";
+export type PageKind = "profile" | "landing";
 export type RevisionState = "draft" | "sealed";
 
 export type BlockType =
@@ -18,14 +21,228 @@ export type BlockType =
   | "menu_card"
   | "accordion"
   | "video_embed"
-  | "map";
+  | "map"
+  | "hero_section"
+  | "toc_bar"
+  | "stats_strip"
+  | "split_content"
+  | "info_cards"
+  | "pricing_table"
+  | "product_grid"
+  | "store_locator"
+  | "lead_form"
+  | "banner_slider"
+  | "testimonials"
+  | "cta_banner";
+
+export interface BannerSlideItem {
+  mediaId?: string;
+  imageUrl?: string;
+  title?: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+export interface BannerSliderBlockPayload {
+  anchorId?: string;
+  autoPlaySec?: number;
+  slides?: BannerSlideItem[];
+}
+
+export interface TestimonialItem {
+  author: string;
+  role?: string;
+  quote: string;
+  rating?: number;
+  mediaId?: string;
+  avatarUrl?: string;
+}
+
+export interface TestimonialsBlockPayload {
+  anchorId?: string;
+  title?: string;
+  subtitle?: string;
+  columns?: 2 | 3;
+  items?: TestimonialItem[];
+}
+
+export interface CtaBannerBlockPayload {
+  anchorId?: string;
+  tone?: "dark" | "gold" | "cream";
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  primaryCtaLabel?: string;
+  primaryCtaHref?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
+}
+
+export interface LeadFormCustomField {
+  id: string;
+  label: string;
+  type: "text" | "select" | "checkbox";
+  required?: boolean;
+  placeholder?: string;
+  options?: string[];
+}
+
+export interface LeadFormBlockPayload {
+  anchorId?: string;
+  formName?: string;
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  submitLabel?: string;
+  successMessage?: string;
+  redirectUrl?: string;
+  fullNameLabel?: string;
+  fullNamePlaceholder?: string;
+  phoneLabel?: string;
+  phonePlaceholder?: string;
+  emailLabel?: string;
+  emailPlaceholder?: string;
+  noteLabel?: string;
+  showEmail?: boolean;
+  showNote?: boolean;
+  notePlaceholder?: string;
+  popupDelaySec?: number;
+  customFields?: LeadFormCustomField[];
+}
+
+export interface StoreLocatorBlockPayload {
+  anchorId?: string;
+  title?: string;
+  subtitle?: string;
+  showSearch?: boolean;
+  showDistrictFilter?: boolean;
+  defaultZoom?: number;
+  pinIconUrl?: string;
+  mapStyle?: "standard" | "satellite" | "hybrid";
+}
+
+export interface HeroSectionBlockPayload {
+  layout?: "split" | "centered" | "full-bg";
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  mediaId?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  overlayOpacity?: number;
+  height?: "compact" | "default" | "tall";
+  primaryCtaLabel?: string;
+  primaryCtaHref?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaHref?: string;
+  anchorId?: string;
+}
+
+export interface TocBarItem {
+  label: string;
+  anchorId: string;
+}
+
+export interface TocBarBlockPayload {
+  title?: string;
+  sticky?: boolean;
+  items?: TocBarItem[];
+}
+
+export interface StatsStripItem {
+  value: string;
+  label: string;
+  sublabel?: string;
+}
+
+export interface StatsStripBlockPayload {
+  anchorId?: string;
+  columns?: 3 | 4;
+  items?: StatsStripItem[];
+}
+
+export interface SplitContentBlockPayload {
+  anchorId?: string;
+  imagePosition?: "left" | "right";
+  eyebrow?: string;
+  title?: string;
+  content?: string;
+  mediaId?: string;
+  imageUrl?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+export interface InfoCardItem {
+  badge?: string;
+  title: string;
+  description?: string;
+}
+
+export interface InfoCardsBlockPayload {
+  anchorId?: string;
+  title?: string;
+  subtitle?: string;
+  columns?: 2 | 3 | 4;
+  variant?: "card" | "steps";
+  items?: InfoCardItem[];
+}
+
+export interface PricingTableRow {
+  name: string;
+  subtitle?: string;
+  description?: string;
+  prices: string[];
+  highlight?: boolean;
+}
+
+export interface PricingTableBlockPayload {
+  anchorId?: string;
+  title?: string;
+  effectiveNote?: string;
+  columns?: string[];
+  rows?: PricingTableRow[];
+}
+
+export interface ProductGridItem {
+  name: string;
+  category?: string;
+  price?: string;
+  description?: string;
+  badge?: string;
+  mediaId?: string;
+  imageUrl?: string;
+  buyUrl?: string;
+}
+
+export interface ProductGridBlockPayload {
+  anchorId?: string;
+  title?: string;
+  subtitle?: string;
+  categories?: string[];
+  items?: ProductGridItem[];
+}
 
 /** Style riêng của từng khối, lưu trong `payload.blockStyle` (mọi giá trị đều thuộc whitelist). */
 export interface BlockStyle {
   align?: "left" | "center" | "right";
   paddingY?: "none" | "sm" | "md" | "lg";
-  surface?: "none" | "card";
-  animation?: "none" | "fade-up";
+  paddingTop?: "none" | "sm" | "md" | "lg" | "xl";
+  paddingBottom?: "none" | "sm" | "md" | "lg" | "xl";
+  maxWidth?: "sm" | "md" | "lg" | "full";
+  surface?: "none" | "card" | "cream" | "dark";
+  bgColor?: string;
+  bgGradientFrom?: string;
+  bgGradientTo?: string;
+  bgGradientDir?: "to-r" | "to-br" | "to-b";
+  bgImageUrl?: string;
+  bgOverlayOpacity?: number;
+  radius?: "none" | "md" | "xl" | "2xl" | "3xl";
+  borderWidth?: 0 | 1 | 2;
+  borderColor?: string;
+  shadow?: "none" | "sm" | "md" | "lg";
+  animation?: "none" | "fade-up" | "fade-in" | "zoom-in" | "slide-left";
   fontSize?: "sm" | "md" | "lg" | "xl";
   titleFontSize?: number;
   bodyFontSize?: number;
@@ -34,6 +251,7 @@ export interface BlockStyle {
   titleColor?: string;
   bodyColor?: string;
   buttonHeight?: number;
+  anchorId?: string;
   hideOn?: ("mobile" | "desktop")[];
 }
 
@@ -203,11 +421,14 @@ export interface PageSeoConfig {
   showFooterBadge?: boolean;
   /** Nội dung nhãn thương hiệu ở cuối trang (để trống = mặc định "GỜ CAFÉ"). */
   footerBadgeText?: string;
+  /** Riêng Landing Page: bật/tắt thanh Menu & Footer dùng chung của Website (mặc định true). */
+  showSiteShell?: boolean;
 }
 
 export interface PageListItem {
   id: string;
   internalName: string;
+  pageKind: PageKind;
   status: PageStatus;
   lockVersion: number;
   primarySlug: string;
@@ -230,6 +451,8 @@ export interface PageEditorData {
   page: {
     id: string;
     internalName: string;
+    pageKind: PageKind;
+    siteShellId?: string | null;
     status: PageStatus;
     lockVersion: number;
     publishedRevisionId: string | null;
@@ -264,4 +487,10 @@ export interface PageEditorData {
     originalFilename: string | null;
     publicUrl: string | null;
   }[];
+  /** Dữ liệu Site Shell (Header/Menu 2 cấp/Footer/Nút nổi) để mô phỏng trực tiếp trong LivePreview của Landing Page. */
+  siteShell?: PublicSiteShell | null;
+  /** Danh sách các bộ Menu / Site Shell trong workspace để chọn gán riêng cho từng Landing Page. */
+  availableShells?: { id: string; name: string; isDefault: boolean }[];
+  /** Danh sách chi nhánh đang mở của workspace để mô phỏng khối store_locator trong LivePreview. */
+  branches?: PublicBranchItem[];
 }

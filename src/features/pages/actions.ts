@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/privileged";
 import type { Json } from "@/types/database.generated";
 import { getWorkspaceForAction } from "@/features/workspace/context";
+import { canUseWorkspaceFeature, FEATURE_DISABLED_MESSAGES } from "@/features/workspace/guards";
 import { FORBIDDEN_ERROR } from "@/features/workspace/types";
 import {
   pageIdSchema,
@@ -18,6 +19,7 @@ import {
   type SaveDraftInput,
   type CreatePageInput,
 } from "./schemas";
+import { getLandingTemplate } from "./landing-templates";
 
 const DRAFT_CONFLICT_ERROR =
   "Bản nháp đã được lưu từ một phiên khác. Vui lòng tải lại trang để tránh ghi đè nội dung.";
@@ -27,6 +29,7 @@ interface CreatePageResult {
   page_id?: string;
   revision_id?: string;
   slug?: string;
+  page_kind?: "profile" | "landing";
 }
 
 interface RenameSlugResult {
@@ -70,6 +73,9 @@ export async function createPageAction(input: CreatePageInput) {
 
   const ctx = await getWorkspaceForAction("editor");
   if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
+  if (parsed.data.pageKind === "landing" && !canUseWorkspaceFeature(ctx, "landing")) {
+    return { success: false, error: FEATURE_DISABLED_MESSAGES.landing };
+  }
 
   const supabase = await createSupabaseServerClient();
 
@@ -78,6 +84,7 @@ export async function createPageAction(input: CreatePageInput) {
     p_internal_name: parsed.data.internalName,
     p_slug: parsed.data.slug,
     p_title: parsed.data.title,
+    p_page_kind: parsed.data.pageKind,
   });
 
   if (error) {
@@ -89,11 +96,40 @@ export async function createPageAction(input: CreatePageInput) {
   }
 
   const res = data as unknown as CreatePageResult;
+
+  // Nếu tạo Landing Page từ Template dựng sẵn (khác "blank"), tự động nạp bộ section mẫu
+  if (
+    parsed.data.pageKind === "landing" &&
+    parsed.data.templateId &&
+    parsed.data.templateId !== "blank" &&
+    res?.page_id &&
+    res?.revision_id
+  ) {
+    const template = getLandingTemplate(parsed.data.templateId);
+    if (template && template.blocks.length > 0) {
+      const privileged = createSupabaseAdminClient();
+      await privileged.from("page_blocks").delete().eq("revision_id", res.revision_id);
+      const rows = template.blocks.map((b, idx) => ({
+        page_id: res.page_id!,
+        revision_id: res.revision_id!,
+        type: b.type,
+        position: idx,
+        is_visible: true,
+        payload: b.payload as unknown as Json,
+      }));
+      const { error: tplErr } = await privileged.from("page_blocks").insert(rows);
+      if (tplErr) {
+        console.error("Lỗi nạp khối template Landing Page:", tplErr);
+      }
+    }
+  }
+
   revalidatePath("/admin/pages");
   return {
     success: true,
     pageId: res?.page_id,
     slug: res?.slug,
+    pageKind: res?.page_kind ?? parsed.data.pageKind,
   };
 }
 
@@ -579,6 +615,7 @@ export async function duplicatePageAction(sourcePageId: string) {
     .select(
       `
       internal_name,
+      page_kind,
       published_revision_id,
       page_slugs(slug, is_current),
       page_revisions!page_revisions_page_id_fkey(id, revision_no, title, description, theme, seo, state)
@@ -602,7 +639,7 @@ export async function duplicatePageAction(sourcePageId: string) {
   while (true) {
     const { data: existing } = await privileged
       .from("page_slugs")
-      .select("id")
+      .select("slug")
       .eq("slug", candidateSlug)
       .maybeSingle();
 
@@ -623,12 +660,13 @@ export async function duplicatePageAction(sourcePageId: string) {
     revs[0];
   const newTitle = sourceRev?.title || newInternalName;
 
-  // 2. Gọi RPC create_page
+  // 2. Gọi RPC create_page (giữ nguyên page_kind của trang nguồn)
   const { data: createData, error: createErr } = await supabase.rpc("create_page", {
     p_workspace_id: ctx.workspace.id,
     p_internal_name: newInternalName,
     p_slug: candidateSlug,
     p_title: newTitle,
+    p_page_kind: sourcePage.page_kind === "landing" ? "landing" : "profile",
   });
 
   if (createErr || !createData) {
@@ -762,6 +800,232 @@ export async function archivePageAction(pageId: string) {
   revalidatePath("/admin/pages");
   revalidatePath("/", "layout");
   revalidateTag(PUBLIC_SITEMAP_TAG, "max");
+  revalidateTag(PUBLIC_PAGES_TAG, "max");
+  return { success: true };
+}
+
+export interface PageRevisionSummary {
+  id: string;
+  revisionNo: number;
+  title: string;
+  sealedAt: string | null;
+  createdAt: string;
+  isPublished: boolean;
+  blocksCount: number;
+}
+
+/** Lấy danh sách tối đa 20 phiên bản đã niêm phong (sealed) của trang để xem lịch sử & khôi phục. */
+export async function listPageRevisionsAction(
+  pageId: string
+): Promise<
+  { success: true; revisions: PageRevisionSummary[] } | { success: false; error: string }
+> {
+  if (!pageIdSchema.safeParse(pageId).success) {
+    return { success: false, error: "ID trang không hợp lệ" };
+  }
+
+  const ctx = await getWorkspaceForAction("viewer");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
+
+  const privileged = createSupabaseAdminClient();
+  const { data: pageRow } = await privileged
+    .from("pages")
+    .select("id, published_revision_id")
+    .eq("id", pageId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+
+  if (!pageRow) {
+    return { success: false, error: "Không tìm thấy trang" };
+  }
+
+  const { data: revs, error } = await privileged
+    .from("page_revisions")
+    .select("id, revision_no, title, sealed_at, created_at, page_blocks(id)")
+    .eq("page_id", pageId)
+    .eq("state", "sealed")
+    .order("revision_no", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error("Lỗi tải lịch sử phiên bản:", error);
+    return { success: false, error: "Không thể tải lịch sử phiên bản" };
+  }
+
+  const revisions: PageRevisionSummary[] = (revs || []).map((r) => ({
+    id: r.id,
+    revisionNo: r.revision_no,
+    title: r.title || "(Không tiêu đề)",
+    sealedAt: r.sealed_at,
+    createdAt: r.created_at,
+    isPublished: r.id === pageRow.published_revision_id,
+    blocksCount: Array.isArray(r.page_blocks) ? r.page_blocks.length : 0,
+  }));
+
+  return { success: true, revisions };
+}
+
+/** Khôi phục nội dung từ 1 phiên bản sealed cũ vào bản nháp (draft) hiện tại. */
+export async function restoreRevisionToDraftAction(
+  pageId: string,
+  sourceRevisionId: string
+): Promise<{ success: true } | { success: false; error: string }> {
+  if (
+    !pageIdSchema.safeParse(pageId).success ||
+    !pageIdSchema.safeParse(sourceRevisionId).success
+  ) {
+    return { success: false, error: "ID không hợp lệ" };
+  }
+
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
+
+  const privileged = createSupabaseAdminClient();
+
+  const { data: pageRow } = await privileged
+    .from("pages")
+    .select("id")
+    .eq("id", pageId)
+    .eq("workspace_id", ctx.workspace.id)
+    .maybeSingle();
+  if (!pageRow) return { success: false, error: "Không tìm thấy trang" };
+
+  const { data: sourceRev } = await privileged
+    .from("page_revisions")
+    .select("id, title, description, theme, seo")
+    .eq("id", sourceRevisionId)
+    .eq("page_id", pageId)
+    .eq("state", "sealed")
+    .maybeSingle();
+  if (!sourceRev) return { success: false, error: "Không tìm thấy phiên bản nguồn" };
+
+  // Tìm bản draft hiện tại của trang
+  const { data: draftRev } = await privileged
+    .from("page_revisions")
+    .select("id")
+    .eq("page_id", pageId)
+    .eq("state", "draft")
+    .maybeSingle();
+
+  let targetDraftId = draftRev?.id ?? null;
+  if (!targetDraftId) {
+    const { data: latest } = await privileged
+      .from("page_revisions")
+      .select("revision_no")
+      .eq("page_id", pageId)
+      .order("revision_no", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { data: createdDraft, error: cErr } = await privileged
+      .from("page_revisions")
+      .insert({
+        page_id: pageId,
+        revision_no: (latest?.revision_no ?? 0) + 1,
+        state: "draft",
+        title: sourceRev.title,
+        description: sourceRev.description,
+        theme: sourceRev.theme,
+        seo: sourceRev.seo,
+      })
+      .select("id")
+      .single();
+    if (cErr || !createdDraft) {
+      return { success: false, error: "Không thể tạo bản nháp để khôi phục" };
+    }
+    targetDraftId = createdDraft.id;
+  } else {
+    await privileged
+      .from("page_revisions")
+      .update({
+        title: sourceRev.title,
+        description: sourceRev.description,
+        theme: sourceRev.theme,
+        seo: sourceRev.seo,
+      })
+      .eq("id", targetDraftId);
+  }
+
+  // Xóa placements & blocks cũ của draft, nạp lại từ sourceRev
+  await privileged.from("revision_link_placements").delete().eq("revision_id", targetDraftId);
+  await privileged.from("page_blocks").delete().eq("revision_id", targetDraftId);
+
+  const { data: sourceBlocks } = await privileged
+    .from("page_blocks")
+    .select("id, type, position, is_visible, payload")
+    .eq("revision_id", sourceRev.id)
+    .order("position", { ascending: true });
+
+  for (const sb of sourceBlocks || []) {
+    const { data: newBlock } = await privileged
+      .from("page_blocks")
+      .insert({
+        page_id: pageId,
+        revision_id: targetDraftId,
+        type: sb.type,
+        position: sb.position,
+        is_visible: sb.is_visible,
+        payload: sb.payload,
+      })
+      .select("id")
+      .single();
+
+    if (newBlock) {
+      const { data: placements } = await privileged
+        .from("revision_link_placements")
+        .select("page_link_id, position, label_override, media_override_id")
+        .eq("revision_id", sourceRev.id)
+        .eq("block_id", sb.id);
+
+      if (placements && placements.length > 0) {
+        await privileged.from("revision_link_placements").insert(
+          placements.map((pl) => ({
+            page_id: pageId,
+            revision_id: targetDraftId,
+            block_id: newBlock.id,
+            page_link_id: pl.page_link_id,
+            position: pl.position,
+            label_override: pl.label_override,
+            media_override_id: pl.media_override_id,
+          }))
+        );
+      }
+    }
+  }
+
+  await syncRevisionMedia(privileged, targetDraftId);
+  revalidatePath(`/admin/pages/${pageId}`);
+  return { success: true };
+}
+
+/** Gán bộ Menu / Site Shell riêng cho 1 trang Landing Page (null = dùng bộ mặc định của workspace). */
+export async function updatePageSiteShellAction(
+  pageId: string,
+  siteShellId: string | null
+): Promise<{ success: true } | { success: false; error: string }> {
+  if (!pageIdSchema.safeParse(pageId).success) {
+    return { success: false, error: "ID trang không hợp lệ" };
+  }
+  if (siteShellId && !pageIdSchema.safeParse(siteShellId).success) {
+    return { success: false, error: "ID bộ Menu không hợp lệ" };
+  }
+
+  const ctx = await getWorkspaceForAction("editor");
+  if (!ctx) return { success: false, error: FORBIDDEN_ERROR };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("pages")
+    .update({ site_shell_id: siteShellId })
+    .eq("id", pageId)
+    .eq("workspace_id", ctx.workspace.id);
+
+  if (error) {
+    console.error("Lỗi gán bộ Menu cho trang:", error);
+    return { success: false, error: error.message || "Không thể đổi bộ Menu cho trang" };
+  }
+
+  revalidatePath(`/admin/pages/${pageId}`);
+  revalidatePath("/");
   revalidateTag(PUBLIC_PAGES_TAG, "max");
   return { success: true };
 }

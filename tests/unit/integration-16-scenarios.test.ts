@@ -73,6 +73,23 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: () =>
     Promise.resolve({
       rpc: mockServerRpc,
+      from: vi.fn((table: string) => {
+        const result = {
+          data:
+            table === "pages"
+              ? [{ id: "page-a" }, { id: "page-b" }]
+              : [{ id: "link-x" }],
+          error: null,
+        };
+        const chain = {
+          select: vi.fn(() => chain),
+          eq: vi.fn(() => chain),
+          is: vi.fn(() => chain),
+          order: vi.fn(() => Promise.resolve(result)),
+          then: (resolve: (v: typeof result) => unknown) => Promise.resolve(result).then(resolve),
+        };
+        return chain;
+      }),
     }),
 }));
 

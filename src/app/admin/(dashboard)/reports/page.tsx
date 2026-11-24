@@ -1,5 +1,7 @@
 import { requireWorkspace } from "@/features/workspace/context";
 import { getClickReport, getReportFilterOptions } from "@/features/reports/queries";
+import { getLeadsReportSummary } from "@/features/leads/queries";
+import { LeadsReportSection } from "@/features/reports/components/leads-report-section";
 import {
   getPresetDateStrings,
   isValidDateString,
@@ -61,8 +63,8 @@ export default async function AdminReportsPage({ searchParams }: AdminReportsPag
   // Chuyển đổi sang UTC [from, to)
   const { from: fromUtc, to: toUtc } = vietnamDateRangeToUtc(startDateStr, endDateStr);
 
-  // Gọi RPC báo cáo và danh sách bộ lọc đồng thời
-  const [report, filterOptions] = await Promise.all([
+  // Gọi RPC báo cáo, danh sách bộ lọc và thống kê Leads đồng thời
+  const [report, filterOptions, leadsSummary] = await Promise.all([
     getClickReport({
       from: fromUtc,
       to: toUtc,
@@ -70,6 +72,11 @@ export default async function AdminReportsPage({ searchParams }: AdminReportsPag
       linkId,
     }),
     getReportFilterOptions(),
+    getLeadsReportSummary({
+      from: fromUtc,
+      to: toUtc,
+      pageId,
+    }),
   ]);
 
   return (
@@ -97,6 +104,9 @@ export default async function AdminReportsPage({ searchParams }: AdminReportsPag
 
       {/* Phân tích chi tiết dạng Tabs gọn gàng */}
       <ReportBreakdownTabs report={report} startDateStr={startDateStr} endDateStr={endDateStr} />
+
+      {/* Thống kê chuyển đổi Leads Landing Page */}
+      <LeadsReportSection summary={leadsSummary} />
     </div>
   );
 }

@@ -53,9 +53,8 @@ describe("form chỉnh sửa khối mới", () => {
 
   it("nút nổi bật: chọn liên kết tạo đúng một placement", () => {
     const onUpdate = renderEditor("button");
-    fireEvent.change(screen.getByRole("combobox", { name: "Liên kết của nút" }), {
-      target: { value: "l1" },
-    });
+    fireEvent.click(screen.getByRole("combobox", { name: "Liên kết của nút" }));
+    fireEvent.click(screen.getByRole("option", { name: /ShopeeFood/ }));
     const updated = onUpdate.mock.calls.at(-1)![0] as EditorBlockItem;
     expect(updated.placements).toHaveLength(1);
     expect(updated.placements![0]).toMatchObject({

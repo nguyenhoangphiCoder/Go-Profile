@@ -7,7 +7,9 @@ import {
   GO_CAFE_WORKSPACE_ID,
   WORKSPACE_COOKIE,
   hasRole,
+  normalizeWorkspaceFeatures,
   type WorkspaceContext,
+  type WorkspacePlan,
   type WorkspaceRole,
   type WorkspaceSummary,
 } from "./types";
@@ -64,7 +66,7 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | nu
   // RLS: thành viên chỉ đọc được workspace của mình; quản trị hệ thống đọc được tất cả
   let wsQuery = supabase
     .from("workspaces")
-    .select("id, name, max_pages, max_media_bytes")
+    .select("id, name, plan, features, max_pages, max_media_bytes, max_branches, max_shells")
     .is("archived_at", null)
     .order("name");
   if (!isPlatformAdmin) {
@@ -85,9 +87,13 @@ export const getWorkspaceContext = cache(async (): Promise<WorkspaceContext | nu
   const workspaces: WorkspaceSummary[] = (wsRows ?? []).map((w) => ({
     id: w.id,
     name: w.name,
+    plan: (w.plan as WorkspacePlan) ?? "pro",
+    features: normalizeWorkspaceFeatures(w.features),
     role: roleByWorkspace.get(w.id) ?? null,
     maxPages: w.max_pages,
     maxMediaBytes: Number(w.max_media_bytes),
+    maxBranches: w.max_branches ?? 100,
+    maxShells: w.max_shells ?? 10,
   }));
 
   const cookieStore = await cookies();

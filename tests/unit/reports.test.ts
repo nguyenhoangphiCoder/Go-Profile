@@ -69,40 +69,65 @@ vi.mock("@/lib/supabase/server", () => ({
       rpc: mockRpc,
       from: vi.fn((table: string) => ({
         select: vi.fn(() => {
+          const rows =
+            table === "pages"
+              ? [
+                  {
+                    id: "page-a-id",
+                    internal_name: "Trang Gờ Cafe A",
+                    archived_at: null,
+                    page_slugs: [{ slug: "gocafe-a", is_current: true }],
+                  },
+                  {
+                    id: "page-b-id",
+                    internal_name: "Trang Gờ Cafe B (Archived)",
+                    archived_at: "2026-11-06T10:00:00Z",
+                    page_slugs: [{ slug: "gocafe-b", is_current: true }],
+                  },
+                  { id: "page-a", internal_name: "Trang A", archived_at: null, page_slugs: [] },
+                  { id: "page-b", internal_name: "Trang B", archived_at: null, page_slugs: [] },
+                  { id: "page-1", internal_name: "Trang chủ", archived_at: null, page_slugs: [] },
+                ]
+              : [
+                  {
+                    id: "link-x-id",
+                    default_label: "Đặt món ShopeeFood",
+                    target_url: "https://shopeefood.vn/gocafe",
+                    kind: "standard",
+                    is_active: true,
+                    archived_at: null,
+                  },
+                  {
+                    id: "link-x",
+                    default_label: "Link X ShopeeFood",
+                    target_url: "https://shopee.vn/gocafe",
+                    kind: "standard",
+                    is_active: true,
+                    archived_at: null,
+                  },
+                  {
+                    id: "link-top",
+                    default_label: "Nút Đặt Hàng Vị Trí #1",
+                    target_url: "https://shopee.vn",
+                    kind: "standard",
+                    is_active: true,
+                    archived_at: null,
+                  },
+                  {
+                    id: "link-bottom",
+                    default_label: "Nút Đặt Hàng Vị Trí #2",
+                    target_url: "https://shopee.vn",
+                    kind: "standard",
+                    is_active: true,
+                    archived_at: null,
+                  },
+                ];
+          const result = { data: rows, error: null };
           const chain = {
-            // .eq("workspace_id", ...) — trả lại chính chain
             eq: vi.fn(() => chain),
-            order: vi.fn(() =>
-              Promise.resolve({
-                data:
-                  table === "pages"
-                    ? [
-                        {
-                          id: "page-a-id",
-                          internal_name: "Trang Gờ Cafe A",
-                          archived_at: null,
-                          page_slugs: [{ slug: "gocafe-a", is_current: true }],
-                        },
-                        {
-                          id: "page-b-id",
-                          internal_name: "Trang Gờ Cafe B (Archived)",
-                          archived_at: "2026-11-06T10:00:00Z",
-                          page_slugs: [{ slug: "gocafe-b", is_current: true }],
-                        },
-                      ]
-                    : [
-                        {
-                          id: "link-x-id",
-                          default_label: "Đặt món ShopeeFood",
-                          target_url: "https://shopeefood.vn/gocafe",
-                          kind: "standard",
-                          is_active: true,
-                          archived_at: null,
-                        },
-                      ],
-                error: null,
-              })
-            ),
+            is: vi.fn(() => chain),
+            order: vi.fn(() => Promise.resolve(result)),
+            then: (resolve: (v: typeof result) => unknown) => Promise.resolve(result).then(resolve),
           };
           return chain;
         }),
