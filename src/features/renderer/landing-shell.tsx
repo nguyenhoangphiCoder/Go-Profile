@@ -25,10 +25,16 @@ import { resolveMediaUrl } from "./media";
 import { PhoneActionButton, parsePhoneTarget, resolveZaloHref } from "./phone-action-sheet";
 import { TrackingScripts } from "./tracking-scripts";
 
+export type SitePreviewSection =
+  "announcement" | "brand" | "nav" | "navbar" | "cta" | "footer" | "legal" | "floating";
+
 interface LandingShellProps {
   siteShell: PublicSiteShell;
   currentSlug?: string;
   mode?: "public" | "preview";
+  showFloatingInPreview?: boolean;
+  activeSection?: SitePreviewSection | null;
+  onSelectSection?: (section: SitePreviewSection) => void;
   children: ReactNode;
 }
 
@@ -47,9 +53,30 @@ export function LandingShell({
   siteShell,
   currentSlug,
   mode = "public",
+  showFloatingInPreview = false,
+  activeSection = null,
+  onSelectSection,
   children,
 }: LandingShellProps) {
   const isPreview = mode === "preview";
+  const interactive = isPreview && Boolean(onSelectSection);
+
+  const selectSection = (e: React.MouseEvent, section: SitePreviewSection) => {
+    if (!onSelectSection) return;
+    e.preventDefault();
+    e.stopPropagation();
+    onSelectSection(section);
+  };
+
+  const sectionRing = (section: SitePreviewSection) => {
+    if (!interactive) return "";
+    const isActive = activeSection === section;
+    return `cursor-pointer transition-shadow ${
+      isActive
+        ? "ring-2 ring-blue-500 ring-offset-1"
+        : "hover:ring-2 hover:ring-blue-500/70 hover:ring-offset-1"
+    }`;
+  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -209,7 +236,12 @@ export function LandingShell({
   };
 
   const brandBlock = (
-    <Link href={homeHref} onClick={preventInPreview} className="flex items-center gap-2.5 shrink-0">
+    <Link
+      href={homeHref}
+      onClick={(e) => (interactive ? selectSection(e, "brand") : preventInPreview(e))}
+      title={interactive ? "Bấm để sửa Logo & Thương hiệu" : undefined}
+      className={`flex items-center gap-2.5 shrink-0 rounded-lg px-1 -mx-1 ${sectionRing("brand")}`}
+    >
       {logoSrc && (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
@@ -229,7 +261,9 @@ export function LandingShell({
 
   const navMenuBlock = topItems.length > 0 && (
     <nav
-      className={`hidden @min-[56rem]:flex items-center flex-wrap ${gapClass}`}
+      onClick={(e) => interactive && selectSection(e, "nav")}
+      title={interactive ? "Bấm để sửa danh sách Menu (2 cấp)" : undefined}
+      className={`hidden @min-[56rem]:flex items-center flex-wrap rounded-xl px-1 ${gapClass} ${sectionRing("nav")}`}
       style={{ fontSize: `${navFontSize}px` }}
       aria-label="Menu chính"
     >
@@ -347,7 +381,8 @@ export function LandingShell({
       {headerConfig.ctaEnabled && headerConfig.ctaLabel?.trim() && (
         <a
           href={headerConfig.ctaHref || "#"}
-          onClick={preventInPreview}
+          onClick={(e) => (interactive ? selectSection(e, "cta") : preventInPreview(e))}
+          title={interactive ? "Bấm để sửa nút CTA" : undefined}
           target={!isPreview && isExternalHref(headerConfig.ctaHref || "") ? "_blank" : undefined}
           rel={
             !isPreview && isExternalHref(headerConfig.ctaHref || "")
@@ -357,7 +392,7 @@ export function LandingShell({
           style={{ backgroundColor: ctaBgColor, color: ctaTextColor }}
           className={`${
             ctaShowOnMobile ? "inline-flex" : "hidden @min-[36rem]:inline-flex"
-          } items-center justify-center px-3.5 @min-[36rem]:px-4 h-9 ${ctaRadiusClass} text-xs font-semibold hover:opacity-90 transition-opacity`}
+          } items-center justify-center px-3.5 @min-[36rem]:px-4 h-9 ${ctaRadiusClass} text-xs font-semibold hover:opacity-90 transition-opacity ${sectionRing("cta")}`}
         >
           {headerConfig.ctaLabel}
         </a>
@@ -387,7 +422,9 @@ export function LandingShell({
       {/* TOP ANNOUNCEMENT BAR */}
       {showAnnouncement && (
         <div
-          className="w-full px-4 py-2 text-center text-xs font-medium"
+          onClick={(e) => interactive && selectSection(e, "announcement")}
+          title={interactive ? "Bấm để sửa Thanh thông báo trên cùng" : undefined}
+          className={`w-full px-4 py-2 text-center text-xs font-medium relative group/ann ${sectionRing("announcement")}`}
           style={{ backgroundColor: annBgColor, color: annTextColor }}
         >
           {headerConfig.announcementHref?.trim() ? (
@@ -421,9 +458,11 @@ export function LandingShell({
           } w-full px-3 @min-[48rem]:px-6 pointer-events-none`}
         >
           <header
+            onClick={(e) => interactive && selectSection(e, "navbar")}
+            title={interactive ? "Bấm để sửa giao diện thanh Navbar" : undefined}
             className={`pointer-events-auto max-w-[1160px] mx-auto px-4 @min-[48rem]:px-6 ${heightClass} rounded-full flex items-center justify-between gap-4 border transition-all duration-200 ${
               navBackdrop !== "solid" && !isTransparentNow ? "backdrop-blur-md" : ""
-            } ${shadowClass || "shadow-md"}`}
+            } ${shadowClass || "shadow-md"} ${sectionRing("navbar")}`}
             style={effectiveBgStyle}
           >
             {brandBlock}
@@ -433,11 +472,13 @@ export function LandingShell({
         </div>
       ) : (
         <header
+          onClick={(e) => interactive && selectSection(e, "navbar")}
+          title={interactive ? "Bấm để sửa giao diện thanh Navbar" : undefined}
           className={`${
             isSticky ? "sticky top-0 z-40" : "relative z-30"
           } w-full border-b transition-colors duration-200 ${
             navBackdrop !== "solid" && !isTransparentNow ? "backdrop-blur-md" : ""
-          } ${shadowClass}`}
+          } ${shadowClass} ${sectionRing("navbar")}`}
           style={effectiveBgStyle}
         >
           {navLayout === "centered-logo" ? (
@@ -480,7 +521,7 @@ export function LandingShell({
       {/* MOBILE DRAWER MENU (đồng bộ màu theo Navbar) */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-50 lg:hidden bg-black/50 backdrop-blur-xs flex justify-end"
+          className={`${isPreview ? "absolute" : "fixed"} inset-0 z-50 @min-[56rem]:hidden bg-black/50 backdrop-blur-xs flex justify-end`}
           onClick={() => setMobileMenuOpen(false)}
         >
           <div
@@ -524,9 +565,12 @@ export function LandingShell({
                     {isExternalHref(href) ? (
                       <a
                         href={href}
-                        target="_blank"
+                        target={isPreview ? undefined : "_blank"}
                         rel="noopener noreferrer"
-                        onClick={() => setMobileMenuOpen(false)}
+                        onClick={(e) => {
+                          preventInPreview(e);
+                          setMobileMenuOpen(false);
+                        }}
                         style={linkStyle}
                         className={`block px-3 py-2.5 rounded-xl text-sm font-semibold ${
                           navUppercase ? "uppercase tracking-wider text-xs" : ""
@@ -537,7 +581,10 @@ export function LandingShell({
                     ) : (
                       <Link
                         href={href}
-                        onClick={() => setMobileMenuOpen(false)}
+                        onClick={(e) => {
+                          preventInPreview(e);
+                          setMobileMenuOpen(false);
+                        }}
                         style={linkStyle}
                         className={`block px-3 py-2.5 rounded-xl text-sm font-semibold ${
                           navUppercase ? "uppercase tracking-wider text-xs" : ""
@@ -566,9 +613,12 @@ export function LandingShell({
                             <a
                               key={child.id}
                               href={cHref}
-                              target="_blank"
+                              target={isPreview ? undefined : "_blank"}
                               rel="noopener noreferrer"
-                              onClick={() => setMobileMenuOpen(false)}
+                              onClick={(e) => {
+                                preventInPreview(e);
+                                setMobileMenuOpen(false);
+                              }}
                               style={cStyle}
                               className="block px-3 py-2 rounded-lg text-xs font-medium"
                             >
@@ -578,7 +628,10 @@ export function LandingShell({
                             <Link
                               key={child.id}
                               href={cHref}
-                              onClick={() => setMobileMenuOpen(false)}
+                              onClick={(e) => {
+                                preventInPreview(e);
+                                setMobileMenuOpen(false);
+                              }}
                               style={cStyle}
                               className="block px-3 py-2 rounded-lg text-xs font-medium"
                             >
@@ -600,7 +653,10 @@ export function LandingShell({
               >
                 <a
                   href={headerConfig.ctaHref || "#"}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={(e) => {
+                    preventInPreview(e);
+                    setMobileMenuOpen(false);
+                  }}
                   style={{ backgroundColor: ctaBgColor, color: ctaTextColor }}
                   className={`w-full inline-flex items-center justify-center h-11 ${ctaRadiusClass} text-sm font-semibold`}
                 >
@@ -637,11 +693,11 @@ export function LandingShell({
           const cols = footerColumns.slice(0, 4);
           const colGridClass =
             cols.length === 2
-              ? "md:grid-cols-2"
+              ? "@min-[44rem]:grid-cols-2"
               : cols.length === 3
-                ? "md:grid-cols-3"
+                ? "@min-[44rem]:grid-cols-3"
                 : cols.length >= 4
-                  ? "md:grid-cols-2 lg:grid-cols-4"
+                  ? "@min-[44rem]:grid-cols-2 @min-[60rem]:grid-cols-4"
                   : "";
 
           const socials = headerConfig.socialLinks || {};
@@ -657,7 +713,9 @@ export function LandingShell({
 
           return (
             <footer
-              className="border-t"
+              onClick={(e) => interactive && selectSection(e, "footer")}
+              title={interactive ? "Bấm để sửa cấu hình Footer (1–4 cột)" : undefined}
+              className={`border-t ${sectionRing("footer")}`}
               style={{
                 backgroundColor: fBg,
                 color: fText,
@@ -666,7 +724,9 @@ export function LandingShell({
                 fontSize: `${fFontSize}px`,
               }}
             >
-              <div className={`max-w-[1200px] mx-auto px-5 sm:px-8 ${fPadClass} space-y-8`}>
+              <div
+                className={`max-w-[1200px] mx-auto px-5 @min-[40rem]:px-8 ${fPadClass} space-y-8`}
+              >
                 {fShowLogo && (logoSrc || siteName) && (
                   <div
                     className={`flex items-center gap-3 ${
@@ -781,10 +841,12 @@ export function LandingShell({
                   ))}
 
                 <div
-                  className="pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs"
+                  onClick={(e) => interactive && selectSection(e, "legal")}
+                  title={interactive ? "Bấm để sửa Bản quyền & Liên kết pháp lý" : undefined}
+                  className={`pt-6 border-t flex flex-col @min-[40rem]:flex-row items-center justify-between gap-3 text-xs rounded-lg ${sectionRing("legal")}`}
                   style={{ borderColor: fBorder, color: fMuted }}
                 >
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1">
+                  <div className="flex flex-wrap items-center justify-center @min-[40rem]:justify-start gap-x-4 gap-y-1">
                     <span>
                       {headerConfig.copyrightText || `© ${new Date().getFullYear()} ${siteName}`}
                     </span>
@@ -846,79 +908,120 @@ export function LandingShell({
         showFloatingZalo ||
         (floating.enabled && (floating.customButtons?.length || 0) > 0) ||
         (floating.enabled && floating.showBackToTop)) &&
-        !isPreview && (
+        (!isPreview || showFloatingInPreview) && (
           <div
-            className={`fixed bottom-5 z-40 flex flex-col gap-2.5 ${
-              floating.position === "left" ? "left-5" : "right-5"
-            }`}
+            className={
+              isPreview
+                ? `sticky bottom-4 z-30 h-0 overflow-visible w-full px-4 pointer-events-none flex items-end ${
+                    floating.position === "left" ? "justify-start" : "justify-end"
+                  }`
+                : `fixed bottom-5 z-40 flex flex-col gap-2.5 ${
+                    floating.position === "left" ? "left-5" : "right-5"
+                  }`
+            }
           >
-            {floating.enabled && floating.showBackToTop && (
-              <button
-                type="button"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                aria-label="Lên đầu trang"
-                title="Lên đầu trang"
-                className="w-11 h-11 rounded-full bg-white/95 text-[#111111] border border-zinc-200 shadow-md hover:scale-105 transition-transform flex items-center justify-center cursor-pointer"
-              >
-                <ArrowUp className="w-4 h-4" />
-              </button>
-            )}
+            <div
+              onClick={(e) => interactive && selectSection(e, "floating")}
+              title={interactive ? "Bấm để sửa Cụm nút liên hệ nổi" : undefined}
+              className={
+                isPreview
+                  ? `pointer-events-auto flex flex-col gap-2.5 p-1 rounded-full ${sectionRing("floating")}`
+                  : "contents"
+              }
+            >
+              {floating.enabled && floating.showBackToTop && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    if (isPreview) {
+                      const scrollParent = (e.currentTarget as HTMLElement).closest(
+                        "[data-preview-scroll]"
+                      );
+                      scrollParent?.scrollTo({ top: 0, behavior: "smooth" });
+                      return;
+                    }
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  aria-label="Lên đầu trang"
+                  title="Lên đầu trang"
+                  className="w-11 h-11 rounded-full bg-white/95 text-[#111111] border border-zinc-200 shadow-md hover:scale-105 transition-transform flex items-center justify-center cursor-pointer"
+                >
+                  <ArrowUp className="w-4 h-4" />
+                </button>
+              )}
 
-            {floating.enabled &&
-              (floating.customButtons || [])
-                .filter((b) => b.label?.trim() && b.href?.trim())
-                .map((btn) => {
-                  const bg = isSafeColor(btn.bgColor) ? btn.bgColor : "#111111";
-                  const fg = isSafeColor(btn.textColor) ? btn.textColor : "#FFFFFF";
-                  const Icon =
-                    btn.icon === "phone"
-                      ? Phone
-                      : btn.icon === "maps"
-                        ? MapPin
-                        : btn.icon === "messenger" || btn.icon === "zalo"
-                          ? MessageCircle
-                          : btn.icon === "tiktok"
-                            ? Send
-                            : ExternalLink;
-                  return (
-                    <a
-                      key={btn.id}
-                      href={btn.href}
-                      target={isExternalHref(btn.href) ? "_blank" : undefined}
-                      rel={isExternalHref(btn.href) ? "noopener noreferrer" : undefined}
-                      aria-label={btn.label}
-                      title={btn.label}
-                      style={{ backgroundColor: bg, color: fg }}
-                      className="w-12 h-12 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center justify-center"
-                    >
-                      <Icon className="w-5 h-5" />
-                    </a>
-                  );
-                })}
+              {floating.enabled &&
+                (floating.customButtons || [])
+                  .filter((b) => b.label?.trim() && b.href?.trim())
+                  .map((btn) => {
+                    const bg = isSafeColor(btn.bgColor) ? btn.bgColor : "#111111";
+                    const fg = isSafeColor(btn.textColor) ? btn.textColor : "#FFFFFF";
+                    const Icon =
+                      btn.icon === "phone"
+                        ? Phone
+                        : btn.icon === "maps"
+                          ? MapPin
+                          : btn.icon === "messenger" || btn.icon === "zalo"
+                            ? MessageCircle
+                            : btn.icon === "tiktok"
+                              ? Send
+                              : ExternalLink;
+                    return (
+                      <a
+                        key={btn.id}
+                        href={btn.href}
+                        onClick={preventInPreview}
+                        target={!isPreview && isExternalHref(btn.href) ? "_blank" : undefined}
+                        rel={
+                          !isPreview && isExternalHref(btn.href) ? "noopener noreferrer" : undefined
+                        }
+                        aria-label={btn.label}
+                        title={btn.label}
+                        style={{ backgroundColor: bg, color: fg }}
+                        className="w-12 h-12 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center justify-center"
+                      >
+                        <Icon className="w-5 h-5" />
+                      </a>
+                    );
+                  })}
 
-            {showFloatingZalo && floatingZaloHref && (
-              <a
-                href={floatingZaloHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Nhắn Zalo"
-                title="Nhắn Zalo"
-                className="w-12 h-12 rounded-full bg-[#0068FF] text-white shadow-lg hover:scale-105 transition-transform flex items-center justify-center"
-              >
-                <MessageCircle className="w-5 h-5" />
-              </a>
-            )}
-            {showFloatingCall && floating.phone && (
-              <PhoneActionButton
-                targetUrl={`tel:${floating.phone}`}
-                zaloTarget={floating.zaloUrl || undefined}
-                label={`Hotline ${siteName}`}
-                title={`Gọi ${floating.phone}`}
-                className="w-12 h-12 rounded-full bg-[#111111] text-white shadow-lg hover:scale-105 transition-transform flex items-center justify-center border border-[#B88A44]/50"
-              >
-                <Phone className="w-5 h-5" />
-              </PhoneActionButton>
-            )}
+              {showFloatingZalo && floatingZaloHref && (
+                <a
+                  href={floatingZaloHref}
+                  onClick={preventInPreview}
+                  target={isPreview ? undefined : "_blank"}
+                  rel="noopener noreferrer"
+                  aria-label="Nhắn Zalo"
+                  title="Nhắn Zalo"
+                  className="w-12 h-12 rounded-full bg-[#0068FF] text-white shadow-lg hover:scale-105 transition-transform flex items-center justify-center"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                </a>
+              )}
+              {showFloatingCall &&
+                floating.phone &&
+                (isPreview ? (
+                  <button
+                    type="button"
+                    onClick={preventInPreview}
+                    aria-label={`Hotline ${siteName}`}
+                    title={`Gọi ${floating.phone}`}
+                    className="w-12 h-12 rounded-full bg-[#111111] text-white shadow-lg hover:scale-105 transition-transform flex items-center justify-center border border-[#B88A44]/50 cursor-pointer"
+                  >
+                    <Phone className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <PhoneActionButton
+                    targetUrl={`tel:${floating.phone}`}
+                    zaloTarget={floating.zaloUrl || undefined}
+                    label={`Hotline ${siteName}`}
+                    title={`Gọi ${floating.phone}`}
+                    className="w-12 h-12 rounded-full bg-[#111111] text-white shadow-lg hover:scale-105 transition-transform flex items-center justify-center border border-[#B88A44]/50"
+                  >
+                    <Phone className="w-5 h-5" />
+                  </PhoneActionButton>
+                ))}
+            </div>
           </div>
         )}
     </div>

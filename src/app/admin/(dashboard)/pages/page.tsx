@@ -18,7 +18,7 @@ export default async function AdminPagesPage() {
   const canEdit = hasRole(role, "editor");
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-5">
       <PagesHeaderClient canEdit={canEdit} />
       <PagesTable initialPages={pages} canEdit={canEdit} />
     </div>

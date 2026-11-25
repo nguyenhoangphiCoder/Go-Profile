@@ -133,12 +133,18 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
               </span>
             </div>
           </div>
-          <div className="flex items-center justify-between pt-1 border-t border-border/50">
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-              {ctx.isPlatformAdmin && <ShieldCheck className="w-3.5 h-3.5 text-foreground" />}
-              <span>{ctx.isPlatformAdmin ? "Quản trị hệ thống" : ROLE_LABELS[ctx.role]}</span>
+          <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-border/50">
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground min-w-0 truncate">
+              {ctx.isPlatformAdmin && (
+                <ShieldCheck className="w-3.5 h-3.5 text-foreground shrink-0" />
+              )}
+              <span className="truncate">
+                {ctx.isPlatformAdmin ? "SuperAdmin" : ROLE_LABELS[ctx.role]}
+              </span>
             </span>
-            <LogoutButton />
+            <div className="shrink-0">
+              <LogoutButton />
+            </div>
           </div>
         </div>
       </aside>

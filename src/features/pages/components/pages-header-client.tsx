@@ -7,8 +7,8 @@ import { PageHeader } from "@/components/ui/page-header";
 export function PagesHeaderClient({ canEdit = true }: { canEdit?: boolean }) {
   return (
     <PageHeader
-      title="Quản lý trang hồ sơ"
-      description="Tạo, tùy biến giao diện và xuất bản các trang profile đa đường dẫn."
+      title="Quản lý trang"
+      description="Tạo, chỉnh sửa nội dung và xuất bản các trang Profile & Landing Page."
       action={
         canEdit ? (
           <Link
