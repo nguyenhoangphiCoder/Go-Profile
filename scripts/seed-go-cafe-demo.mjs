@@ -413,7 +413,9 @@ async function seedBranches() {
     const { error } = await supabase.from("branches").insert(toInsert);
     if (error) throw new Error(`Lỗi nạp chi nhánh: ${error.message}`);
   }
-  console.log(`  ✓ Hệ thống chi nhánh: đã có ${existingNames.size + toInsert.length} cửa hàng TP.HCM`);
+  console.log(
+    `  ✓ Hệ thống chi nhánh: đã có ${existingNames.size + toInsert.length} cửa hàng TP.HCM`
+  );
 }
 
 async function seedSampleLeads(pageMap) {
@@ -536,7 +538,8 @@ async function main() {
           payload: {
             anchorId: "menu-noi-bat",
             title: "Menu Thức Uống Đặc Trưng",
-            subtitle: "6 nhóm thức uống tươi mới được pha chế chuẩn vị tại toàn bộ hệ thống Gờ Café",
+            subtitle:
+              "6 nhóm thức uống tươi mới được pha chế chuẩn vị tại toàn bộ hệ thống Gờ Café",
             categories: [
               "Cà phê truyền thống",
               "Cà phê hiện đại",
@@ -551,7 +554,8 @@ async function main() {
                 category: "Cà phê truyền thống",
                 price: "29.000đ",
                 badge: "Bán chạy",
-                description: "Cà phê phin rang mộc đậm đà hòa quyện sữa đặc béo thơm chuẩn gu Sài Gòn.",
+                description:
+                  "Cà phê phin rang mộc đậm đà hòa quyện sữa đặc béo thơm chuẩn gu Sài Gòn.",
                 imageUrl: IMG.traditionalCoffee,
                 buyUrl: "/menu-go-cafe",
               },
@@ -577,7 +581,8 @@ async function main() {
                 name: "Trà Đào Cam Sả",
                 category: "Trà trái cây",
                 price: "38.000đ",
-                description: "Hồng trà ủ mới cùng đào miếng giòn ngọt, cam vàng tươi và sả thơm dịu.",
+                description:
+                  "Hồng trà ủ mới cùng đào miếng giòn ngọt, cam vàng tươi và sả thơm dịu.",
                 imageUrl: IMG.fruitTea,
                 buyUrl: "/menu-go-cafe",
               },
@@ -585,7 +590,8 @@ async function main() {
                 name: "Sữa Chua Nhiệt Đới",
                 category: "Sữa chua",
                 price: "39.000đ",
-                description: "Sữa chua lên men tự nhiên sánh mịn kết hợp mứt trái cây chua ngọt dịu nhẹ.",
+                description:
+                  "Sữa chua lên men tự nhiên sánh mịn kết hợp mứt trái cây chua ngọt dịu nhẹ.",
                 imageUrl: IMG.yogurt,
                 buyUrl: "/menu-go-cafe",
               },
@@ -593,7 +599,8 @@ async function main() {
                 name: "Nước Ép Cam Thơm",
                 category: "Nước ép",
                 price: "38.000đ",
-                description: "100% trái cây tươi ép lạnh mỗi ngày, không đường tinh luyện, giàu vitamin C.",
+                description:
+                  "100% trái cây tươi ép lạnh mỗi ngày, không đường tinh luyện, giàu vitamin C.",
                 imageUrl: IMG.juice,
                 buyUrl: "/menu-go-cafe",
               },
@@ -635,7 +642,8 @@ async function main() {
           payload: {
             anchorId: "danh-gia",
             title: "Khách hàng & Đối tác nói gì về Gờ Café",
-            subtitle: "Hơn 98% đánh giá 5 sao trên Shopee Mall và sự tin tưởng từ các chủ quán đối tác",
+            subtitle:
+              "Hơn 98% đánh giá 5 sao trên Shopee Mall và sự tin tưởng từ các chủ quán đối tác",
             columns: 3,
             items: [
               {
@@ -669,7 +677,8 @@ async function main() {
             tone: "gold",
             eyebrow: "ĐỒNG HÀNH CÙNG GỜ CAFÉ",
             title: "Sẵn sàng mở quán hoặc nhập sỉ cà phê nguyên chất?",
-            subtitle: "Nhận ngay bộ hồ sơ nhượng quyền & mẫu thử cà phê rang mộc 72H hoàn toàn miễn phí.",
+            subtitle:
+              "Nhận ngay bộ hồ sơ nhượng quyền & mẫu thử cà phê rang mộc 72H hoàn toàn miễn phí.",
             primaryCtaLabel: "Xem Cẩm nang Nhượng quyền",
             primaryCtaHref: "/nhuong-quyen",
             secondaryCtaLabel: "Gọi 1900-9246",
@@ -934,8 +943,16 @@ async function main() {
             columns: 3,
             items: [
               { value: "TOP 1", label: "Bán chạy Shopee", sublabel: "98% đánh giá 5 sao thực tế" },
-              { value: "55+ CỬA HÀNG", label: "Chuỗi Gờ Café", sublabel: "Kiểm chứng chất lượng mỗi ngày" },
-              { value: "RANG RIÊNG", label: "Xưởng rang chủ động", sublabel: "Hạt mới rang trong vòng 72H" },
+              {
+                value: "55+ CỬA HÀNG",
+                label: "Chuỗi Gờ Café",
+                sublabel: "Kiểm chứng chất lượng mỗi ngày",
+              },
+              {
+                value: "RANG RIÊNG",
+                label: "Xưởng rang chủ động",
+                sublabel: "Hạt mới rang trong vòng 72H",
+              },
             ],
           },
         },
@@ -1009,7 +1026,8 @@ async function main() {
           payload: {
             anchorId: "danh-gia",
             title: "Khách hàng & Đối tác nói gì về Gờ Café",
-            subtitle: "Hơn 98% đánh giá 5 sao trên Shopee Mall và sự tin tưởng từ các chủ quán đối tác",
+            subtitle:
+              "Hơn 98% đánh giá 5 sao trên Shopee Mall và sự tin tưởng từ các chủ quán đối tác",
             columns: 3,
             items: [
               {
@@ -1043,7 +1061,8 @@ async function main() {
             tone: "gold",
             eyebrow: "ĐỒNG HÀNH CÙNG GỜ CAFÉ",
             title: "Sẵn sàng mở quán hoặc nhập sỉ cà phê nguyên chất?",
-            subtitle: "Nhận ngay bộ hồ sơ nhượng quyền & mẫu thử cà phê rang mộc 72H hoàn toàn miễn phí.",
+            subtitle:
+              "Nhận ngay bộ hồ sơ nhượng quyền & mẫu thử cà phê rang mộc 72H hoàn toàn miễn phí.",
             primaryCtaLabel: "Xem Cẩm nang Nhượng quyền",
             primaryCtaHref: "/nhuong-quyen",
             secondaryCtaLabel: "Gọi 1900-9246",
@@ -1127,7 +1146,8 @@ async function main() {
               {
                 badge: "DIỆN TÍCH",
                 title: "60m² – 150m²",
-                description: "Ưu tiên mặt bằng thông thoáng, không gian mở, có chỗ để xe thuận tiện.",
+                description:
+                  "Ưu tiên mặt bằng thông thoáng, không gian mở, có chỗ để xe thuận tiện.",
               },
               {
                 badge: "PHÂN KHÚC",
@@ -1179,7 +1199,8 @@ async function main() {
           payload: {
             anchorId: "danh-gia",
             title: "Khách hàng & Đối tác nói gì về Gờ Café",
-            subtitle: "Hơn 98% đánh giá 5 sao trên Shopee Mall và sự tin tưởng từ các chủ quán đối tác",
+            subtitle:
+              "Hơn 98% đánh giá 5 sao trên Shopee Mall và sự tin tưởng từ các chủ quán đối tác",
             columns: 3,
             items: [
               {
@@ -1213,7 +1234,8 @@ async function main() {
             tone: "gold",
             eyebrow: "ĐỒNG HÀNH CÙNG GỜ CAFÉ",
             title: "Sẵn sàng mở quán hoặc nhập sỉ cà phê nguyên chất?",
-            subtitle: "Nhận ngay bộ hồ sơ nhượng quyền & mẫu thử cà phê rang mộc 72H hoàn toàn miễn phí.",
+            subtitle:
+              "Nhận ngay bộ hồ sơ nhượng quyền & mẫu thử cà phê rang mộc 72H hoàn toàn miễn phí.",
             primaryCtaLabel: "Xem Cẩm nang Nhượng quyền",
             primaryCtaHref: "/nhuong-quyen",
             secondaryCtaLabel: "Gọi 1900-9246",
@@ -1241,7 +1263,8 @@ async function main() {
       slug: "qa",
       internalName: "Gờ Café — Câu hỏi thường gặp",
       title: "Câu hỏi thường gặp (Q&A)",
-      description: "Giải đáp các câu hỏi phổ biến về sản phẩm, đặt bàn, tuyển dụng và nhượng quyền Gờ Café.",
+      description:
+        "Giải đáp các câu hỏi phổ biến về sản phẩm, đặt bàn, tuyển dụng và nhượng quyền Gờ Café.",
       blocks: [
         {
           type: "hero_section",
@@ -1250,7 +1273,8 @@ async function main() {
             layout: "centered",
             eyebrow: "HỖ TRỢ KHÁCH HÀNG",
             title: "Câu hỏi thường gặp",
-            subtitle: "Tổng hợp giải đáp nhanh về cửa hàng, thực đơn, cà phê rang xay và chính sách hợp tác.",
+            subtitle:
+              "Tổng hợp giải đáp nhanh về cửa hàng, thực đơn, cà phê rang xay và chính sách hợp tác.",
           },
         },
         {
@@ -1285,7 +1309,8 @@ async function main() {
           payload: {
             anchorId: "danh-gia",
             title: "Khách hàng & Đối tác nói gì về Gờ Café",
-            subtitle: "Hơn 98% đánh giá 5 sao trên Shopee Mall và sự tin tưởng từ các chủ quán đối tác",
+            subtitle:
+              "Hơn 98% đánh giá 5 sao trên Shopee Mall và sự tin tưởng từ các chủ quán đối tác",
             columns: 3,
             items: [
               {
@@ -1319,7 +1344,8 @@ async function main() {
             tone: "gold",
             eyebrow: "ĐỒNG HÀNH CÙNG GỜ CAFÉ",
             title: "Sẵn sàng mở quán hoặc nhập sỉ cà phê nguyên chất?",
-            subtitle: "Nhận ngay bộ hồ sơ nhượng quyền & mẫu thử cà phê rang mộc 72H hoàn toàn miễn phí.",
+            subtitle:
+              "Nhận ngay bộ hồ sơ nhượng quyền & mẫu thử cà phê rang mộc 72H hoàn toàn miễn phí.",
             primaryCtaLabel: "Xem Cẩm nang Nhượng quyền",
             primaryCtaHref: "/nhuong-quyen",
             secondaryCtaLabel: "Gọi 1900-9246",
@@ -1444,7 +1470,12 @@ async function main() {
 
   const topNavItems = [
     { label: "Trang chủ", target_type: "page", target_page_id: pageMap["go-cafe"], position: 0 },
-    { label: "Về Gờ cafe", target_type: "page", target_page_id: pageMap["ve-chung-toi"], position: 1 },
+    {
+      label: "Về Gờ cafe",
+      target_type: "page",
+      target_page_id: pageMap["ve-chung-toi"],
+      position: 1,
+    },
     {
       label: "Danh sách chi nhánh",
       target_type: "page",
@@ -1464,7 +1495,12 @@ async function main() {
       target_value: "https://gocafe.hronline.vn/onStart%3dJobs",
       position: 5,
     },
-    { label: "Câu hỏi thường gặp", target_type: "page", target_page_id: pageMap["qa"], position: 6 },
+    {
+      label: "Câu hỏi thường gặp",
+      target_type: "page",
+      target_page_id: pageMap["qa"],
+      position: 6,
+    },
   ];
 
   const { data: insertedTop, error: navErr } = await supabase

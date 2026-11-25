@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getDomainLookupCandidates,
-  normalizeDomainHost,
-} from "@/features/workspace/domain-utils";
+import { getDomainLookupCandidates, normalizeDomainHost } from "@/features/workspace/domain-utils";
 
 describe("Multi-Tenant Custom Domain Host Normalization (MT-3)", () => {
   it("chuẩn hóa tên miền đầy đủ protocol, port, path, chữ hoa và dấu chấm cuối", () => {

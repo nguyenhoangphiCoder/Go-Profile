@@ -15,7 +15,8 @@ import {
 } from "./schemas";
 import { FORBIDDEN_ERROR } from "./types";
 
-type Result = { success: true; message?: string; userId?: string } | { success: false; error: string };
+type Result =
+  { success: true; message?: string; userId?: string } | { success: false; error: string };
 
 const firstIssue = (e: z.ZodError) => e.issues[0]?.message || "Dữ liệu không hợp lệ";
 const LAST_OWNER = /ít nhất một chủ sở hữu/;

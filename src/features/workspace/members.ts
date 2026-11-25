@@ -109,7 +109,9 @@ export async function getWorkspacesOverview(): Promise<WorkspaceOverview[]> {
   const [ws, members, pages, branches, leads, shells, media, invites] = await Promise.all([
     db
       .from("workspaces")
-      .select("id, name, plan, features, max_pages, max_media_bytes, max_branches, max_shells, archived_at")
+      .select(
+        "id, name, plan, features, max_pages, max_media_bytes, max_branches, max_shells, archived_at"
+      )
       .order("created_at"),
     db.from("workspace_members").select("workspace_id, user_id, role"),
     db.from("pages").select("workspace_id").is("archived_at", null),

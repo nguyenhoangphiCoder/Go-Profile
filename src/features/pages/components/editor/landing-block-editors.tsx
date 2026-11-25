@@ -919,15 +919,11 @@ export function StoreLocatorEditor({ payload, updatePayload }: LandingEditorProp
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/60">
         <div>
-          <label className="block font-semibold text-muted-foreground mb-1">
-            Kiểu nền bản đồ
-          </label>
+          <label className="block font-semibold text-muted-foreground mb-1">Kiểu nền bản đồ</label>
           <Select
             size="sm"
             value={p.mapStyle || "standard"}
-            onChange={(v) =>
-              updatePayload({ mapStyle: v as "standard" | "satellite" | "hybrid" })
-            }
+            onChange={(v) => updatePayload({ mapStyle: v as "standard" | "satellite" | "hybrid" })}
             options={[
               { value: "standard", label: "Google Maps chuẩn" },
               { value: "satellite", label: "Ảnh vệ tinh" },
@@ -1120,9 +1116,7 @@ export function LeadFormEditor({ payload, updatePayload }: LandingEditorProps) {
       {/* Nhãn tùy chỉnh cho trường cơ bản */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-border/60">
         <div>
-          <label className="block font-semibold text-muted-foreground mb-1">
-            Nhãn ô Họ tên
-          </label>
+          <label className="block font-semibold text-muted-foreground mb-1">Nhãn ô Họ tên</label>
           <input
             type="text"
             value={p.fullNameLabel || ""}
@@ -1198,9 +1192,7 @@ export function LeadFormEditor({ payload, updatePayload }: LandingEditorProps) {
                   <Select
                     size="sm"
                     value={field.type}
-                    onChange={(v) =>
-                      updateField({ type: v as "text" | "select" | "checkbox" })
-                    }
+                    onChange={(v) => updateField({ type: v as "text" | "select" | "checkbox" })}
                     options={[
                       { value: "text", label: "Ô nhập chữ" },
                       { value: "select", label: "Danh sách chọn" },

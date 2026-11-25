@@ -19,12 +19,12 @@ async function ensureLocalUser() {
   });
   if (!listRes.ok) {
     throw new Error(
-      `Không kết nối được Supabase Local (${listRes.status}). Hãy chắc chắn đã chạy pnpm db:start.`,
+      `Không kết nối được Supabase Local (${listRes.status}). Hãy chắc chắn đã chạy pnpm db:start.`
     );
   }
   const listData = await listRes.json();
   const existing = (listData.users || []).find(
-    (u) => u.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase(),
+    (u) => u.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase()
   );
   if (existing) {
     return existing.id;
@@ -89,12 +89,12 @@ async function main() {
   await upsertRow(
     "admin_users",
     { user_id: userId, display_name: ADMIN_NAME, is_active: true },
-    "user_id",
+    "user_id"
   );
   await upsertRow(
     "workspace_members",
     { workspace_id: DEFAULT_WORKSPACE_ID, user_id: userId, role: "owner" },
-    "workspace_id,user_id",
+    "workspace_id,user_id"
   );
   await ensurePublicMediaBucket();
 

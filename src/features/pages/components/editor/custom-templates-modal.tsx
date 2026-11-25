@@ -2,16 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import {
-  BookmarkPlus,
-  Download,
-  FolderOpen,
-  Layers,
-  Plus,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+import { BookmarkPlus, Download, FolderOpen, Layers, Plus, Trash2, Upload, X } from "lucide-react";
 import type { EditorBlockItem, PageKind, PageThemeConfig } from "../../types";
 
 export interface SavedCustomTemplate {

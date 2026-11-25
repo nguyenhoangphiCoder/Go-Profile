@@ -215,9 +215,12 @@ export function GuideClient({ workspaceName, isPlatformAdmin = false }: GuideCli
                 <Rocket className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-bold">Lộ trình khởi động nhanh 7 bước cho người mới</h2>
+                <h2 className="text-base font-bold">
+                  Lộ trình khởi động nhanh 7 bước cho người mới
+                </h2>
                 <p className="text-xs text-muted-foreground">
-                  Tích vào từng bước sau khi bạn đã làm thử — tiến độ tự lưu trên trình duyệt của bạn.
+                  Tích vào từng bước sau khi bạn đã làm thử — tiến độ tự lưu trên trình duyệt của
+                  bạn.
                 </p>
               </div>
             </div>

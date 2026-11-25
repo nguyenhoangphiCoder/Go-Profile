@@ -1,7 +1,15 @@
 "use client";
 
 import { useSyncExternalStore, type ReactNode } from "react";
-import { ChevronDown, ChevronUp, ClipboardCopy, ClipboardPaste, Plus, Trash2, RotateCcw } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  ClipboardCopy,
+  ClipboardPaste,
+  Plus,
+  Trash2,
+  RotateCcw,
+} from "lucide-react";
 import { FONT_IDS, FONT_LABELS, type FontId } from "@/config/theme-tokens";
 import { MediaPickerField } from "@/components/admin/media-picker-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
@@ -920,7 +928,10 @@ export function BlockStyleEditor({
           onClick={() => {
             if (!copiedStyle) return;
             updatePayload({
-              blockStyle: { ...copiedStyle, ...(style.anchorId ? { anchorId: style.anchorId } : {}) },
+              blockStyle: {
+                ...copiedStyle,
+                ...(style.anchorId ? { anchorId: style.anchorId } : {}),
+              },
             });
           }}
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border bg-background text-[11px] font-medium hover:bg-muted cursor-pointer disabled:opacity-40"
@@ -1139,7 +1150,9 @@ export function BlockStyleEditor({
               { value: 1, label: "1px" },
               { value: 2, label: "2px" },
             ]}
-            onChange={(borderWidth) => set({ borderWidth: borderWidth === 0 ? undefined : borderWidth })}
+            onChange={(borderWidth) =>
+              set({ borderWidth: borderWidth === 0 ? undefined : borderWidth })
+            }
           />
           <Choice
             label="Đổ bóng"

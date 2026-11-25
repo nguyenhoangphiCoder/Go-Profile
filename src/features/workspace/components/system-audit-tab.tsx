@@ -7,7 +7,10 @@ import type { PlatformAuditLogItem } from "../audit";
 const ACTION_LABELS: Record<string, { label: string; tone: string }> = {
   "workspace.create": { label: "Tạo Workspace", tone: "bg-emerald-500/10 text-emerald-700" },
   "workspace.rename": { label: "Đổi tên Workspace", tone: "bg-blue-500/10 text-blue-700" },
-  "workspace.update_limits": { label: "Cập nhật Gói/Hạn mức", tone: "bg-indigo-500/10 text-indigo-700" },
+  "workspace.update_limits": {
+    label: "Cập nhật Gói/Hạn mức",
+    tone: "bg-indigo-500/10 text-indigo-700",
+  },
   "workspace.archive": { label: "Lưu trữ Workspace", tone: "bg-amber-500/10 text-amber-700" },
   "workspace.restore": { label: "Khôi phục Workspace", tone: "bg-emerald-500/10 text-emerald-700" },
   "user.create": { label: "Tạo tài khoản", tone: "bg-emerald-500/10 text-emerald-700" },
@@ -119,7 +122,10 @@ export function SystemAuditTab({ logs }: { logs: PlatformAuditLogItem[] }) {
                           {badge.label}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3.5 text-muted-foreground max-w-md truncate" title={detail}>
+                      <td
+                        className="py-2.5 px-3.5 text-muted-foreground max-w-md truncate"
+                        title={detail}
+                      >
                         {detail || item.targetId || "—"}
                       </td>
                     </tr>

@@ -50,7 +50,10 @@ export async function fetchPublicPage(slug: string): Promise<PublicPageDTO> {
 
   const dto = data as unknown as PublicPageDTO;
   // Bảo mật: không bao giờ gửi token Telegram / Webhook riêng của Tenant ra HTML công khai
-  if (dto?.site_shell?.settings?.header_config && "leadNotifications" in dto.site_shell.settings.header_config) {
+  if (
+    dto?.site_shell?.settings?.header_config &&
+    "leadNotifications" in dto.site_shell.settings.header_config
+  ) {
     const safeHeader = { ...dto.site_shell.settings.header_config };
     delete safeHeader.leadNotifications;
     dto.site_shell.settings.header_config = safeHeader;

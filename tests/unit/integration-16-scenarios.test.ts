@@ -75,10 +75,7 @@ vi.mock("@/lib/supabase/server", () => ({
       rpc: mockServerRpc,
       from: vi.fn((table: string) => {
         const result = {
-          data:
-            table === "pages"
-              ? [{ id: "page-a" }, { id: "page-b" }]
-              : [{ id: "link-x" }],
+          data: table === "pages" ? [{ id: "page-a" }, { id: "page-b" }] : [{ id: "link-x" }],
           error: null,
         };
         const chain = {

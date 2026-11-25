@@ -223,9 +223,7 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
     initialData.settings.headerConfig.footerStyle?.fontSize ?? 14
   );
   const [copyrightText, setCopyrightText] = useState(initialData.settings.copyrightText || "");
-  const [faviconUrl, setFaviconUrl] = useState(
-    initialData.settings.headerConfig.faviconUrl || ""
-  );
+  const [faviconUrl, setFaviconUrl] = useState(initialData.settings.headerConfig.faviconUrl || "");
   const [legalLinks, setLegalLinks] = useState<SiteFooterLink[]>(
     initialData.settings.headerConfig.legalLinks || []
   );
@@ -1742,7 +1740,9 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                           disabled={!canEdit}
                           onChange={(e) =>
                             setCustomFloatingButtons((prev) =>
-                              prev.map((x, i) => (i === idx ? { ...x, bgColor: e.target.value } : x))
+                              prev.map((x, i) =>
+                                i === idx ? { ...x, bgColor: e.target.value } : x
+                              )
                             )
                           }
                           title="Màu nền nút"
@@ -1775,8 +1775,8 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                 Favicon &amp; Liên kết pháp lý cuối trang (White-Label)
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Tùy chỉnh biểu tượng trên tab trình duyệt và các liên kết Điều khoản / Chính sách bảo
-                mật riêng cho thương hiệu này.
+                Tùy chỉnh biểu tượng trên tab trình duyệt và các liên kết Điều khoản / Chính sách
+                bảo mật riêng cho thương hiệu này.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

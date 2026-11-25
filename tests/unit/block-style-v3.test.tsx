@@ -28,15 +28,9 @@ describe("Block Design System v3 (Chặng C1)", () => {
   });
 
   it("chặn URL ảnh nền độc hại (javascript:) và anchorId không hợp lệ", () => {
-    expect(
-      blockStyleSchema.safeParse({ bgImageUrl: "javascript:alert(1)" }).success
-    ).toBe(false);
-    expect(
-      blockStyleSchema.safeParse({ anchorId: "Bang Gia!" }).success
-    ).toBe(false);
-    expect(
-      blockStyleSchema.safeParse({ titleFontSize: 120 }).success
-    ).toBe(false);
+    expect(blockStyleSchema.safeParse({ bgImageUrl: "javascript:alert(1)" }).success).toBe(false);
+    expect(blockStyleSchema.safeParse({ anchorId: "Bang Gia!" }).success).toBe(false);
+    expect(blockStyleSchema.safeParse({ titleFontSize: 120 }).success).toBe(false);
   });
 
   it("BlockFrame render đúng id, scroll-mt-24, gradient, bo góc, bóng và hiệu ứng", () => {

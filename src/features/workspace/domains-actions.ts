@@ -38,7 +38,8 @@ export async function upsertWorkspaceDomainAction(
   if (!normalized) {
     return {
       success: false,
-      error: "Tên miền không hợp lệ. Chỉ nhập tên miền dạng go-cafe.com hoặc shop.doitac.vn (không chứa khoảng trắng hay IP).",
+      error:
+        "Tên miền không hợp lệ. Chỉ nhập tên miền dạng go-cafe.com hoặc shop.doitac.vn (không chứa khoảng trắng hay IP).",
     };
   }
 

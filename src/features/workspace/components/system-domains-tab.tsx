@@ -166,8 +166,8 @@ export function SystemDomainsTab({
         </p>
         <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
           <li>
-            <strong>Tên miền gốc</strong> (VD: <code>doitac.vn</code>): tạo bản ghi{" "}
-            <code>A</code> trỏ về <code>76.76.21.21</code>.
+            <strong>Tên miền gốc</strong> (VD: <code>doitac.vn</code>): tạo bản ghi <code>A</code>{" "}
+            trỏ về <code>76.76.21.21</code>.
           </li>
           <li>
             <strong>Tên miền phụ</strong> (VD: <code>www.doitac.vn</code> hoặc{" "}
@@ -190,8 +190,8 @@ export function SystemDomainsTab({
             <Globe className="w-8 h-8 text-muted-foreground/60 mx-auto" />
             <p className="text-sm font-medium">Chưa có tên miền riêng nào</p>
             <p className="text-xs text-muted-foreground">
-              Thêm tên miền cho từng Workspace để khách truy cập vào <code>https://tenmien.vn/</code>{" "}
-              tự động mở đúng trang chủ của thương hiệu đó.
+              Thêm tên miền cho từng Workspace để khách truy cập vào{" "}
+              <code>https://tenmien.vn/</code> tự động mở đúng trang chủ của thương hiệu đó.
             </p>
           </div>
         ) : (

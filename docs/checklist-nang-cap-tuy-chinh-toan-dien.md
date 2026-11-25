@@ -8,18 +8,19 @@
 
 ## Bảng Tổng quan Tiến độ
 
-| Chặng | Tên giai đoạn | Trạng thái | Ngày hoàn thành |
-| :---: | --- | :---: | :---: |
-| **C1** | Tùy chỉnh Khối Toàn Diện (Block Design System v3, Anchor ID, Duplicate & Copy/Paste Style) | Hoàn thành (Đã nghiệm thu) | 2026-11-24 |
-| **C2** | Tùy chỉnh Nhận diện Website, Nút Nổi Động & White-Label (Favicon, Copyright, Map Pin, Admin Brand) | Hoàn thành (Đã nghiệm thu) | 2026-11-24 |
-| **C3** | Tùy chỉnh Form Khách hàng Động (Dynamic Lead Form Builder & Webhook/Telegram riêng theo Tenant) | Hoàn thành (Đã nghiệm thu) | 2026-11-24 |
-| **C4** | Nâng cấp Trải nghiệm Thiết kế (Preview 3 màn hình, Undo/Redo, Custom Templates) | Hoàn thành (Chờ nghiệm thu) | 2026-11-24 |
+| Chặng  | Tên giai đoạn                                                                                      |         Trạng thái          | Ngày hoàn thành |
+| :----: | -------------------------------------------------------------------------------------------------- | :-------------------------: | :-------------: |
+| **C1** | Tùy chỉnh Khối Toàn Diện (Block Design System v3, Anchor ID, Duplicate & Copy/Paste Style)         | Hoàn thành (Đã nghiệm thu)  |   2026-11-24    |
+| **C2** | Tùy chỉnh Nhận diện Website, Nút Nổi Động & White-Label (Favicon, Copyright, Map Pin, Admin Brand) | Hoàn thành (Đã nghiệm thu)  |   2026-11-24    |
+| **C3** | Tùy chỉnh Form Khách hàng Động (Dynamic Lead Form Builder & Webhook/Telegram riêng theo Tenant)    | Hoàn thành (Đã nghiệm thu)  |   2026-11-24    |
+| **C4** | Nâng cấp Trải nghiệm Thiết kế (Preview 3 màn hình, Undo/Redo, Custom Templates)                    | Hoàn thành (Chờ nghiệm thu) |   2026-11-24    |
 
 ---
 
 ## Chặng C1 — Tùy chỉnh Khối Toàn Diện (Block Design System v3 — 0 migration)
 
 ### 1.1. Schema, Renderer & Hiệu ứng (`blockStyleSchema`, `BlockFrame`, `renderer.css`)
+
 - [x] Mở rộng `blockStyleSchema` (`src/features/renderer/blocks/payload-schemas.ts`):
   - [x] Nền khối tự do: `bgColor` (màu đơn), `bgGradientFrom` / `bgGradientTo` / `bgGradientDir`, `bgImageUrl` + `bgOverlayOpacity` (`0–90%`).
   - [x] Khung & Bố cục: `maxWidth` (`sm | md | lg | full`), `radius` (`none | md | xl | 2xl | 3xl`), `borderWidth` (`0 | 1 | 2`), `borderColor`, `shadow` (`none | sm | md | lg`).
@@ -31,6 +32,7 @@
   - [x] Hỗ trợ đầy đủ màu nền, gradient, ảnh nền + lớp phủ mờ, độ rộng, bo góc, viền, đổ bóng và 4 hiệu ứng CSS.
 
 ### 1.2. Giao diện Chỉnh sửa Kiểu Khối & Thao tác Nhanh trên Editor
+
 - [x] Nâng cấp panel **Kiểu khối** (`BlockStyleEditor` trong `block-editors-v2.tsx`):
   - [x] Thêm chọn nhanh Nền (Trong suốt / Thẻ nổi / Kem nhạt / Đen sang trọng / **Màu đơn / Gradient 2 màu / Ảnh nền + Overlay**).
   - [x] Thêm thanh chọn Độ rộng, Bo góc, Viền, Đổ bóng, Khoảng đệm Trên/Dưới độc lập, 4 hiệu ứng xuất hiện.
@@ -40,6 +42,7 @@
   - [x] Thêm thanh **Sao chép kiểu (Copy Style)**, **Dán kiểu (Paste Style)** và **Đặt lại kiểu** ngay trong panel `Kiểu khối`.
 
 ### Kiểm chứng Chặng C1
+
 - [x] Bổ sung unit test `tests/unit/block-style-v3.test.tsx` cho `blockStyleSchema` v3 & `BlockFrame`.
 - [x] `pnpm typecheck` (0 lỗi) + `pnpm lint` (0 lỗi, 0 cảnh báo) + `vitest` (**35/35 tests pass**).
 - [x] **Check list & Ghi log Chặng C1 — Dừng chờ nghiệm thu.**
@@ -78,6 +81,7 @@
 ## Nhật ký Thực hiện (Execution Log)
 
 ### 2026-11-24 — Hoàn thành Chặng C1 (Block Design System v3 — 0 migration)
+
 - **Files cập nhật / tạo mới:**
   - `src/features/pages/types.ts`, `src/features/renderer/blocks/payload-schemas.ts`
   - `src/features/renderer/block-frame.tsx`, `src/features/renderer/renderer.css`
@@ -89,6 +93,7 @@
 - **Trạng thái:** Đã hoàn tất Chặng C1, dừng chờ nghiệm thu trước khi triển khai Chặng C2.
 
 ### 2026-11-24 — Hoàn thành Chặng C2 (Floating Action Bar động, Favicon/Copyright & White-Label Admin/Bản đồ)
+
 - **Files cập nhật:**
   - `src/features/site/types.ts`, `src/features/site/schemas.ts`, `src/features/site/components/site-config-client.tsx`
   - `src/features/renderer/landing-shell.tsx`, `src/app/page.tsx`, `src/app/[slug]/page.tsx`
@@ -100,6 +105,7 @@
 - **Trạng thái:** Đã hoàn tất Chặng C2, dừng chờ nghiệm thu trước khi triển khai Chặng C3.
 
 ### 2026-11-24 — Hoàn thành Chặng C3 (Dynamic Lead Form Builder & Telegram/Webhook riêng theo Tenant)
+
 - **Files cập nhật:**
   - `src/features/pages/types.ts`, `src/features/renderer/blocks/payload-schemas.ts`
   - `src/features/pages/components/editor/landing-block-editors.tsx`, `src/features/renderer/blocks/lead-form-block.tsx`
@@ -111,6 +117,7 @@
 - **Trạng thái:** Đã hoàn tất Chặng C3, dừng chờ nghiệm thu trước khi triển khai Chặng C4.
 
 ### 2026-11-24 — Hoàn thành Chặng C4 (Custom Templates Modal + Kiểm chứng tổng thể 4/4 Chặng)
+
 - **Files tạo mới / cập nhật:**
   - `src/features/pages/components/editor/custom-templates-modal.tsx`
   - `src/features/pages/components/editor/page-editor.tsx` (tích hợp nút **"Mẫu"** + `<CustomTemplatesModal />` cùng Preview 3 màn hình & Undo/Redo có sẵn)

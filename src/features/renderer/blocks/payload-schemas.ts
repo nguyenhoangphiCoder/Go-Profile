@@ -43,7 +43,10 @@ const optAnchorId = z
   .string()
   .trim()
   .max(60)
-  .refine((v) => v === "" || /^[a-z0-9-]+$/.test(v), "ID neo chỉ gồm chữ thường, số và dấu gạch ngang")
+  .refine(
+    (v) => v === "" || /^[a-z0-9-]+$/.test(v),
+    "ID neo chỉ gồm chữ thường, số và dấu gạch ngang"
+  )
   .optional();
 
 export const blockStyleSchema = z

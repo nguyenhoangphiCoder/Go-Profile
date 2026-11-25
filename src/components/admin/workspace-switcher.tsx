@@ -222,10 +222,9 @@ export function WorkspaceSwitcher({
                     className="w-full"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Gói <strong>{plan.toUpperCase()}</strong>: tối đa{" "}
-                    {PLAN_PRESETS[plan].maxPages} trang, {PLAN_PRESETS[plan].maxMediaMb} MB ảnh,{" "}
-                    {PLAN_PRESETS[plan].maxBranches} chi nhánh, {PLAN_PRESETS[plan].maxShells} bộ
-                    giao diện.
+                    Gói <strong>{plan.toUpperCase()}</strong>: tối đa {PLAN_PRESETS[plan].maxPages}{" "}
+                    trang, {PLAN_PRESETS[plan].maxMediaMb} MB ảnh, {PLAN_PRESETS[plan].maxBranches}{" "}
+                    chi nhánh, {PLAN_PRESETS[plan].maxShells} bộ giao diện.
                   </p>
                 </div>
 

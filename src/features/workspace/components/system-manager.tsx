@@ -766,9 +766,7 @@ export function SystemManager({
                       key={`${ws.id}-${ws.plan}-${ws.maxPages}-${ws.maxMediaBytes}-${ws.maxBranches}-${ws.maxShells}`}
                       ws={ws}
                       disabled={isPending}
-                      onSave={(payload) =>
-                        run(() => updateWorkspaceLimitsAction(ws.id, payload))
-                      }
+                      onSave={(payload) => run(() => updateWorkspaceLimitsAction(ws.id, payload))}
                     />
                   )}
                 </article>

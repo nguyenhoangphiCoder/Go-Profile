@@ -59,8 +59,7 @@ export async function getPlatformUsersOverview(): Promise<PlatformUserItem[]> {
   return authUsers
     .map((u) => {
       const admin = adminMap.get(u.id);
-      const bannedUntil =
-        (u as unknown as { banned_until?: string | null }).banned_until ?? null;
+      const bannedUntil = (u as unknown as { banned_until?: string | null }).banned_until ?? null;
       const isBanned = Boolean(bannedUntil && new Date(bannedUntil).getTime() > now);
       const metaName =
         typeof u.user_metadata?.display_name === "string"

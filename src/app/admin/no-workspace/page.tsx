@@ -45,8 +45,9 @@ export default async function NoWorkspacePage() {
         </div>
 
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Hãy gửi email trên cho <strong>SuperAdmin</strong> hoặc <strong>Chủ sở hữu Workspace</strong>{" "}
-          để được cấp quyền, sau đó bấm nút kiểm tra lại bên dưới.
+          Hãy gửi email trên cho <strong>SuperAdmin</strong> hoặc{" "}
+          <strong>Chủ sở hữu Workspace</strong> để được cấp quyền, sau đó bấm nút kiểm tra lại bên
+          dưới.
         </p>
 
         <div className="pt-2 flex flex-wrap items-center justify-center gap-3">

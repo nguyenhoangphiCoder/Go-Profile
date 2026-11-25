@@ -29,8 +29,7 @@ import {
 } from "./types";
 
 type Result =
-  | { success: true; message?: string; workspaceId?: string }
-  | { success: false; error: string };
+  { success: true; message?: string; workspaceId?: string } | { success: false; error: string };
 
 const firstIssue = (e: z.ZodError) => e.issues[0]?.message || "Dữ liệu không hợp lệ";
 const LAST_OWNER = /ít nhất một chủ sở hữu/;
@@ -266,25 +265,29 @@ export async function createWorkspaceAction(input: CreateWorkspaceInput): Promis
   if (ownerEmail) {
     const existingUserId = await findAuthUserIdByEmail(ownerEmail);
     if (existingUserId) {
-      const { error: memberErr } = await db.from("workspace_members").upsert(
-        { workspace_id: ws.id, user_id: existingUserId, role: "owner" },
-        { onConflict: "workspace_id,user_id" }
-      );
+      const { error: memberErr } = await db
+        .from("workspace_members")
+        .upsert(
+          { workspace_id: ws.id, user_id: existingUserId, role: "owner" },
+          { onConflict: "workspace_id,user_id" }
+        );
       ownerNotice = memberErr
         ? `Chưa gán được ${ownerEmail} làm Chủ sở hữu (${memberErr.message}).`
         : `Đã gán ngay ${ownerEmail} làm Chủ sở hữu.`;
     } else {
       const invite = await saveAndSendInvitation(ws.id, ownerEmail, "owner", ctx.user.userId);
       ownerNotice = invite.success
-        ? invite.message ?? ""
+        ? (invite.message ?? "")
         : `Chưa mời được chủ sở hữu: ${invite.error}`;
     }
   } else {
     // Gán chính SuperAdmin làm owner tạm thời để workspace luôn có owner hợp lệ
-    const { error: selfOwnerErr } = await db.from("workspace_members").upsert(
-      { workspace_id: ws.id, user_id: ctx.user.userId, role: "owner" },
-      { onConflict: "workspace_id,user_id" }
-    );
+    const { error: selfOwnerErr } = await db
+      .from("workspace_members")
+      .upsert(
+        { workspace_id: ws.id, user_id: ctx.user.userId, role: "owner" },
+        { onConflict: "workspace_id,user_id" }
+      );
     ownerNotice = selfOwnerErr
       ? "Chưa gán được chủ sở hữu mặc định."
       : "Bạn đang là Chủ sở hữu mặc định.";
@@ -373,7 +376,8 @@ export async function updateWorkspaceLimitsAction(
     .eq("id", workspaceId)
     .select("id, name")
     .single();
-  if (error || !data) return { success: false, error: "Không cập nhật được cấu hình gói & giới hạn." };
+  if (error || !data)
+    return { success: false, error: "Không cập nhật được cấu hình gói & giới hạn." };
 
   await logPlatformAudit({
     actorUserId: ctx.user.userId,

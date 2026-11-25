@@ -26,9 +26,13 @@ export function FeatureLockedNotice({
           <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
         </div>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-xs text-muted-foreground">
-          <span>Workspace: <strong className="text-foreground">{workspaceName}</strong></span>
+          <span>
+            Workspace: <strong className="text-foreground">{workspaceName}</strong>
+          </span>
           <span>·</span>
-          <span>Gói: <strong className="text-foreground">{PLAN_LABELS[plan]}</strong></span>
+          <span>
+            Gói: <strong className="text-foreground">{PLAN_LABELS[plan]}</strong>
+          </span>
         </div>
         <p className="text-xs text-muted-foreground">
           Liên hệ <strong>SuperAdmin</strong> để bật tính năng này hoặc nâng cấp gói cho Workspace.

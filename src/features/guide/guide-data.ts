@@ -102,7 +102,10 @@ export const EDITOR_SHORTCUTS = [
   { keys: "Ctrl + S (⌘S)", desc: "Lưu bản nháp hiện tại ngay lập tức" },
   { keys: "Ctrl + Z (⌘Z)", desc: "Hoàn tác (quay lại bước chỉnh sửa trước)" },
   { keys: "Ctrl + Y / Ctrl + Shift + Z", desc: "Làm lại bước vừa hoàn tác" },
-  { keys: "Bấm trực tiếp trên Khung Xem Trước", desc: "Tự động chọn & mở đúng form chỉnh sửa của khối đó ở cột trái" },
+  {
+    keys: "Bấm trực tiếp trên Khung Xem Trước",
+    desc: "Tự động chọn & mở đúng form chỉnh sửa của khối đó ở cột trái",
+  },
   { keys: "Kéo biểu tượng 6 chấm (⋮⋮)", desc: "Kéo-thả đổi vị trí các khối nội dung mượt mà" },
 ];
 
@@ -136,7 +139,8 @@ export const MENU_GUIDES: MenuGuideSection[] = [
       {
         formName: "Modal '+ Tạo mới' Workspace nhanh (chỉ hiện với SuperAdmin)",
         where: "Góc trên Sidebar → cạnh chữ WORKSPACE → bấm '+ Tạo mới'",
-        purpose: "Tạo nhanh một Workspace mới cho chi nhánh/đối tác mà không cần rời trang đang làm việc.",
+        purpose:
+          "Tạo nhanh một Workspace mới cho chi nhánh/đối tác mà không cần rời trang đang làm việc.",
         fields: [
           {
             field: "Tên Workspace",
@@ -146,12 +150,14 @@ export const MENU_GUIDES: MenuGuideSection[] = [
           },
           {
             field: "Gói tính năng",
-            meaning: "Chọn Free / Pro / Enterprise — hệ thống tự điền hạn mức trang, ảnh, chi nhánh và bộ giao diện tương ứng.",
+            meaning:
+              "Chọn Free / Pro / Enterprise — hệ thống tự điền hạn mức trang, ảnh, chi nhánh và bộ giao diện tương ứng.",
             example: "Pro (30 trang, 500MB ảnh, 100 chi nhánh)",
           },
           {
             field: "Email Chủ sở hữu (tùy chọn)",
-            meaning: "Nếu email đã có tài khoản → gán làm Owner ngay lập tức; nếu chưa có → tự gửi lời mời. Để trống sẽ gán chính bạn làm Owner.",
+            meaning:
+              "Nếu email đã có tài khoản → gán làm Owner ngay lập tức; nếu chưa có → tự gửi lời mời. Để trống sẽ gán chính bạn làm Owner.",
             example: "quanly@doitac.com",
           },
           {
@@ -208,7 +214,8 @@ export const MENU_GUIDES: MenuGuideSection[] = [
           },
           {
             field: "Mẫu dựng sẵn (Template)",
-            meaning: "Chỉ hiện với Landing Page: chọn 1 trong 5 mẫu có sẵn (Trang chủ, Nhượng quyền, Menu, Báo giá sỉ, Câu chuyện) để có sẵn bố cục đẹp, chỉ việc thay chữ & ảnh.",
+            meaning:
+              "Chỉ hiện với Landing Page: chọn 1 trong 5 mẫu có sẵn (Trang chủ, Nhượng quyền, Menu, Báo giá sỉ, Câu chuyện) để có sẵn bố cục đẹp, chỉ việc thay chữ & ảnh.",
           },
           {
             field: "Tên nội bộ",
@@ -231,7 +238,8 @@ export const MENU_GUIDES: MenuGuideSection[] = [
         fields: [
           {
             field: "Sao chép kiểu / Dán kiểu / Đặt lại",
-            meaning: "Copy toàn bộ cấu hình màu, bo góc, padding, font của khối này sang khối khác trong 1 click.",
+            meaning:
+              "Copy toàn bộ cấu hình màu, bo góc, padding, font của khối này sang khối khác trong 1 click.",
           },
           {
             field: "Font chữ, Cỡ chữ (tới 72px) & Màu chữ",
@@ -239,34 +247,41 @@ export const MENU_GUIDES: MenuGuideSection[] = [
           },
           {
             field: "Nền tự do (Màu đơn / Gradient 2 màu / Ảnh nền + Lớp phủ tối)",
-            meaning: "Chọn màu nền bất kỳ, dải chuyển màu theo 3 hướng (→, ↘, ↓), hoặc dán link ảnh nền kèm độ tối lớp phủ 0–90% để chữ nổi bật.",
+            meaning:
+              "Chọn màu nền bất kỳ, dải chuyển màu theo 3 hướng (→, ↘, ↓), hoặc dán link ảnh nền kèm độ tối lớp phủ 0–90% để chữ nổi bật.",
           },
           {
             field: "Khung, Độ rộng, Bo góc, Viền, Đổ bóng & Đệm Trên/Dưới",
-            meaning: "Tinh chỉnh độ rộng (Hẹp/Vừa/Rộng/Mặc định), bo góc, viền 1px/2px + màu viền, bóng đổ và khoảng thở trên/dưới độc lập.",
+            meaning:
+              "Tinh chỉnh độ rộng (Hẹp/Vừa/Rộng/Mặc định), bo góc, viền 1px/2px + màu viền, bóng đổ và khoảng thở trên/dưới độc lập.",
           },
           {
             field: "Hiệu ứng xuất hiện & ID Neo (Anchor ID)",
-            meaning: "Chọn 1 trong 4 hiệu ứng (Trượt lên, Mờ dần, Phóng nhẹ, Trượt ngang). Đặt ID Neo (VD: bang-gia) để nút trên thanh Menu trỏ '#bang-gia' cuộn mượt thẳng xuống khối này.",
+            meaning:
+              "Chọn 1 trong 4 hiệu ứng (Trượt lên, Mờ dần, Phóng nhẹ, Trượt ngang). Đặt ID Neo (VD: bang-gia) để nút trên thanh Menu trỏ '#bang-gia' cuộn mượt thẳng xuống khối này.",
           },
         ],
       },
       {
         formName: "Form SEO & Cài đặt trang (Tab SEO)",
         where: "Page Editor → Tab 'SEO & Cài đặt'",
-        purpose: "Tối ưu hiển thị khi chia sẻ link lên Facebook/Zalo/Google và chọn bộ Menu áp dụng.",
+        purpose:
+          "Tối ưu hiển thị khi chia sẻ link lên Facebook/Zalo/Google và chọn bộ Menu áp dụng.",
         fields: [
           {
             field: "Thanh Menu & Footer (Site Shell)",
-            meaning: "Bật/tắt thanh Menu & Footer trên trang này (tắt nếu làm trang chiến dịch độc lập). Nếu Workspace có nhiều bộ Menu, chọn chính xác bộ Menu muốn gắn cho trang này.",
+            meaning:
+              "Bật/tắt thanh Menu & Footer trên trang này (tắt nếu làm trang chiến dịch độc lập). Nếu Workspace có nhiều bộ Menu, chọn chính xác bộ Menu muốn gắn cho trang này.",
           },
           {
             field: "Meta Title & Meta Description",
-            meaning: "Tiêu đề và mô tả hiển thị trên Google Search và thẻ xem trước khi gửi link qua Zalo/Facebook.",
+            meaning:
+              "Tiêu đề và mô tả hiển thị trên Google Search và thẻ xem trước khi gửi link qua Zalo/Facebook.",
           },
           {
             field: "Ảnh chia sẻ (OG Image)",
-            meaning: "Ảnh bìa (khuyên dùng tỷ lệ 1200×630) hiện ra khi chia sẻ link lên mạng xã hội.",
+            meaning:
+              "Ảnh bìa (khuyên dùng tỷ lệ 1200×630) hiện ra khi chia sẻ link lên mạng xã hội.",
           },
         ],
       },
@@ -283,22 +298,26 @@ export const MENU_GUIDES: MenuGuideSection[] = [
           },
           {
             field: "Tự mở Popup sau (giây)",
-            meaning: "Nhập 0 để chỉ hiện form cố định trên trang. Nhập VD: 10 để tự bật hộp thoại đăng ký sau 10 giây (chỉ hiện 1 lần mỗi phiên để không gây phiền).",
+            meaning:
+              "Nhập 0 để chỉ hiện form cố định trên trang. Nhập VD: 10 để tự bật hộp thoại đăng ký sau 10 giây (chỉ hiện 1 lần mỗi phiên để không gây phiền).",
           },
           {
             field: "Tự chuyển hướng sau khi gửi thành công (redirectUrl)",
-            meaning: "Tùy chọn: sau khi khách bấm Gửi thành công 1.2 giây, tự mở trang Cảm ơn (/cam-on), link tải Catalog PDF hoặc Zalo OA.",
+            meaning:
+              "Tùy chọn: sau khi khách bấm Gửi thành công 1.2 giây, tự mở trang Cảm ơn (/cam-on), link tải Catalog PDF hoặc Zalo OA.",
           },
           {
             field: "Trường mở rộng (Custom Fields — tối đa 8 trường)",
-            meaning: "Tự thêm ô nhập chữ, danh sách chọn (Dropdown — các phương án ngăn cách bằng dấu phẩy) hoặc ô tích chọn (Checkbox) kèm tùy chọn Bắt buộc. Câu trả lời tự động gộp gọn vào hồ sơ khách hàng ở /admin/leads.",
+            meaning:
+              "Tự thêm ô nhập chữ, danh sách chọn (Dropdown — các phương án ngăn cách bằng dấu phẩy) hoặc ô tích chọn (Checkbox) kèm tùy chọn Bắt buộc. Câu trả lời tự động gộp gọn vào hồ sơ khách hàng ở /admin/leads.",
           },
         ],
       },
       {
         formName: "Form Khối Bản đồ Chi nhánh (Store Locator)",
         where: "Page Editor → thêm/mở khối 'Bản đồ chi nhánh (store_locator)'",
-        purpose: "Hiển thị bản đồ Google Maps tiếng Việt tương tác 2 chiều với danh sách quán của Workspace.",
+        purpose:
+          "Hiển thị bản đồ Google Maps tiếng Việt tương tác 2 chiều với danh sách quán của Workspace.",
         fields: [
           {
             field: "Kiểu nền bản đồ",
@@ -306,11 +325,13 @@ export const MENU_GUIDES: MenuGuideSection[] = [
           },
           {
             field: "URL Icon Pin chi nhánh riêng",
-            meaning: "Dán link logo thương hiệu của bạn để thay thế icon pin mặc định trên bản đồ (White-Label).",
+            meaning:
+              "Dán link logo thương hiệu của bạn để thay thế icon pin mặc định trên bản đồ (White-Label).",
           },
           {
             field: "Mức phóng mặc định & Bộ lọc",
-            meaning: "Chỉnh độ phóng ban đầu (10–16), bật/tắt ô tìm kiếm không dấu và bộ lọc theo Quận/Huyện.",
+            meaning:
+              "Chỉnh độ phóng ban đầu (10–16), bật/tắt ô tìm kiếm không dấu và bộ lọc theo Quận/Huyện.",
           },
         ],
       },
@@ -365,7 +386,8 @@ export const MENU_GUIDES: MenuGuideSection[] = [
           {
             field: "Loại đích đến",
             required: true,
-            meaning: "Chọn 'Trang trong hệ thống' (chọn từ danh sách trang), 'Neo mục lục (#anchor)' (cuộn tới khối có ID neo), hoặc 'Đường dẫn ngoài (URL)' (VD: link tuyển dụng/Shopee).",
+            meaning:
+              "Chọn 'Trang trong hệ thống' (chọn từ danh sách trang), 'Neo mục lục (#anchor)' (cuộn tới khối có ID neo), hoặc 'Đường dẫn ngoài (URL)' (VD: link tuyển dụng/Shopee).",
           },
         ],
       },
@@ -380,30 +402,36 @@ export const MENU_GUIDES: MenuGuideSection[] = [
           },
           {
             field: "Vị trí cụm nút nổi & Nút Lên đầu trang (Back-to-Top)",
-            meaning: "Chọn đặt góc dưới Phải hoặc góc dưới Trái; tích chọn để hiện nút mũi tên cuộn mượt lên đầu trang.",
+            meaning:
+              "Chọn đặt góc dưới Phải hoặc góc dưới Trái; tích chọn để hiện nút mũi tên cuộn mượt lên đầu trang.",
           },
           {
             field: "Nút nổi mở rộng (tối đa 6 nút)",
-            meaning: "Bấm '+ Thêm nút nổi' để gắn thêm Messenger, TikTok, Google Maps hoặc bất kỳ link nào, tự chọn màu nền cho từng nút.",
+            meaning:
+              "Bấm '+ Thêm nút nổi' để gắn thêm Messenger, TikTok, Google Maps hoặc bất kỳ link nào, tự chọn màu nền cho từng nút.",
           },
         ],
       },
       {
         formName: "Form Favicon, Bản quyền, Pixel & Telegram/Webhook (Tab 2)",
         where: "Cấu hình Website → Tab 'Header & Nút nổi' (phần dưới)",
-        purpose: "Cá nhân hóa nhận diện thương hiệu (White-Label), đo lường quảng cáo và nhận báo Lead tự động.",
+        purpose:
+          "Cá nhân hóa nhận diện thương hiệu (White-Label), đo lường quảng cáo và nhận báo Lead tự động.",
         fields: [
           {
             field: "URL Favicon riêng & Dòng bản quyền & Liên kết pháp lý",
-            meaning: "Gắn icon vuông hiển thị trên tab trình duyệt, sửa dòng © Copyright và thêm tối đa 6 link pháp lý (Điều khoản, Chính sách bảo mật) ở đáy Footer.",
+            meaning:
+              "Gắn icon vuông hiển thị trên tab trình duyệt, sửa dòng © Copyright và thêm tối đa 6 link pháp lý (Điều khoản, Chính sách bảo mật) ở đáy Footer.",
           },
           {
             field: "Google Analytics 4 / Meta Pixel / TikTok Pixel",
-            meaning: "Dán ID đo lường (GA4 dạng G-XXXX, Meta/TikTok dạng số/ký tự). Hệ thống tự kiểm tra an toàn và tự bắn sự kiện chuyển đổi Lead khi khách gửi form.",
+            meaning:
+              "Dán ID đo lường (GA4 dạng G-XXXX, Meta/TikTok dạng số/ký tự). Hệ thống tự kiểm tra an toàn và tự bắn sự kiện chuyển đổi Lead khi khách gửi form.",
           },
           {
             field: "Telegram Bot Token, Chat ID & Webhook URL (https://)",
-            meaning: "Cấu hình riêng cho từng Workspace: mỗi khi có khách điền Form, hệ thống bắn tin nhắn ngay về nhóm Telegram của bạn hoặc đẩy JSON sang Make / n8n / Google Sheets / CRM (token được bảo mật tuyệt đối, không bao giờ lộ ra trình duyệt khách).",
+            meaning:
+              "Cấu hình riêng cho từng Workspace: mỗi khi có khách điền Form, hệ thống bắn tin nhắn ngay về nhóm Telegram của bạn hoặc đẩy JSON sang Make / n8n / Google Sheets / CRM (token được bảo mật tuyệt đối, không bao giờ lộ ra trình duyệt khách).",
           },
         ],
       },
@@ -445,11 +473,34 @@ export const MENU_GUIDES: MenuGuideSection[] = [
         purpose: "Lưu thông tin chi tiết và tọa độ bản đồ cho 1 cửa hàng.",
         fields: [
           { field: "Mã quán (tùy chọn)", meaning: "Mã quản lý nội bộ (VD: GC-Q1-01)." },
-          { field: "Tên chi nhánh", required: true, meaning: "Tên hiển thị trên danh sách & popup bản đồ.", example: "Gờ Café — Nguyễn Huệ" },
-          { field: "Địa chỉ chi tiết", required: true, meaning: "Số nhà, tên đường đầy đủ.", example: "42 Nguyễn Huệ, P. Bến Nghé" },
-          { field: "Quận / Huyện & Thành phố", required: true, meaning: "Dùng để tạo nút lọc nhanh theo Quận trên bản đồ.", example: "Quận 1 / TP.HCM" },
-          { field: "Số điện thoại & Giờ mở cửa", meaning: "Hiện nút Gọi/Zalo trực tiếp và khung giờ hoạt động trên thẻ quán.", example: "0909 123 456 / 06:30 - 22:00" },
-          { field: "Link Google Maps & Tọa độ (Lat / Lng)", meaning: "Dán link Google Maps có chứa @10.77...,106.70... hệ thống tự động điền Lat/Lng chính xác để cắm ghim lên bản đồ." },
+          {
+            field: "Tên chi nhánh",
+            required: true,
+            meaning: "Tên hiển thị trên danh sách & popup bản đồ.",
+            example: "Gờ Café — Nguyễn Huệ",
+          },
+          {
+            field: "Địa chỉ chi tiết",
+            required: true,
+            meaning: "Số nhà, tên đường đầy đủ.",
+            example: "42 Nguyễn Huệ, P. Bến Nghé",
+          },
+          {
+            field: "Quận / Huyện & Thành phố",
+            required: true,
+            meaning: "Dùng để tạo nút lọc nhanh theo Quận trên bản đồ.",
+            example: "Quận 1 / TP.HCM",
+          },
+          {
+            field: "Số điện thoại & Giờ mở cửa",
+            meaning: "Hiện nút Gọi/Zalo trực tiếp và khung giờ hoạt động trên thẻ quán.",
+            example: "0909 123 456 / 06:30 - 22:00",
+          },
+          {
+            field: "Link Google Maps & Tọa độ (Lat / Lng)",
+            meaning:
+              "Dán link Google Maps có chứa @10.77...,106.70... hệ thống tự động điền Lat/Lng chính xác để cắm ghim lên bản đồ.",
+          },
         ],
       },
     ],
@@ -488,9 +539,19 @@ export const MENU_GUIDES: MenuGuideSection[] = [
         where: "Khách hàng (Leads) → thanh công cụ phía trên bảng",
         purpose: "Tra cứu, phân loại và xuất dữ liệu khách đăng ký.",
         fields: [
-          { field: "Ô tìm kiếm", meaning: "Gõ tên khách, SĐT hoặc từ khóa trong nhu cầu (hỗ trợ gõ không dấu)." },
-          { field: "Lọc Trạng thái / Form / Trang / Từ ngày - Đến ngày", meaning: "Thu hẹp danh sách trước khi xử lý hoặc xuất Excel." },
-          { field: "Cột Ghi chú & Nguồn UTM", meaning: "Hiển thị đầy đủ câu trả lời từ các Trường mở rộng (Custom Fields) dạng [Tên trường]: Giá trị và nguồn quảng cáo (utm_source / utm_campaign)." },
+          {
+            field: "Ô tìm kiếm",
+            meaning: "Gõ tên khách, SĐT hoặc từ khóa trong nhu cầu (hỗ trợ gõ không dấu).",
+          },
+          {
+            field: "Lọc Trạng thái / Form / Trang / Từ ngày - Đến ngày",
+            meaning: "Thu hẹp danh sách trước khi xử lý hoặc xuất Excel.",
+          },
+          {
+            field: "Cột Ghi chú & Nguồn UTM",
+            meaning:
+              "Hiển thị đầy đủ câu trả lời từ các Trường mở rộng (Custom Fields) dạng [Tên trường]: Giá trị và nguồn quảng cáo (utm_source / utm_campaign).",
+          },
         ],
       },
     ],
@@ -524,9 +585,22 @@ export const MENU_GUIDES: MenuGuideSection[] = [
         where: "Danh mục liên kết → nút '+ Thêm liên kết'",
         purpose: "Lưu trữ liên kết dùng chung có theo dõi lượt bấm (click tracking).",
         fields: [
-          { field: "Nhãn mặc định", required: true, meaning: "Tên hiển thị trên nút bấm.", example: "Đặt món qua ShopeeFood" },
-          { field: "Đường dẫn đích (URL / SĐT / Email)", required: true, meaning: "Link https://..., tel:0909..., hoặc mailto:...", example: "https://shopeefood.vn/..." },
-          { field: "Phân loại", meaning: "Liên kết thường (Standard), Mạng xã hội (Social), hoặc Liên hệ (Contact)." },
+          {
+            field: "Nhãn mặc định",
+            required: true,
+            meaning: "Tên hiển thị trên nút bấm.",
+            example: "Đặt món qua ShopeeFood",
+          },
+          {
+            field: "Đường dẫn đích (URL / SĐT / Email)",
+            required: true,
+            meaning: "Link https://..., tel:0909..., hoặc mailto:...",
+            example: "https://shopeefood.vn/...",
+          },
+          {
+            field: "Phân loại",
+            meaning: "Liên kết thường (Standard), Mạng xã hội (Social), hoặc Liên hệ (Contact).",
+          },
           { field: "Ảnh đại diện mặc định", meaning: "Icon/ảnh nhỏ đi kèm nút bấm (tùy chọn)." },
         ],
       },
@@ -586,8 +660,17 @@ export const MENU_GUIDES: MenuGuideSection[] = [
         where: "Thành viên → khung phía trên cùng",
         purpose: "Cấp quyền truy cập Workspace hiện tại cho nhân viên/đối tác.",
         fields: [
-          { field: "Email thành viên", required: true, meaning: "Địa chỉ email dùng để đăng nhập hệ thống.", example: "marketing@congty.vn" },
-          { field: "Vai trò", required: true, meaning: "Chọn Người xem, Biên tập viên hoặc Chủ sở hữu." },
+          {
+            field: "Email thành viên",
+            required: true,
+            meaning: "Địa chỉ email dùng để đăng nhập hệ thống.",
+            example: "marketing@congty.vn",
+          },
+          {
+            field: "Vai trò",
+            required: true,
+            meaning: "Chọn Người xem, Biên tập viên hoặc Chủ sở hữu.",
+          },
         ],
       },
     ],
@@ -629,21 +712,49 @@ export const MENU_GUIDES: MenuGuideSection[] = [
       {
         formName: "Form Tạo Workspace (Tab 1) & Form Tạo Tài khoản trực tiếp (Tab 2)",
         where: "Quản trị hệ thống (/admin/system)",
-        purpose: "Khởi tạo nhanh không gian làm việc và tài khoản bàn giao cho khách hàng / chi nhánh.",
+        purpose:
+          "Khởi tạo nhanh không gian làm việc và tài khoản bàn giao cho khách hàng / chi nhánh.",
         fields: [
-          { field: "Tên Workspace + Gói (Free / Pro / Enterprise)", required: true, meaning: "Chọn gói sẽ tự điền sẵn bộ Feature Flags & Hạn mức chuẩn (vẫn chỉnh tay từng số liệu được)." },
-          { field: "Email + Mật khẩu ban đầu (≥ 8 ký tự)", required: true, meaning: "Khi tạo tài khoản ở Tab 2, tài khoản được xác thực email sẵn — gửi email & mật khẩu là nhân sự đăng nhập làm việc ngay." },
-          { field: "Gán ngay vào Workspace & Vai trò", meaning: "Gán luôn người dùng mới vào đúng Workspace cần quản lý ngay trong bước tạo." },
+          {
+            field: "Tên Workspace + Gói (Free / Pro / Enterprise)",
+            required: true,
+            meaning:
+              "Chọn gói sẽ tự điền sẵn bộ Feature Flags & Hạn mức chuẩn (vẫn chỉnh tay từng số liệu được).",
+          },
+          {
+            field: "Email + Mật khẩu ban đầu (≥ 8 ký tự)",
+            required: true,
+            meaning:
+              "Khi tạo tài khoản ở Tab 2, tài khoản được xác thực email sẵn — gửi email & mật khẩu là nhân sự đăng nhập làm việc ngay.",
+          },
+          {
+            field: "Gán ngay vào Workspace & Vai trò",
+            meaning: "Gán luôn người dùng mới vào đúng Workspace cần quản lý ngay trong bước tạo.",
+          },
         ],
       },
       {
         formName: "Form Gắn Tên miền riêng (Tab 3 — Tên miền)",
         where: "Quản trị hệ thống → Tab 'Tên miền'",
-        purpose: "Định tuyến tự động tên miền riêng của từng thương hiệu về đúng trang chủ của Workspace đó.",
+        purpose:
+          "Định tuyến tự động tên miền riêng của từng thương hiệu về đúng trang chủ của Workspace đó.",
         fields: [
-          { field: "Tên miền", required: true, meaning: "Nhập dạng go-cafe.com hoặc shop.doitac.vn (tự chuẩn hóa chữ thường, tự hỗ trợ cả www.)." },
-          { field: "Thuộc Workspace", required: true, meaning: "Chọn Workspace sở hữu tên miền này." },
-          { field: "Trang chủ khi mở tên miền (/)", meaning: "Chọn 1 trang cụ thể của Workspace đó, hoặc để mặc định (tự lấy Trang chủ trong Cấu hình Website)." },
+          {
+            field: "Tên miền",
+            required: true,
+            meaning:
+              "Nhập dạng go-cafe.com hoặc shop.doitac.vn (tự chuẩn hóa chữ thường, tự hỗ trợ cả www.).",
+          },
+          {
+            field: "Thuộc Workspace",
+            required: true,
+            meaning: "Chọn Workspace sở hữu tên miền này.",
+          },
+          {
+            field: "Trang chủ khi mở tên miền (/)",
+            meaning:
+              "Chọn 1 trang cụ thể của Workspace đó, hoặc để mặc định (tự lấy Trang chủ trong Cấu hình Website).",
+          },
         ],
       },
     ],

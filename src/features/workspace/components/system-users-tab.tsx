@@ -244,9 +244,7 @@ export function SystemUsersTab({
                 <input
                   type="checkbox"
                   checked={createForm.isSuperAdmin}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, isSuperAdmin: e.target.checked })
-                  }
+                  onChange={(e) => setCreateForm({ ...createForm, isSuperAdmin: e.target.checked })}
                   className="rounded border-input"
                 />
                 <span>Cấp quyền SuperAdmin toàn hệ thống</span>
@@ -401,7 +399,11 @@ export function SystemUsersTab({
                           : "border-red-500/30 text-red-600 hover:bg-red-500/10"
                       }`}
                     >
-                      {u.isBanned ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                      {u.isBanned ? (
+                        <Unlock className="w-3.5 h-3.5" />
+                      ) : (
+                        <Lock className="w-3.5 h-3.5" />
+                      )}
                       {u.isBanned ? "Mở khóa" : "Khóa"}
                     </button>
                   )}
@@ -413,7 +415,9 @@ export function SystemUsersTab({
                 <span className="text-[11px] text-muted-foreground mr-1">Workspace:</span>
                 {u.memberships.length === 0 ? (
                   <span className="text-[11px] italic text-muted-foreground">
-                    {u.isSuperAdmin ? "Toàn quyền mọi Workspace (SuperAdmin)" : "Chưa thuộc Workspace nào"}
+                    {u.isSuperAdmin
+                      ? "Toàn quyền mọi Workspace (SuperAdmin)"
+                      : "Chưa thuộc Workspace nào"}
                   </span>
                 ) : (
                   u.memberships.map((m) => (
