@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -9,6 +9,7 @@ import {
   ArrowUpToLine,
   BarChart3,
   ChevronDown,
+  Download,
   FileText,
   Image as ImageIcon,
   Layers,
@@ -23,6 +24,7 @@ import {
   Sparkles,
   Star,
   Tablet,
+  Upload,
   Users,
   ArrowUp,
   ArrowDown,
@@ -41,24 +43,39 @@ import type { SitePreviewSection } from "@/features/renderer/landing-shell";
 import { SiteLivePreview, type SitePreviewDevice, type SitePreviewZoom } from "./site-live-preview";
 import { SiteConfigSection, ToggleRow } from "./site-config-section";
 import type {
+  SiteAnnouncementMode,
   SiteConfigEditorData,
+  SiteCtaIcon,
   SiteCtaRadius,
+  SiteCtaSecondaryStyle,
+  SiteCtaSize,
+  SiteDropdownRadius,
   SiteFloatingButtonIcon,
   SiteFloatingCustomButton,
+  SiteFloatingSize,
+  SiteFloatingStyle,
+  SiteFloatingVisibility,
   SiteFooterColumn,
   SiteFooterLayout,
   SiteFooterLink,
   SiteFooterPadding,
+  SiteHeaderConfig,
+  SiteMobileDrawerSide,
   SiteNavActiveStyle,
   SiteNavBackdrop,
+  SiteNavBgMode,
+  SiteNavBlur,
   SiteNavGap,
   SiteNavHeight,
   SiteNavItemData,
   SiteNavLayout,
+  SiteNavLetterSpacing,
+  SiteNavMaxWidth,
   SiteNavShadow,
   SiteNavTargetType,
   SiteNavWeight,
 } from "../types";
+import { SITE_HEADER_PRESETS } from "../header-presets";
 import {
   createNavItemAction,
   createPageAndLinkNavAction,
@@ -274,6 +291,9 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
   const [navLayout, setNavLayout] = useState<SiteNavLayout>(
     initialData.settings.headerConfig.navLayout || "classic"
   );
+  const [navMaxWidth, setNavMaxWidth] = useState<SiteNavMaxWidth>(
+    initialData.settings.headerConfig.navMaxWidth || "default"
+  );
   const [navHeight, setNavHeight] = useState<SiteNavHeight>(
     initialData.settings.headerConfig.navHeight || "default"
   );
@@ -286,6 +306,9 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
   const [navUppercase, setNavUppercase] = useState<boolean>(
     initialData.settings.headerConfig.navUppercase ?? false
   );
+  const [navLetterSpacing, setNavLetterSpacing] = useState<SiteNavLetterSpacing>(
+    initialData.settings.headerConfig.navLetterSpacing || "normal"
+  );
   const [navWeight, setNavWeight] = useState<SiteNavWeight>(
     initialData.settings.headerConfig.navWeight || "500"
   );
@@ -295,11 +318,35 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
   const [navBackdrop, setNavBackdrop] = useState<SiteNavBackdrop>(
     initialData.settings.headerConfig.navBackdrop || "glass"
   );
+  const [navBgMode, setNavBgMode] = useState<SiteNavBgMode>(
+    initialData.settings.headerConfig.navBgMode || "solid-color"
+  );
+  const [navBgGradientEnd, setNavBgGradientEnd] = useState<string>(
+    initialData.settings.headerConfig.navBgGradientEnd || "#1A120D"
+  );
+  const [navBgGradientAngle, setNavBgGradientAngle] = useState<90 | 135 | 180>(
+    initialData.settings.headerConfig.navBgGradientAngle || 90
+  );
+  const [navBgOpacity, setNavBgOpacity] = useState<number>(
+    initialData.settings.headerConfig.navBgOpacity ?? 92
+  );
+  const [navBlur, setNavBlur] = useState<SiteNavBlur>(
+    initialData.settings.headerConfig.navBlur || "md"
+  );
   const [navShadow, setNavShadow] = useState<SiteNavShadow>(
     initialData.settings.headerConfig.navShadow || "none"
   );
   const [navBorder, setNavBorder] = useState<boolean>(
     initialData.settings.headerConfig.navBorder ?? true
+  );
+  const [dropdownRadius, setDropdownRadius] = useState<SiteDropdownRadius>(
+    initialData.settings.headerConfig.dropdownRadius || "xl"
+  );
+  const [mobileDrawerSide, setMobileDrawerSide] = useState<SiteMobileDrawerSide>(
+    initialData.settings.headerConfig.mobileDrawerSide || "right"
+  );
+  const [mobileDrawerShowContact, setMobileDrawerShowContact] = useState<boolean>(
+    initialData.settings.headerConfig.mobileDrawerShowContact ?? false
   );
   const [ctaBgColor, setCtaBgColor] = useState(
     initialData.settings.headerConfig.ctaBgColor || "#111111"
@@ -310,11 +357,32 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
   const [ctaRadius, setCtaRadius] = useState<SiteCtaRadius>(
     initialData.settings.headerConfig.ctaRadius || "xl"
   );
+  const [ctaIcon, setCtaIcon] = useState<SiteCtaIcon>(
+    initialData.settings.headerConfig.ctaIcon || "none"
+  );
+  const [ctaSize, setCtaSize] = useState<SiteCtaSize>(
+    initialData.settings.headerConfig.ctaSize || "md"
+  );
   const [ctaShowOnMobile, setCtaShowOnMobile] = useState<boolean>(
     initialData.settings.headerConfig.ctaShowOnMobile ?? false
   );
+  const [ctaSecondaryEnabled, setCtaSecondaryEnabled] = useState<boolean>(
+    initialData.settings.headerConfig.ctaSecondaryEnabled ?? false
+  );
+  const [ctaSecondaryLabel, setCtaSecondaryLabel] = useState<string>(
+    initialData.settings.headerConfig.ctaSecondaryLabel || ""
+  );
+  const [ctaSecondaryHref, setCtaSecondaryHref] = useState<string>(
+    initialData.settings.headerConfig.ctaSecondaryHref || ""
+  );
+  const [ctaSecondaryStyle, setCtaSecondaryStyle] = useState<SiteCtaSecondaryStyle>(
+    initialData.settings.headerConfig.ctaSecondaryStyle || "outline"
+  );
   const [announcementEnabled, setAnnouncementEnabled] = useState<boolean>(
     initialData.settings.headerConfig.announcementEnabled ?? false
+  );
+  const [announcementBadge, setAnnouncementBadge] = useState<string>(
+    initialData.settings.headerConfig.announcementBadge || ""
   );
   const [announcementText, setAnnouncementText] = useState(
     initialData.settings.headerConfig.announcementText || ""
@@ -325,8 +393,20 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
   const [announcementBgColor, setAnnouncementBgColor] = useState(
     initialData.settings.headerConfig.announcementBgColor || "#111111"
   );
+  const [announcementBgGradientEnd, setAnnouncementBgGradientEnd] = useState<string>(
+    initialData.settings.headerConfig.announcementBgGradientEnd || ""
+  );
   const [announcementTextColor, setAnnouncementTextColor] = useState(
     initialData.settings.headerConfig.announcementTextColor || "#FFFFFF"
+  );
+  const [announcementFontSize, setAnnouncementFontSize] = useState<number>(
+    initialData.settings.headerConfig.announcementFontSize ?? 12
+  );
+  const [announcementDismissible, setAnnouncementDismissible] = useState<boolean>(
+    initialData.settings.headerConfig.announcementDismissible ?? false
+  );
+  const [announcementMode, setAnnouncementMode] = useState<SiteAnnouncementMode>(
+    initialData.settings.headerConfig.announcementMode || "static"
   );
   // Footer style state
   const [footerLayout, setFooterLayout] = useState<SiteFooterLayout>(
@@ -366,6 +446,24 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
   const [floatingPosition, setFloatingPosition] = useState<"right" | "left">(
     initialData.settings.floatingContact.position ?? "right"
   );
+  const [floatingStyle, setFloatingStyle] = useState<SiteFloatingStyle>(
+    initialData.settings.floatingContact.style || "icon"
+  );
+  const [floatingSize, setFloatingSize] = useState<SiteFloatingSize>(
+    initialData.settings.floatingContact.size || "md"
+  );
+  const [floatingVisibility, setFloatingVisibility] = useState<SiteFloatingVisibility>(
+    initialData.settings.floatingContact.visibility || "all"
+  );
+  const [floatingBottomOffset, setFloatingBottomOffset] = useState<number>(
+    initialData.settings.floatingContact.bottomOffset ?? 20
+  );
+  const [floatingSideOffset, setFloatingSideOffset] = useState<number>(
+    initialData.settings.floatingContact.sideOffset ?? 20
+  );
+  const [floatingPulseCall, setFloatingPulseCall] = useState<boolean>(
+    initialData.settings.floatingContact.pulseCall ?? false
+  );
   const [showBackToTop, setShowBackToTop] = useState(
     initialData.settings.floatingContact.showBackToTop ?? false
   );
@@ -373,13 +471,40 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
   const [floatingPhone, setFloatingPhone] = useState(
     initialData.settings.floatingContact.phone || ""
   );
+  const [floatingCallLabel, setFloatingCallLabel] = useState(
+    initialData.settings.floatingContact.callLabel || "Gọi ngay"
+  );
+  const [floatingCallIconUrl, setFloatingCallIconUrl] = useState(
+    initialData.settings.floatingContact.callIconUrl || ""
+  );
+  const [floatingCallBg, setFloatingCallBg] = useState(
+    initialData.settings.floatingContact.callBgColor || "#111111"
+  );
+  const [floatingCallText, setFloatingCallText] = useState(
+    initialData.settings.floatingContact.callTextColor || "#FFFFFF"
+  );
   const [showZalo, setShowZalo] = useState(initialData.settings.floatingContact.showZalo ?? true);
   const [floatingZalo, setFloatingZalo] = useState(
     initialData.settings.floatingContact.zaloUrl || ""
   );
+  const [floatingZaloLabel, setFloatingZaloLabel] = useState(
+    initialData.settings.floatingContact.zaloLabel || "Nhắn Zalo"
+  );
+  const [floatingZaloIconUrl, setFloatingZaloIconUrl] = useState(
+    initialData.settings.floatingContact.zaloIconUrl || ""
+  );
+  const [floatingZaloBg, setFloatingZaloBg] = useState(
+    initialData.settings.floatingContact.zaloBgColor || "#0068FF"
+  );
+  const [floatingZaloText, setFloatingZaloText] = useState(
+    initialData.settings.floatingContact.zaloTextColor || "#FFFFFF"
+  );
   const [customFloatingButtons, setCustomFloatingButtons] = useState<SiteFloatingCustomButton[]>(
     initialData.settings.floatingContact.customButtons || []
   );
+  const [showFloatingAdvanced, setShowFloatingAdvanced] = useState(false);
+  const [jsonModalOpen, setJsonModalOpen] = useState(false);
+  const [jsonImportText, setJsonImportText] = useState("");
 
   // Footer columns state (max 3)
   const [footerColumns, setFooterColumns] = useState<SiteFooterColumn[]>(
@@ -446,6 +571,34 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
     setFormSlug(slug);
   };
 
+  const applyHeaderPreset = (cfg: Partial<SiteHeaderConfig>) => {
+    if (cfg.navLayout) setNavLayout(cfg.navLayout);
+    if (cfg.navMaxWidth) setNavMaxWidth(cfg.navMaxWidth);
+    if (cfg.navHeight) setNavHeight(cfg.navHeight);
+    if (typeof cfg.logoHeight === "number") setLogoHeight(cfg.logoHeight);
+    if (cfg.navGap) setNavGap(cfg.navGap);
+    if (cfg.navFont) setNavFont(cfg.navFont);
+    if (typeof cfg.navFontSize === "number") setNavFontSize(cfg.navFontSize);
+    if (typeof cfg.navUppercase === "boolean") setNavUppercase(cfg.navUppercase);
+    if (cfg.navLetterSpacing) setNavLetterSpacing(cfg.navLetterSpacing);
+    if (cfg.navWeight) setNavWeight(cfg.navWeight);
+    if (cfg.navActiveStyle) setNavActiveStyle(cfg.navActiveStyle);
+    if (cfg.navBackdrop) setNavBackdrop(cfg.navBackdrop);
+    if (cfg.navBgMode) setNavBgMode(cfg.navBgMode);
+    if (typeof cfg.navBgGradientEnd === "string") setNavBgGradientEnd(cfg.navBgGradientEnd);
+    if (cfg.navBgGradientAngle) setNavBgGradientAngle(cfg.navBgGradientAngle);
+    if (typeof cfg.navBgOpacity === "number") setNavBgOpacity(cfg.navBgOpacity);
+    if (cfg.navBlur) setNavBlur(cfg.navBlur);
+    if (cfg.navShadow) setNavShadow(cfg.navShadow);
+    if (typeof cfg.navBorder === "boolean") setNavBorder(cfg.navBorder);
+    if (cfg.navBgColor) setNavBgColor(cfg.navBgColor);
+    if (cfg.navTextColor) setNavTextColor(cfg.navTextColor);
+    if (cfg.navActiveColor) setNavActiveColor(cfg.navActiveColor);
+    if (cfg.ctaBgColor) setCtaBgColor(cfg.ctaBgColor);
+    if (cfg.ctaTextColor) setCtaTextColor(cfg.ctaTextColor);
+    if (cfg.ctaRadius) setCtaRadius(cfg.ctaRadius);
+  };
+
   const handleSaveSettings = () => {
     startTransition(async () => {
       const res = await saveSiteSettingsAction({
@@ -457,32 +610,53 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
           hideSiteName,
           homePageSlug,
           navLayout,
+          navMaxWidth,
           navHeight,
           logoHeight,
           navGap,
           navFont,
           navFontSize,
           navUppercase,
+          navLetterSpacing,
           navWeight,
           navActiveStyle,
           navBackdrop,
+          navBgMode,
+          navBgGradientEnd: navBgMode === "gradient" ? navBgGradientEnd : "",
+          navBgGradientAngle,
+          navBgOpacity,
+          navBlur,
           navShadow,
           navBorder,
           navBgColor,
           navTextColor,
           navActiveColor,
+          dropdownRadius,
+          mobileDrawerSide,
+          mobileDrawerShowContact,
           ctaEnabled,
           ctaLabel,
           ctaHref,
           ctaBgColor,
           ctaTextColor,
           ctaRadius,
+          ctaIcon,
+          ctaSize,
           ctaShowOnMobile,
+          ctaSecondaryEnabled,
+          ctaSecondaryLabel,
+          ctaSecondaryHref,
+          ctaSecondaryStyle,
           announcementEnabled,
+          announcementBadge,
           announcementText,
           announcementHref,
           announcementBgColor,
+          announcementBgGradientEnd,
           announcementTextColor,
+          announcementFontSize,
+          announcementDismissible,
+          announcementMode,
           faviconUrl,
           copyrightText,
           legalLinks: legalLinks.filter((l) => l.label.trim() && l.href.trim()),
@@ -518,11 +692,25 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
         floatingContact: {
           enabled: floatingEnabled,
           position: floatingPosition,
+          style: floatingStyle,
+          size: floatingSize,
+          visibility: floatingVisibility,
+          bottomOffset: floatingBottomOffset,
+          sideOffset: floatingSideOffset,
+          pulseCall: floatingPulseCall,
           showBackToTop,
           showCall,
           phone: floatingPhone,
+          callLabel: floatingCallLabel,
+          callIconUrl: floatingCallIconUrl,
+          callBgColor: floatingCallBg,
+          callTextColor: floatingCallText,
           showZalo,
           zaloUrl: floatingZalo,
+          zaloLabel: floatingZaloLabel,
+          zaloIconUrl: floatingZaloIconUrl,
+          zaloBgColor: floatingZaloBg,
+          zaloTextColor: floatingZaloText,
           customButtons: customFloatingButtons.filter((b) => b.label.trim() && b.href.trim()),
         },
       });
@@ -534,6 +722,23 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
       }
     });
   };
+
+  // Phím tắt Ctrl+S / Cmd+S để lưu nhanh
+  const saveRef = useRef(handleSaveSettings);
+  useEffect(() => {
+    saveRef.current = handleSaveSettings;
+  });
+  useEffect(() => {
+    if (!canEdit) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        saveRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [canEdit]);
 
   const handleSubmitNavModal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -724,30 +929,51 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
           ctaEnabled,
           ctaLabel: ctaLabel.trim() || undefined,
           ctaHref: ctaHref.trim() || undefined,
+          ctaIcon,
+          ctaSize,
+          ctaSecondaryEnabled,
+          ctaSecondaryLabel: ctaSecondaryLabel.trim() || undefined,
+          ctaSecondaryHref: ctaSecondaryHref.trim() || undefined,
+          ctaSecondaryStyle,
           navFont,
           navFontSize,
           navBgColor,
           navTextColor,
           navActiveColor,
           navLayout,
+          navMaxWidth,
           navHeight,
           logoHeight,
           navGap,
           navUppercase,
+          navLetterSpacing,
           navWeight,
           navActiveStyle,
           navBackdrop,
+          navBgMode,
+          navBgGradientEnd: navBgMode === "gradient" ? navBgGradientEnd : undefined,
+          navBgGradientAngle,
+          navBgOpacity,
+          navBlur,
           navShadow,
           navBorder,
+          dropdownRadius,
+          mobileDrawerSide,
+          mobileDrawerShowContact,
           ctaBgColor,
           ctaTextColor,
           ctaRadius,
           ctaShowOnMobile,
           announcementEnabled,
+          announcementBadge: announcementBadge.trim() || undefined,
           announcementText: announcementText.trim() || undefined,
           announcementHref: announcementHref.trim() || undefined,
           announcementBgColor,
+          announcementBgGradientEnd: announcementBgGradientEnd.trim() || undefined,
           announcementTextColor,
+          announcementFontSize,
+          announcementDismissible,
+          announcementMode,
           copyrightText: copyrightText.trim() || undefined,
           faviconUrl: faviconUrl.trim() || undefined,
           legalLinks,
@@ -773,11 +999,25 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
         floating_contact: {
           enabled: floatingEnabled,
           position: floatingPosition,
+          style: floatingStyle,
+          size: floatingSize,
+          visibility: floatingVisibility,
+          bottomOffset: floatingBottomOffset,
+          sideOffset: floatingSideOffset,
+          pulseCall: floatingPulseCall,
           showBackToTop,
           showCall,
           phone: floatingPhone.trim() || undefined,
+          callLabel: floatingCallLabel.trim() || undefined,
+          callIconUrl: floatingCallIconUrl.trim() || undefined,
+          callBgColor: floatingCallBg,
+          callTextColor: floatingCallText,
           showZalo,
           zaloUrl: floatingZalo.trim() || undefined,
+          zaloLabel: floatingZaloLabel.trim() || undefined,
+          zaloIconUrl: floatingZaloIconUrl.trim() || undefined,
+          zaloBgColor: floatingZaloBg,
+          zaloTextColor: floatingZaloText,
           customButtons: customFloatingButtons,
         },
       },
@@ -802,30 +1042,51 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
       ctaEnabled,
       ctaLabel,
       ctaHref,
+      ctaIcon,
+      ctaSize,
+      ctaSecondaryEnabled,
+      ctaSecondaryLabel,
+      ctaSecondaryHref,
+      ctaSecondaryStyle,
       navFont,
       navFontSize,
       navBgColor,
       navTextColor,
       navActiveColor,
       navLayout,
+      navMaxWidth,
       navHeight,
       logoHeight,
       navGap,
       navUppercase,
+      navLetterSpacing,
       navWeight,
       navActiveStyle,
       navBackdrop,
+      navBgMode,
+      navBgGradientEnd,
+      navBgGradientAngle,
+      navBgOpacity,
+      navBlur,
       navShadow,
       navBorder,
+      dropdownRadius,
+      mobileDrawerSide,
+      mobileDrawerShowContact,
       ctaBgColor,
       ctaTextColor,
       ctaRadius,
       ctaShowOnMobile,
       announcementEnabled,
+      announcementBadge,
       announcementText,
       announcementHref,
       announcementBgColor,
+      announcementBgGradientEnd,
       announcementTextColor,
+      announcementFontSize,
+      announcementDismissible,
+      announcementMode,
       copyrightText,
       faviconUrl,
       legalLinks,
@@ -845,15 +1106,78 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
       footerColumns,
       floatingEnabled,
       floatingPosition,
+      floatingStyle,
+      floatingSize,
+      floatingVisibility,
+      floatingBottomOffset,
+      floatingSideOffset,
+      floatingPulseCall,
       showBackToTop,
       showCall,
       floatingPhone,
+      floatingCallLabel,
+      floatingCallIconUrl,
+      floatingCallBg,
+      floatingCallText,
       showZalo,
       floatingZalo,
+      floatingZaloLabel,
+      floatingZaloIconUrl,
+      floatingZaloBg,
+      floatingZaloText,
       customFloatingButtons,
       initialData.navItems,
     ]
   );
+
+  const handleExportShellJson = async () => {
+    const payload = {
+      headerConfig: liveSiteShell.settings.header_config,
+      floatingContact: liveSiteShell.settings.floating_contact,
+      footerColumns,
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+      toast.success("Đã sao chép cấu hình JSON vào bộ nhớ tạm!");
+    } catch {
+      toast.error("Không thể truy cập bộ nhớ tạm trình duyệt");
+    }
+  };
+
+  const handleImportShellJson = () => {
+    try {
+      const parsed = JSON.parse(jsonImportText) as {
+        headerConfig?: Partial<SiteHeaderConfig>;
+        floatingContact?: Record<string, unknown>;
+        footerColumns?: SiteFooterColumn[];
+      };
+      if (parsed.headerConfig) {
+        applyHeaderPreset(parsed.headerConfig);
+        if (typeof parsed.headerConfig.sticky === "boolean")
+          setStickyHeader(parsed.headerConfig.sticky);
+        if (typeof parsed.headerConfig.hideSiteName === "boolean")
+          setHideSiteName(parsed.headerConfig.hideSiteName);
+        if (typeof parsed.headerConfig.ctaEnabled === "boolean")
+          setCtaEnabled(parsed.headerConfig.ctaEnabled);
+        if (typeof parsed.headerConfig.ctaLabel === "string")
+          setCtaLabel(parsed.headerConfig.ctaLabel);
+        if (typeof parsed.headerConfig.ctaHref === "string")
+          setCtaHref(parsed.headerConfig.ctaHref);
+        if (typeof parsed.headerConfig.announcementEnabled === "boolean")
+          setAnnouncementEnabled(parsed.headerConfig.announcementEnabled);
+        if (typeof parsed.headerConfig.announcementText === "string")
+          setAnnouncementText(parsed.headerConfig.announcementText);
+      }
+      if (Array.isArray(parsed.footerColumns)) {
+        setFooterColumns(parsed.footerColumns.slice(0, 4));
+      }
+      setJsonModalOpen(false);
+      setJsonImportText("");
+      toast.success("Đã áp dụng cấu hình JSON! Bấm Lưu cấu hình để ghi lại.");
+    } catch {
+      toast.error("JSON không hợp lệ. Vui lòng kiểm tra lại định dạng.");
+    }
+  };
 
   return (
     <div
@@ -1014,13 +1338,32 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
             )}
           </div>
 
-          {/* Right: Primary Save Button */}
+          {/* Right: JSON Export/Import + Primary Save Button */}
           {canEdit && (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={handleExportShellJson}
+                className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title="Sao chép cấu hình JSON của bộ Menu này"
+                aria-label="Xuất JSON"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setJsonModalOpen(true)}
+                className="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                title="Nhập cấu hình JSON từ bộ Menu khác"
+                aria-label="Nhập JSON"
+              >
+                <Upload className="w-3.5 h-3.5" />
+              </button>
               <button
                 type="button"
                 disabled={isPending}
                 onClick={handleSaveSettings}
+                title="Lưu cấu hình (Ctrl+S)"
                 className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 sm:px-4 rounded-xl bg-foreground text-background text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer shadow-xs"
               >
                 {isPending ? (
@@ -1515,112 +1858,199 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                   open={Boolean(openHeaderSections.navbar)}
                   onToggle={() => toggleHeaderSection("navbar")}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Bố cục &amp; Nền
+                  {/* 6 Preset Header 1-Click */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                      Mẫu thiết kế nhanh (1-Click Preset)
                     </span>
-                    {canEdit && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNavLayout("classic");
-                          setNavHeight("default");
-                          setLogoHeight(36);
-                          setNavGap("normal");
-                          setNavFont("lexend-deca");
-                          setNavFontSize(13);
-                          setNavUppercase(false);
-                          setNavWeight("500");
-                          setNavActiveStyle("text");
-                          setNavBackdrop("glass");
-                          setNavShadow("none");
-                          setNavBorder(true);
-                          setNavBgColor("#FFFFFF");
-                          setNavTextColor("#111111");
-                          setNavActiveColor("#B88A44");
-                          setCtaBgColor("#111111");
-                          setCtaTextColor("#FFFFFF");
-                          setCtaRadius("xl");
-                        }}
-                        className="text-[11px] font-semibold text-muted-foreground hover:text-foreground underline cursor-pointer"
-                      >
-                        Khôi phục mặc định
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                        Kiểu bố cục
-                      </label>
-                      <Select
-                        value={navLayout}
-                        disabled={!canEdit}
-                        onChange={(val) => setNavLayout(val as SiteNavLayout)}
-                        options={[
-                          { value: "classic", label: "Chuẩn (Logo trái • Menu giữa)" },
-                          { value: "left", label: "Hiện đại (Logo & Menu sát trái)" },
-                          { value: "centered-logo", label: "Luxury (Logo giữa • 2 tầng)" },
-                          { value: "floating-pill", label: "Thanh nổi bo tròn (Pill)" },
-                        ]}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                        Hiệu ứng nền
-                      </label>
-                      <Select
-                        value={navBackdrop}
-                        disabled={!canEdit}
-                        onChange={(val) => setNavBackdrop(val as SiteNavBackdrop)}
-                        options={[
-                          { value: "glass", label: "Kính mờ (Glass)" },
-                          { value: "solid", label: "Nền đặc 100%" },
-                          { value: "transparent-top", label: "Trong suốt đầu trang" },
-                        ]}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                        Chiều cao Navbar
-                      </label>
-                      <Select
-                        value={navHeight}
-                        disabled={!canEdit}
-                        onChange={(val) => setNavHeight(val as SiteNavHeight)}
-                        options={[
-                          { value: "compact", label: "Gọn (56px)" },
-                          { value: "default", label: "Chuẩn (64px)" },
-                          { value: "tall", label: "Thoáng (80px)" },
-                        ]}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                        Chiều cao Logo ({logoHeight}px)
-                      </label>
-                      <input
-                        type="range"
-                        min={24}
-                        max={56}
-                        step={2}
-                        disabled={!canEdit}
-                        value={logoHeight}
-                        onChange={(e) => setLogoHeight(Number(e.target.value))}
-                        className="w-full h-9 accent-primary"
-                      />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {SITE_HEADER_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          disabled={!canEdit}
+                          onClick={() => {
+                            applyHeaderPreset(preset.config);
+                            toast.success(`Đã áp dụng mẫu "${preset.name}"`);
+                          }}
+                          className="p-2.5 rounded-xl border border-border/80 bg-background hover:border-foreground/40 hover:bg-muted/30 text-left transition-all cursor-pointer disabled:opacity-50 space-y-1.5"
+                        >
+                          <div className="flex items-center gap-1">
+                            {preset.swatches.map((color, idx) => (
+                              <span
+                                key={idx}
+                                className="w-3.5 h-3.5 rounded-full border border-black/15 shrink-0"
+                                style={{ backgroundColor: color }}
+                              />
+                            ))}
+                          </div>
+                          <div className="text-[11px] font-bold text-foreground leading-tight truncate">
+                            {preset.name}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground leading-tight truncate">
+                            {preset.subtitle}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-border/60 space-y-3">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
-                      Màu sắc thanh Menu
+                      Bố cục &amp; Khung Header
                     </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Kiểu bố cục
+                        </label>
+                        <Select
+                          value={navLayout}
+                          disabled={!canEdit}
+                          onChange={(val) => setNavLayout(val as SiteNavLayout)}
+                          options={[
+                            { value: "classic", label: "Chuẩn (Logo trái • Menu giữa)" },
+                            { value: "left", label: "Hiện đại (Logo & Menu sát trái)" },
+                            { value: "centered-logo", label: "Luxury (Logo giữa • 2 tầng)" },
+                            { value: "floating-pill", label: "Thanh nổi bo tròn (Pill)" },
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Độ rộng khung Header
+                        </label>
+                        <Select
+                          value={navMaxWidth}
+                          disabled={!canEdit}
+                          onChange={(val) => setNavMaxWidth(val as SiteNavMaxWidth)}
+                          options={[
+                            { value: "compact", label: "Gọn (1024px)" },
+                            { value: "default", label: "Chuẩn (1200px)" },
+                            { value: "wide", label: "Rộng (1440px)" },
+                            { value: "full", label: "Tràn viền (100%)" },
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Chiều cao Navbar
+                        </label>
+                        <Select
+                          value={navHeight}
+                          disabled={!canEdit}
+                          onChange={(val) => setNavHeight(val as SiteNavHeight)}
+                          options={[
+                            { value: "compact", label: "Gọn (56px)" },
+                            { value: "default", label: "Chuẩn (64px)" },
+                            { value: "tall", label: "Thoáng (80px)" },
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Chiều cao Logo ({logoHeight}px)
+                        </label>
+                        <input
+                          type="range"
+                          min={24}
+                          max={56}
+                          step={2}
+                          disabled={!canEdit}
+                          value={logoHeight}
+                          onChange={(e) => setLogoHeight(Number(e.target.value))}
+                          className="w-full h-9 accent-primary"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-border/60 space-y-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                      Nền, Hiệu ứng kính &amp; Màu sắc
+                    </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Hiệu ứng nền
+                        </label>
+                        <Select
+                          value={navBackdrop}
+                          disabled={!canEdit}
+                          onChange={(val) => setNavBackdrop(val as SiteNavBackdrop)}
+                          options={[
+                            { value: "glass", label: "Kính mờ (Glass)" },
+                            { value: "solid", label: "Nền đặc 100%" },
+                            { value: "transparent-top", label: "Trong suốt đầu trang" },
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Kiểu tô nền
+                        </label>
+                        <Select
+                          value={navBgMode}
+                          disabled={!canEdit}
+                          onChange={(val) => setNavBgMode(val as SiteNavBgMode)}
+                          options={[
+                            { value: "solid-color", label: "Màu đơn" },
+                            { value: "gradient", label: "Gradient 2 màu" },
+                          ]}
+                        />
+                      </div>
+                      {navBackdrop !== "solid" && (
+                        <>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Độ đậm nền ({navBgOpacity}%)
+                            </label>
+                            <input
+                              type="range"
+                              min={50}
+                              max={100}
+                              step={2}
+                              disabled={!canEdit}
+                              value={navBgOpacity}
+                              onChange={(e) => setNavBgOpacity(Number(e.target.value))}
+                              className="w-full h-9 accent-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Độ nhòe kính (Blur)
+                            </label>
+                            <Select
+                              value={navBlur}
+                              disabled={!canEdit}
+                              onChange={(val) => setNavBlur(val as SiteNavBlur)}
+                              options={[
+                                { value: "none", label: "Không nhòe" },
+                                { value: "sm", label: "Nhẹ (sm)" },
+                                { value: "md", label: "Chuẩn (md)" },
+                                { value: "lg", label: "Mạnh (lg)" },
+                              ]}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {(
                         [
                           { label: "Màu nền Navbar", val: navBgColor, set: setNavBgColor },
+                          ...(navBgMode === "gradient"
+                            ? [
+                                {
+                                  label: "Màu kết thúc Gradient",
+                                  val: navBgGradientEnd,
+                                  set: setNavBgGradientEnd,
+                                },
+                              ]
+                            : []),
                           { label: "Màu chữ Menu", val: navTextColor, set: setNavTextColor },
                           {
                             label: "Màu tab đang chọn",
@@ -1652,11 +2082,29 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                         </div>
                       ))}
                     </div>
+
+                    {navBgMode === "gradient" && (
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Hướng Gradient
+                        </label>
+                        <Select
+                          value={String(navBgGradientAngle)}
+                          disabled={!canEdit}
+                          onChange={(val) => setNavBgGradientAngle(Number(val) as 90 | 135 | 180)}
+                          options={[
+                            { value: "90", label: "Trái → Phải (90°)" },
+                            { value: "135", label: "Chéo (135°)" },
+                            { value: "180", label: "Trên → Dưới (180°)" },
+                          ]}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-3 border-t border-border/60 space-y-3">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
-                      Kiểu chữ &amp; Chi tiết
+                      Kiểu chữ, Dropdown &amp; Menu Mobile
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
@@ -1699,6 +2147,21 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                             { value: "500", label: "Vừa (Medium 500)" },
                             { value: "600", label: "Bán đậm (SemiBold 600)" },
                             { value: "700", label: "Đậm (Bold 700)" },
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Giãn chữ (Letter Spacing)
+                        </label>
+                        <Select
+                          value={navLetterSpacing}
+                          disabled={!canEdit}
+                          onChange={(val) => setNavLetterSpacing(val as SiteNavLetterSpacing)}
+                          options={[
+                            { value: "normal", label: "Mặc định" },
+                            { value: "wide", label: "Hơi thoáng (0.06em)" },
+                            { value: "wider", label: "Rộng Luxury (0.12em)" },
                           ]}
                         />
                       </div>
@@ -1747,6 +2210,36 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                           ]}
                         />
                       </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Bo góc menu thả xuống
+                        </label>
+                        <Select
+                          value={dropdownRadius}
+                          disabled={!canEdit}
+                          onChange={(val) => setDropdownRadius(val as SiteDropdownRadius)}
+                          options={[
+                            { value: "md", label: "Vuông nhẹ" },
+                            { value: "xl", label: "Bo chuẩn" },
+                            { value: "2xl", label: "Bo lớn" },
+                          ]}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                          Hướng mở Menu Mobile
+                        </label>
+                        <Select
+                          value={mobileDrawerSide}
+                          disabled={!canEdit}
+                          onChange={(val) => setMobileDrawerSide(val as SiteMobileDrawerSide)}
+                          options={[
+                            { value: "right", label: "Trượt từ phải" },
+                            { value: "left", label: "Trượt từ trái" },
+                            { value: "full", label: "Phủ toàn màn hình" },
+                          ]}
+                        />
+                      </div>
                     </div>
 
                     <div className="pt-2 space-y-2.5">
@@ -1761,6 +2254,13 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                         checked={navBorder}
                         disabled={!canEdit}
                         onChange={setNavBorder}
+                      />
+                      <ToggleRow
+                        label="Hiện Hotline ở chân Menu Mobile"
+                        description="Tự lấy SĐT từ mục Cụm nút liên hệ nổi."
+                        checked={mobileDrawerShowContact}
+                        disabled={!canEdit}
+                        onChange={setMobileDrawerShowContact}
                       />
                     </div>
                   </div>
@@ -1878,18 +2378,55 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                           </div>
                         </div>
 
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Bo góc nút CTA
+                            </label>
+                            <Select
+                              value={ctaRadius}
+                              disabled={!canEdit}
+                              onChange={(val) => setCtaRadius(val as SiteCtaRadius)}
+                              options={[
+                                { value: "md", label: "Vuông nhẹ" },
+                                { value: "xl", label: "Bo tròn chuẩn" },
+                                { value: "full", label: "Viên thuốc (Pill)" },
+                              ]}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Kích thước nút
+                            </label>
+                            <Select
+                              value={ctaSize}
+                              disabled={!canEdit}
+                              onChange={(val) => setCtaSize(val as SiteCtaSize)}
+                              options={[
+                                { value: "sm", label: "Gọn (32px)" },
+                                { value: "md", label: "Chuẩn (36px)" },
+                                { value: "lg", label: "Lớn (40px)" },
+                              ]}
+                            />
+                          </div>
+                        </div>
+
                         <div>
                           <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                            Bo góc nút CTA
+                            Icon kèm theo nút CTA
                           </label>
                           <Select
-                            value={ctaRadius}
+                            value={ctaIcon}
                             disabled={!canEdit}
-                            onChange={(val) => setCtaRadius(val as SiteCtaRadius)}
+                            onChange={(val) => setCtaIcon(val as SiteCtaIcon)}
                             options={[
-                              { value: "md", label: "Vuông nhẹ" },
-                              { value: "xl", label: "Bo tròn chuẩn" },
-                              { value: "full", label: "Viên thuốc (Pill)" },
+                              { value: "none", label: "Không có icon" },
+                              { value: "arrow-right", label: "Mũi tên phải →" },
+                              { value: "phone", label: "Điện thoại" },
+                              { value: "sparkles", label: "Ngôi sao nổi bật" },
+                              { value: "calendar", label: "Đặt lịch" },
+                              { value: "shopping-bag", label: "Giỏ hàng / Đặt món" },
+                              { value: "message", label: "Tin nhắn / Tư vấn" },
                             ]}
                           />
                         </div>
@@ -1900,6 +2437,55 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                           disabled={!canEdit}
                           onChange={setCtaShowOnMobile}
                         />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Khối nút CTA phụ (Secondary) */}
+                  <div className="pt-3 border-t border-border/60 space-y-3">
+                    <ToggleRow
+                      label="Thêm nút CTA phụ (Secondary)"
+                      description='Đặt cạnh nút chính trên Desktop (VD: "Xem Menu", "Đăng nhập").'
+                      checked={ctaSecondaryEnabled}
+                      disabled={!canEdit}
+                      onChange={setCtaSecondaryEnabled}
+                    />
+
+                    {ctaSecondaryEnabled && (
+                      <div className="p-3 rounded-xl bg-muted/30 border border-border/60 space-y-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <input
+                            type="text"
+                            value={ctaSecondaryLabel}
+                            disabled={!canEdit}
+                            onChange={(e) => setCtaSecondaryLabel(e.target.value)}
+                            placeholder="Nhãn (VD: Xem Menu)"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-input bg-background"
+                          />
+                          <input
+                            type="text"
+                            value={ctaSecondaryHref}
+                            disabled={!canEdit}
+                            onChange={(e) => setCtaSecondaryHref(e.target.value)}
+                            placeholder="Link (VD: /menu)"
+                            className="w-full px-3 py-2 text-xs rounded-xl border border-input bg-background"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                            Kiểu nút phụ
+                          </label>
+                          <Select
+                            value={ctaSecondaryStyle}
+                            disabled={!canEdit}
+                            onChange={(val) => setCtaSecondaryStyle(val as SiteCtaSecondaryStyle)}
+                            options={[
+                              { value: "outline", label: "Viền mảnh (Outline)" },
+                              { value: "soft", label: "Nền nhạt (Soft)" },
+                              { value: "ghost", label: "Trong suốt (Ghost)" },
+                            ]}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1916,14 +2502,24 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
 
                     {announcementEnabled && (
                       <div className="p-3 rounded-xl bg-muted/30 border border-border/60 space-y-2.5">
-                        <input
-                          type="text"
-                          value={announcementText}
-                          disabled={!canEdit}
-                          onChange={(e) => setAnnouncementText(e.target.value)}
-                          placeholder="VD: Miễn phí gửi mẫu thử cà phê rang mộc 72H — Đăng ký ngay"
-                          className="w-full px-3 py-2 text-xs rounded-xl border border-input bg-background"
-                        />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <input
+                            type="text"
+                            value={announcementBadge}
+                            disabled={!canEdit}
+                            onChange={(e) => setAnnouncementBadge(e.target.value)}
+                            placeholder="Nhãn (VD: HOT)"
+                            className="px-3 py-2 text-xs rounded-xl border border-input bg-background"
+                          />
+                          <input
+                            type="text"
+                            value={announcementText}
+                            disabled={!canEdit}
+                            onChange={(e) => setAnnouncementText(e.target.value)}
+                            placeholder="Nội dung thông báo ưu đãi..."
+                            className="sm:col-span-2 px-3 py-2 text-xs rounded-xl border border-input bg-background"
+                          />
+                        </div>
                         <input
                           type="text"
                           value={announcementHref}
@@ -1932,6 +2528,40 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                           placeholder="Link khi bấm (VD: /xuong-rang-ca-phe)"
                           className="w-full px-3 py-2 text-xs rounded-xl border border-input bg-background"
                         />
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Hiệu ứng hiển thị
+                            </label>
+                            <Select
+                              size="sm"
+                              value={announcementMode}
+                              disabled={!canEdit}
+                              onChange={(val) => setAnnouncementMode(val as SiteAnnouncementMode)}
+                              options={[
+                                { value: "static", label: "Chữ tĩnh căn giữa" },
+                                { value: "marquee", label: "Chạy chữ ngang (Marquee)" },
+                              ]}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Cỡ chữ ({announcementFontSize}px)
+                            </label>
+                            <Select
+                              size="sm"
+                              value={String(announcementFontSize)}
+                              disabled={!canEdit}
+                              onChange={(val) => setAnnouncementFontSize(Number(val))}
+                              options={[
+                                { value: "11", label: "11px (Gọn)" },
+                                { value: "12", label: "12px (Chuẩn)" },
+                                { value: "13", label: "13px (Rõ)" },
+                                { value: "14", label: "14px (Lớn)" },
+                              ]}
+                            />
+                          </div>
+                        </div>
                         <div className="grid grid-cols-2 gap-2.5">
                           <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-input bg-background">
                             <span className="text-[11px] text-muted-foreground shrink-0">Nền</span>
@@ -1976,6 +2606,36 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                             />
                           </div>
                         </div>
+                        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-input bg-background">
+                          <span className="text-[11px] text-muted-foreground shrink-0">
+                            Màu Gradient 2 (tuỳ chọn)
+                          </span>
+                          <input
+                            type="color"
+                            disabled={!canEdit}
+                            value={
+                              /^#[0-9a-f]{6}$/i.test(announcementBgGradientEnd)
+                                ? announcementBgGradientEnd
+                                : "#B88A44"
+                            }
+                            onChange={(e) => setAnnouncementBgGradientEnd(e.target.value)}
+                            className="w-5 h-5 rounded border-0 bg-transparent cursor-pointer shrink-0"
+                          />
+                          <input
+                            type="text"
+                            disabled={!canEdit}
+                            value={announcementBgGradientEnd}
+                            onChange={(e) => setAnnouncementBgGradientEnd(e.target.value)}
+                            placeholder="Để trống nếu dùng màu đơn"
+                            className="w-full text-xs font-mono bg-transparent focus:outline-hidden"
+                          />
+                        </div>
+                        <ToggleRow
+                          label="Cho phép khách bấm nút × để đóng thông báo"
+                          checked={announcementDismissible}
+                          disabled={!canEdit}
+                          onChange={setAnnouncementDismissible}
+                        />
                       </div>
                     )}
                   </div>
@@ -2012,6 +2672,55 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
 
                   {floatingEnabled && (
                     <div className="space-y-3 pt-2 border-t border-border/60">
+                      {/* 4 Chế độ hiển thị cụm nút nổi */}
+                      <div className="space-y-1.5">
+                        <label className="block text-[11px] font-semibold text-muted-foreground">
+                          Kiểu hiển thị cụm nút nổi
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(
+                            [
+                              { id: "icon", title: "Icon tròn", desc: "Gọn gàng góc màn hình" },
+                              {
+                                id: "pill",
+                                title: "Viên thuốc có chữ",
+                                desc: "Rõ nhãn Gọi / Zalo",
+                              },
+                              {
+                                id: "bottom-bar",
+                                title: "Thanh đáy Mobile",
+                                desc: "Cố định đáy điện thoại",
+                              },
+                              {
+                                id: "speed-dial",
+                                title: "Nút gom mở quạt",
+                                desc: "Bấm mới bung danh sách",
+                              },
+                            ] as const
+                          ).map((opt) => {
+                            const active = floatingStyle === opt.id;
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                disabled={!canEdit}
+                                onClick={() => setFloatingStyle(opt.id)}
+                                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                                  active
+                                    ? "border-foreground bg-foreground/5 ring-1 ring-foreground/20"
+                                    : "border-border/80 bg-background hover:bg-muted/40"
+                                }`}
+                              >
+                                <div className="text-xs font-bold text-foreground">{opt.title}</div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5">
+                                  {opt.desc}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <ToggleRow
@@ -2047,22 +2756,67 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                         </div>
                       </div>
 
+                      {/* Ảnh / Icon riêng cho nút Gọi & Zalo (hiện trực tiếp để dễ thấy) */}
+                      {(showCall || showZalo) && (
+                        <div className="space-y-2.5 pt-2 border-t border-border/50">
+                          {showCall && (
+                            <MediaPickerField
+                              label="Ảnh / Icon riêng cho nút Gọi (tuỳ chọn)"
+                              mediaId={null}
+                              mediaUrl={floatingCallIconUrl || null}
+                              availableMedia={mediaList}
+                              onMediaAdded={(m) => setMediaList((prev) => [m, ...prev])}
+                              onChange={(_mId, mUrl) => setFloatingCallIconUrl(mUrl || "")}
+                            />
+                          )}
+                          {showZalo && (
+                            <MediaPickerField
+                              label="Ảnh / Icon riêng cho nút Zalo (tuỳ chọn)"
+                              mediaId={null}
+                              mediaUrl={floatingZaloIconUrl || null}
+                              availableMedia={mediaList}
+                              onMediaAdded={(m) => setMediaList((prev) => [m, ...prev])}
+                              onChange={(_mId, mUrl) => setFloatingZaloIconUrl(mUrl || "")}
+                            />
+                          )}
+                        </div>
+                      )}
+
                       <div className="pt-2 border-t border-border/50 space-y-3">
-                        <div>
-                          <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
-                            Vị trí cụm nút nổi
-                          </label>
-                          <Select
-                            size="sm"
-                            value={floatingPosition}
-                            disabled={!canEdit}
-                            onChange={(v) => setFloatingPosition(v as "right" | "left")}
-                            options={[
-                              { value: "right", label: "Góc dưới bên phải" },
-                              { value: "left", label: "Góc dưới bên trái" },
-                            ]}
-                            className="w-full"
-                          />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Vị trí cụm nút nổi
+                            </label>
+                            <Select
+                              size="sm"
+                              value={floatingPosition}
+                              disabled={!canEdit}
+                              onChange={(v) => setFloatingPosition(v as "right" | "left")}
+                              options={[
+                                { value: "right", label: "Góc dưới bên phải" },
+                                { value: "left", label: "Góc dưới bên trái" },
+                              ]}
+                              className="w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                              Hiển thị theo thiết bị
+                            </label>
+                            <Select
+                              size="sm"
+                              value={floatingVisibility}
+                              disabled={!canEdit}
+                              onChange={(v) => setFloatingVisibility(v as SiteFloatingVisibility)}
+                              options={[
+                                { value: "all", label: "Cả Desktop & Mobile" },
+                                { value: "mobile-only", label: "Chỉ hiện trên Mobile" },
+                                { value: "desktop-only", label: "Chỉ hiện trên Desktop" },
+                              ]}
+                              className="w-full"
+                            />
+                          </div>
                         </div>
                         <ToggleRow
                           label="Hiện nút Lên đầu trang (Back-to-Top)"
@@ -2070,6 +2824,171 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                           disabled={!canEdit}
                           onChange={setShowBackToTop}
                         />
+                        <ToggleRow
+                          label="Hiệu ứng nhịp sóng (Pulse) cho tất cả các nút"
+                          checked={floatingPulseCall}
+                          disabled={!canEdit}
+                          onChange={setFloatingPulseCall}
+                        />
+                      </div>
+
+                      {/* Tuỳ chỉnh nâng cao thu gọn */}
+                      <div className="pt-2 border-t border-border/50">
+                        <button
+                          type="button"
+                          onClick={() => setShowFloatingAdvanced((v) => !v)}
+                          className="w-full flex items-center justify-between py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          <span>
+                            Tuỳ chỉnh nâng cao (màu nút, nhãn chữ, kích thước, khoảng cách lề)
+                          </span>
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 transition-transform ${
+                              showFloatingAdvanced ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+
+                        {showFloatingAdvanced && (
+                          <div className="mt-2.5 p-3 rounded-xl bg-muted/30 border border-border/60 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                  Kích thước nút
+                                </label>
+                                <Select
+                                  size="sm"
+                                  value={floatingSize}
+                                  disabled={!canEdit}
+                                  onChange={(v) => setFloatingSize(v as SiteFloatingSize)}
+                                  options={[
+                                    { value: "sm", label: "Nhỏ (40px)" },
+                                    { value: "md", label: "Chuẩn (48px)" },
+                                    { value: "lg", label: "Lớn (56px)" },
+                                  ]}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                  Cách đáy ({floatingBottomOffset}px)
+                                </label>
+                                <input
+                                  type="range"
+                                  min={12}
+                                  max={96}
+                                  step={4}
+                                  disabled={!canEdit}
+                                  value={floatingBottomOffset}
+                                  onChange={(e) => setFloatingBottomOffset(Number(e.target.value))}
+                                  className="w-full h-8 accent-primary"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+                                  Cách lề ngang ({floatingSideOffset}px)
+                                </label>
+                                <input
+                                  type="range"
+                                  min={12}
+                                  max={48}
+                                  step={4}
+                                  disabled={!canEdit}
+                                  value={floatingSideOffset}
+                                  onChange={(e) => setFloatingSideOffset(Number(e.target.value))}
+                                  className="w-full h-8 accent-primary"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-border/50">
+                              <div className="space-y-1.5">
+                                <label className="block text-[11px] font-semibold text-muted-foreground">
+                                  Nhãn &amp; màu nút Gọi
+                                </label>
+                                <input
+                                  type="text"
+                                  value={floatingCallLabel}
+                                  disabled={!canEdit}
+                                  onChange={(e) => setFloatingCallLabel(e.target.value)}
+                                  placeholder="Gọi ngay"
+                                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-input bg-background"
+                                />
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    disabled={!canEdit}
+                                    value={
+                                      /^#[0-9a-f]{6}$/i.test(floatingCallBg)
+                                        ? floatingCallBg
+                                        : "#111111"
+                                    }
+                                    onChange={(e) => setFloatingCallBg(e.target.value)}
+                                    title="Màu nền nút Gọi"
+                                    className="w-7 h-7 rounded border border-input bg-background cursor-pointer"
+                                  />
+                                  <input
+                                    type="color"
+                                    disabled={!canEdit}
+                                    value={
+                                      /^#[0-9a-f]{6}$/i.test(floatingCallText)
+                                        ? floatingCallText
+                                        : "#FFFFFF"
+                                    }
+                                    onChange={(e) => setFloatingCallText(e.target.value)}
+                                    title="Màu chữ nút Gọi"
+                                    className="w-7 h-7 rounded border border-input bg-background cursor-pointer"
+                                  />
+                                  <span className="text-[10px] text-muted-foreground">
+                                    Nền / Chữ
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <label className="block text-[11px] font-semibold text-muted-foreground">
+                                  Nhãn &amp; màu nút Zalo
+                                </label>
+                                <input
+                                  type="text"
+                                  value={floatingZaloLabel}
+                                  disabled={!canEdit}
+                                  onChange={(e) => setFloatingZaloLabel(e.target.value)}
+                                  placeholder="Nhắn Zalo"
+                                  className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-input bg-background"
+                                />
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    disabled={!canEdit}
+                                    value={
+                                      /^#[0-9a-f]{6}$/i.test(floatingZaloBg)
+                                        ? floatingZaloBg
+                                        : "#0068FF"
+                                    }
+                                    onChange={(e) => setFloatingZaloBg(e.target.value)}
+                                    title="Màu nền nút Zalo"
+                                    className="w-7 h-7 rounded border border-input bg-background cursor-pointer"
+                                  />
+                                  <input
+                                    type="color"
+                                    disabled={!canEdit}
+                                    value={
+                                      /^#[0-9a-f]{6}$/i.test(floatingZaloText)
+                                        ? floatingZaloText
+                                        : "#FFFFFF"
+                                    }
+                                    onChange={(e) => setFloatingZaloText(e.target.value)}
+                                    title="Màu chữ nút Zalo"
+                                    className="w-7 h-7 rounded border border-input bg-background cursor-pointer"
+                                  />
+                                  <span className="text-[10px] text-muted-foreground">
+                                    Nền / Chữ
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Nút nổi mở rộng (dạng thẻ gọn 2 hàng thay vì 12-col chật) */}
@@ -2089,6 +3008,7 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                                     label: "Messenger",
                                     href: "",
                                     icon: "messenger",
+                                    imageUrl: "",
                                     bgColor: "#0084FF",
                                     textColor: "#FFFFFF",
                                   },
@@ -2123,9 +3043,15 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                                   options={[
                                     { value: "messenger", label: "Messenger" },
                                     { value: "zalo", label: "Zalo" },
-                                    { value: "phone", label: "Điện thoại" },
+                                    { value: "facebook", label: "Facebook" },
+                                    { value: "instagram", label: "Instagram" },
                                     { value: "tiktok", label: "TikTok" },
+                                    { value: "shopee", label: "Shopee" },
+                                    { value: "youtube", label: "YouTube" },
+                                    { value: "phone", label: "Điện thoại" },
                                     { value: "maps", label: "Google Maps" },
+                                    { value: "calendar", label: "Đặt lịch" },
+                                    { value: "shopping-bag", label: "Giỏ hàng" },
                                     { value: "link", label: "Link khác" },
                                   ]}
                                   className="w-full"
@@ -2187,6 +3113,20 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
                               }
                               placeholder="Đường dẫn đích: https://m.me/... hoặc /slug"
                               className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-input bg-background"
+                            />
+                            <MediaPickerField
+                              label="Ảnh / Icon riêng (tuỳ chọn — thay thế icon mặc định)"
+                              mediaId={null}
+                              mediaUrl={btn.imageUrl || null}
+                              availableMedia={mediaList}
+                              onMediaAdded={(m) => setMediaList((prev) => [m, ...prev])}
+                              onChange={(_mId, mUrl) =>
+                                setCustomFloatingButtons((prev) =>
+                                  prev.map((x, i) =>
+                                    i === idx ? { ...x, imageUrl: mUrl || "" } : x
+                                  )
+                                )
+                              }
                             />
                           </div>
                         ))}
@@ -3197,6 +4137,56 @@ export function SiteConfigClient({ initialData }: SiteConfigClientProps) {
           />
         </div>
       </div>
+
+      {/* MODAL NHẬP CẤU HÌNH JSON */}
+      {jsonModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          onClick={() => setJsonModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl space-y-3.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-border/60">
+              <h3 className="text-sm font-bold text-foreground">Nhập cấu hình Site Shell (JSON)</h3>
+              <button
+                type="button"
+                onClick={() => setJsonModalOpen(false)}
+                className="p-1 rounded-lg text-muted-foreground hover:bg-muted cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Dán chuỗi JSON đã xuất từ một Bộ Menu khác để áp dụng nhanh Header &amp; Footer.
+            </p>
+            <textarea
+              rows={8}
+              value={jsonImportText}
+              onChange={(e) => setJsonImportText(e.target.value)}
+              placeholder='{"headerConfig": { ... }, "footerColumns": [ ... ]}'
+              className="w-full p-3 text-xs font-mono rounded-xl border border-input bg-background"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setJsonModalOpen(false)}
+                className="px-3.5 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted cursor-pointer"
+              >
+                Huỷ
+              </button>
+              <button
+                type="button"
+                onClick={handleImportShellJson}
+                className="px-4 py-2 rounded-xl bg-foreground text-background text-xs font-semibold hover:opacity-90 cursor-pointer"
+              >
+                Áp dụng JSON
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL THÊM / SỬA MỤC MENU */}
       {navModal && (

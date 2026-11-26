@@ -104,6 +104,32 @@ select:hover {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
+/* Hiệu ứng chạy chữ ngang cho Announcement Bar (Marquee) */
+@keyframes gp-marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.gp-marquee-track {
+  display: inline-flex;
+  width: max-content;
+  animation: gp-marquee 22s linear infinite;
+}
+
+.gp-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gp-marquee-track {
+    animation: none;
+  }
+}
+
 /* Định dạng hiển thị cho trình soạn thảo Rich Text (cả trong editor lẫn trang công khai) */
 .gp-rich-text p {
   margin: 0.25em 0;

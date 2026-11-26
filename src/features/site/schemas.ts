@@ -133,32 +133,60 @@ export const siteHeaderConfigSchema = z.object({
     .enum(["classic", "left", "centered-logo", "floating-pill"])
     .optional()
     .default("classic"),
+  navMaxWidth: z.enum(["compact", "default", "wide", "full"]).optional().default("default"),
   navHeight: z.enum(["compact", "default", "tall"]).optional().default("default"),
   logoHeight: z.number().int().min(24).max(56).optional().default(36),
   navGap: z.enum(["compact", "normal", "wide"]).optional().default("normal"),
   navFont: z.enum(FONT_IDS).optional().default("lexend-deca"),
   navFontSize: z.number().int().min(11).max(20).optional().default(13),
   navUppercase: z.boolean().optional().default(false),
+  navLetterSpacing: z.enum(["normal", "wide", "wider"]).optional().default("normal"),
   navWeight: z.enum(["500", "600", "700"]).optional().default("500"),
   navActiveStyle: z.enum(["text", "underline", "pill"]).optional().default("text"),
   navBackdrop: z.enum(["glass", "solid", "transparent-top"]).optional().default("glass"),
+  navBgMode: z.enum(["solid-color", "gradient"]).optional().default("solid-color"),
+  navBgGradientEnd: optColorSchema,
+  navBgGradientAngle: z
+    .union([z.literal(90), z.literal(135), z.literal(180)])
+    .optional()
+    .default(90),
+  navBgOpacity: z.number().int().min(50).max(100).optional().default(92),
+  navBlur: z.enum(["none", "sm", "md", "lg"]).optional().default("md"),
   navShadow: z.enum(["none", "sm", "md"]).optional().default("none"),
   navBorder: z.boolean().optional().default(true),
   navBgColor: optColorSchema,
   navTextColor: optColorSchema,
   navActiveColor: optColorSchema,
+  navHoverColor: optColorSchema,
+  dropdownRadius: z.enum(["md", "xl", "2xl"]).optional().default("xl"),
+  mobileDrawerSide: z.enum(["right", "left", "full"]).optional().default("right"),
+  mobileDrawerShowContact: z.boolean().optional().default(false),
   ctaEnabled: z.boolean().optional().default(false),
   ctaLabel: z.string().trim().max(40).optional().default(""),
   ctaHref: safeHrefSchema.optional().default(""),
   ctaBgColor: optColorSchema,
   ctaTextColor: optColorSchema,
   ctaRadius: z.enum(["md", "xl", "full"]).optional().default("xl"),
+  ctaIcon: z
+    .enum(["none", "arrow-right", "phone", "sparkles", "calendar", "shopping-bag", "message"])
+    .optional()
+    .default("none"),
+  ctaSize: z.enum(["sm", "md", "lg"]).optional().default("md"),
   ctaShowOnMobile: z.boolean().optional().default(false),
+  ctaSecondaryEnabled: z.boolean().optional().default(false),
+  ctaSecondaryLabel: z.string().trim().max(40).optional().default(""),
+  ctaSecondaryHref: safeHrefSchema.optional().default(""),
+  ctaSecondaryStyle: z.enum(["outline", "ghost", "soft"]).optional().default("outline"),
   announcementEnabled: z.boolean().optional().default(false),
+  announcementBadge: z.string().trim().max(24).optional().default(""),
   announcementText: z.string().trim().max(180).optional().default(""),
   announcementHref: safeHrefSchema.optional().default(""),
   announcementBgColor: optColorSchema,
+  announcementBgGradientEnd: optColorSchema,
   announcementTextColor: optColorSchema,
+  announcementFontSize: z.number().int().min(11).max(14).optional().default(12),
+  announcementDismissible: z.boolean().optional().default(false),
+  announcementMode: z.enum(["static", "marquee"]).optional().default("static"),
   faviconUrl: z
     .string()
     .trim()
@@ -197,11 +225,38 @@ export const siteFooterColumnSchema = z.object({
   links: z.array(siteFooterLinkSchema).max(12).optional().default([]),
 });
 
+const optImageUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .refine(
+    (v) => v === "" || /^https?:\/\/[^\s"'<>]+$/i.test(v) || /^\/[^\s"'<>]*$/.test(v),
+    "URL ảnh/icon phải bắt đầu bằng https:// hoặc /"
+  )
+  .optional()
+  .default("");
+
 export const siteFloatingCustomButtonSchema = z.object({
   id: z.string().trim().min(1).max(64),
   label: z.string().trim().min(1, "Nhập tên nút nổi").max(40),
   href: safeHrefSchema.refine((v) => v.length > 0, "Nhập đường dẫn cho nút nổi"),
-  icon: z.enum(["phone", "zalo", "messenger", "tiktok", "maps", "link"]).default("link"),
+  icon: z
+    .enum([
+      "phone",
+      "zalo",
+      "messenger",
+      "facebook",
+      "instagram",
+      "tiktok",
+      "shopee",
+      "youtube",
+      "maps",
+      "calendar",
+      "shopping-bag",
+      "link",
+    ])
+    .default("link"),
+  imageUrl: optImageUrlSchema,
   bgColor: optColorSchema,
   textColor: optColorSchema,
 });
@@ -209,9 +264,19 @@ export const siteFloatingCustomButtonSchema = z.object({
 export const siteFloatingContactSchema = z.object({
   enabled: z.boolean().optional().default(false),
   position: z.enum(["right", "left"]).optional().default("right"),
+  style: z.enum(["icon", "pill", "bottom-bar", "speed-dial"]).optional().default("icon"),
+  size: z.enum(["sm", "md", "lg"]).optional().default("md"),
+  visibility: z.enum(["all", "mobile-only", "desktop-only"]).optional().default("all"),
+  bottomOffset: z.number().int().min(12).max(96).optional().default(20),
+  sideOffset: z.number().int().min(12).max(48).optional().default(20),
+  pulseCall: z.boolean().optional().default(false),
   showBackToTop: z.boolean().optional().default(false),
   showCall: z.boolean().optional().default(true),
   phone: z.string().trim().max(30).optional().default(""),
+  callLabel: z.string().trim().max(24).optional().default(""),
+  callIconUrl: optImageUrlSchema,
+  callBgColor: optColorSchema,
+  callTextColor: optColorSchema,
   showZalo: z.boolean().optional().default(true),
   zaloUrl: z
     .string()
@@ -223,6 +288,10 @@ export const siteFloatingContactSchema = z.object({
     )
     .optional()
     .default(""),
+  zaloLabel: z.string().trim().max(24).optional().default(""),
+  zaloIconUrl: optImageUrlSchema,
+  zaloBgColor: optColorSchema,
+  zaloTextColor: optColorSchema,
   customButtons: z.array(siteFloatingCustomButtonSchema).max(6).optional().default([]),
 });
 
@@ -247,79 +316,9 @@ export const saveSiteSettingsSchema = z.object({
   shellId: pgUuid("ID bộ Menu không hợp lệ").optional(),
   siteName: z.string().trim().max(120).optional().default(""),
   logoMediaId: pgUuid("ID ảnh logo không hợp lệ").nullable().optional(),
-  headerConfig: siteHeaderConfigSchema.default({
-    sticky: true,
-    hideSiteName: false,
-    homePageSlug: "",
-    navLayout: "classic",
-    navHeight: "default",
-    logoHeight: 36,
-    navGap: "normal",
-    navFont: "lexend-deca",
-    navFontSize: 13,
-    navUppercase: false,
-    navWeight: "500",
-    navActiveStyle: "text",
-    navBackdrop: "glass",
-    navShadow: "none",
-    navBorder: true,
-    navBgColor: "",
-    navTextColor: "",
-    navActiveColor: "",
-    ctaEnabled: false,
-    ctaLabel: "",
-    ctaHref: "",
-    ctaBgColor: "",
-    ctaTextColor: "",
-    ctaRadius: "xl",
-    ctaShowOnMobile: false,
-    announcementEnabled: false,
-    announcementText: "",
-    announcementHref: "",
-    announcementBgColor: "",
-    announcementTextColor: "",
-    faviconUrl: "",
-    copyrightText: "",
-    legalLinks: [],
-    footerStyle: {
-      layout: "columns",
-      padding: "default",
-      showLogo: true,
-      bgColor: "",
-      textColor: "",
-      accentColor: "",
-      font: "lexend-deca",
-      fontSize: 14,
-    },
-    socialLinks: {
-      facebook: "",
-      tiktok: "",
-      instagram: "",
-      shopee: "",
-      youtube: "",
-    },
-    tracking: {
-      ga4Id: "",
-      fbPixelId: "",
-      tiktokPixelId: "",
-    },
-    leadNotifications: {
-      telegramBotToken: "",
-      telegramChatId: "",
-      webhookUrl: "",
-    },
-  }),
+  headerConfig: siteHeaderConfigSchema.default(() => siteHeaderConfigSchema.parse({})),
   footerColumns: z.array(siteFooterColumnSchema).max(4, "Footer tối đa 4 cột").default([]),
-  floatingContact: siteFloatingContactSchema.default({
-    enabled: false,
-    position: "right",
-    showBackToTop: false,
-    showCall: true,
-    phone: "",
-    showZalo: true,
-    zaloUrl: "",
-    customButtons: [],
-  }),
+  floatingContact: siteFloatingContactSchema.default(() => siteFloatingContactSchema.parse({})),
 });
 
 export type SaveSiteSettingsInput = z.input<typeof saveSiteSettingsSchema>;

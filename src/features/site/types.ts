@@ -29,7 +29,18 @@ export type SiteNavWeight = "500" | "600" | "700";
 export type SiteNavActiveStyle = "text" | "underline" | "pill";
 export type SiteNavBackdrop = "glass" | "solid" | "transparent-top";
 export type SiteNavShadow = "none" | "sm" | "md";
+export type SiteNavMaxWidth = "compact" | "default" | "wide" | "full";
+export type SiteNavBgMode = "solid-color" | "gradient";
+export type SiteNavBlur = "none" | "sm" | "md" | "lg";
+export type SiteNavLetterSpacing = "normal" | "wide" | "wider";
+export type SiteDropdownRadius = "md" | "xl" | "2xl";
+export type SiteMobileDrawerSide = "right" | "left" | "full";
 export type SiteCtaRadius = "md" | "xl" | "full";
+export type SiteCtaIcon =
+  "none" | "arrow-right" | "phone" | "sparkles" | "calendar" | "shopping-bag" | "message";
+export type SiteCtaSize = "sm" | "md" | "lg";
+export type SiteCtaSecondaryStyle = "outline" | "ghost" | "soft";
+export type SiteAnnouncementMode = "static" | "marquee";
 
 export type SiteFooterLayout = "columns" | "centered";
 export type SiteFooterPadding = "compact" | "default" | "spacious";
@@ -51,6 +62,7 @@ export interface SiteHeaderConfig {
   homePageSlug?: string;
   // Bố cục & Kích thước
   navLayout?: SiteNavLayout;
+  navMaxWidth?: SiteNavMaxWidth;
   navHeight?: SiteNavHeight;
   logoHeight?: number;
   navGap?: SiteNavGap;
@@ -58,28 +70,49 @@ export interface SiteHeaderConfig {
   navFont?: FontId;
   navFontSize?: number;
   navUppercase?: boolean;
+  navLetterSpacing?: SiteNavLetterSpacing;
   navWeight?: SiteNavWeight;
   navActiveStyle?: SiteNavActiveStyle;
   navBackdrop?: SiteNavBackdrop;
+  navBgMode?: SiteNavBgMode;
+  navBgGradientEnd?: string;
+  navBgGradientAngle?: 90 | 135 | 180;
+  navBgOpacity?: number;
+  navBlur?: SiteNavBlur;
   navShadow?: SiteNavShadow;
   navBorder?: boolean;
   navBgColor?: string;
   navTextColor?: string;
   navActiveColor?: string;
-  // Nút CTA phải
+  navHoverColor?: string;
+  dropdownRadius?: SiteDropdownRadius;
+  mobileDrawerSide?: SiteMobileDrawerSide;
+  mobileDrawerShowContact?: boolean;
+  // Nút CTA phải (Chính + Phụ)
   ctaEnabled?: boolean;
   ctaLabel?: string;
   ctaHref?: string;
   ctaBgColor?: string;
   ctaTextColor?: string;
   ctaRadius?: SiteCtaRadius;
+  ctaIcon?: SiteCtaIcon;
+  ctaSize?: SiteCtaSize;
   ctaShowOnMobile?: boolean;
+  ctaSecondaryEnabled?: boolean;
+  ctaSecondaryLabel?: string;
+  ctaSecondaryHref?: string;
+  ctaSecondaryStyle?: SiteCtaSecondaryStyle;
   // Thanh thông báo trên cùng (Announcement Bar)
   announcementEnabled?: boolean;
+  announcementBadge?: string;
   announcementText?: string;
   announcementHref?: string;
   announcementBgColor?: string;
+  announcementBgGradientEnd?: string;
   announcementTextColor?: string;
+  announcementFontSize?: number;
+  announcementDismissible?: boolean;
+  announcementMode?: SiteAnnouncementMode;
   // Nhận diện Favicon, Bản quyền & Pháp lý
   faviconUrl?: string;
   copyrightText?: string;
@@ -102,25 +135,56 @@ export interface SiteFooterColumn {
   links?: SiteFooterLink[];
 }
 
-export type SiteFloatingButtonIcon = "phone" | "zalo" | "messenger" | "tiktok" | "maps" | "link";
+export type SiteFloatingButtonIcon =
+  | "phone"
+  | "zalo"
+  | "messenger"
+  | "facebook"
+  | "instagram"
+  | "tiktok"
+  | "shopee"
+  | "youtube"
+  | "maps"
+  | "calendar"
+  | "shopping-bag"
+  | "link";
 
 export interface SiteFloatingCustomButton {
   id: string;
   label: string;
   href: string;
   icon: SiteFloatingButtonIcon;
+  imageUrl?: string;
   bgColor?: string;
   textColor?: string;
 }
 
+export type SiteFloatingStyle = "icon" | "pill" | "bottom-bar" | "speed-dial";
+export type SiteFloatingSize = "sm" | "md" | "lg";
+export type SiteFloatingVisibility = "all" | "mobile-only" | "desktop-only";
+
 export interface SiteFloatingContactConfig {
   enabled?: boolean;
   position?: "right" | "left";
+  style?: SiteFloatingStyle;
+  size?: SiteFloatingSize;
+  visibility?: SiteFloatingVisibility;
+  bottomOffset?: number;
+  sideOffset?: number;
+  pulseCall?: boolean;
   showBackToTop?: boolean;
   showCall?: boolean;
   phone?: string;
+  callLabel?: string;
+  callIconUrl?: string;
+  callBgColor?: string;
+  callTextColor?: string;
   showZalo?: boolean;
   zaloUrl?: string;
+  zaloLabel?: string;
+  zaloIconUrl?: string;
+  zaloBgColor?: string;
+  zaloTextColor?: string;
   customButtons?: SiteFloatingCustomButton[];
 }
 
